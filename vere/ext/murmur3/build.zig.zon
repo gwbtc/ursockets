@@ -1,0 +1,7 @@
+.{
+    .name = "murmur3",
+    .version = "0.0.1",
+    .paths = .{
+        "",
+    },
+}
