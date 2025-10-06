@@ -22,7 +22,7 @@
     =/  atom=(unit @)  (slaw:sr %ux p.jon)
     ?~  atom  ~
     atom
-  ++  du  |=  jon=json  ^-  (unit @da) 
+  ++  du 
     (cu from-unix:chrono:userlib ni)
   ++  se  |=  aur=@tas  |=  jon=json
     ?.  ?=(%s -.jon)  ~

@@ -22,7 +22,7 @@
     =/  rls  ~(tap by relays.state)
     =|  urls=(list @t)
     =/  sub-id  (gen-sub-id:nostr-keys eny.bowl)
-    =/  =req:shim:nsur  [%req sub-id fs]
+    =/  req=client-msg:nsur  [%req sub-id fs]
     |-  ?~  rls  [[urls req] state]
       ::  build http card
       =/  [url=@t rs=relay-stats:nsur]  i.rls

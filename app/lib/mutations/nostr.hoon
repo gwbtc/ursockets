@@ -3,7 +3,6 @@
     
 /+  appjs=json-nostrill,
     lib=nostrill,
-    nlib=nostr,
     nreq=nostr-req,
     server,
     njs=json-nostr,
@@ -17,11 +16,11 @@
 ++  handle-client-event  |=  [wid=@ =event:nsur]  ^-  (quip card _state)
   ~&  handling-client-event=event
   =.  nostr-feed.state  (put:norm:sur nostr-feed.state created-at.event event)
-  =/  profile  (~(get by profiles.state [%nostr author.event]))
+  =/  profile  (~(get by profiles.state) [%nostr pubkey.event])
   :: TODO save if we're following?
   :: =/  pw  (event-to-post:nlib event profile)
-  =/  response  (ok-client-event event .n 'we\'re full')
-  =/  cs  (ws-response:nreq response)
+  =/  response  (ok-client-event:nreq event .n 'we\'re full')
+  =/  cs  (ws-response:nreq wid response)
   [cs state]
   :: =/  l  events.state
   :: =|  cards=(list card:agent:gall)

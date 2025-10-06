@@ -5,7 +5,7 @@
 =,  enjs:format  
   |%
   ::  shim comms
-  ++  bulk-req  |=  [relays=(list @t) r=req:shim:sur]  ^-  json
+  ++  bulk-req  |=  [relays=(list @t) r=client-msg:sur]  ^-  json
     %+  frond  %ws
     %:  pairs
       relays+a+(turn relays cord:en:common)
@@ -153,10 +153,20 @@
     ?.  ?=(%s -.head)  ~
     :: TODO make sure they're always caps
     ?+  p.head  ~
-      %'EVENT'  `[%event ((event second))]
-      %'REQ'    `[%req (so second) (turn t.t.p.jon filter)]  
-      %'CLOSE'  `[%close (so second)]
-      %'AUTH'    [%auth (event second)]
+      %'EVENT'
+        =/  d  (event second)  ?~  d  ~
+        `[%event u.d] 
+      %'REQ'
+         =/  d  (so second)  ?~  d  ~
+         =/  rest=(list json)  t.t.p.jon
+         =/  d2  ((ar filter) [%a rest])  ?~  d2  ~
+        `[%req u.d u.d2]  
+      %'CLOSE'
+         =/  d  (so second)  ?~  d  ~
+        `[%close u.d]
+      %'AUTH'
+         =/  d  (event second)  ?~  d  ~
+        `[%auth u.d]
     ==
     ++  filter  |=  jon=json  ^-  (unit filter:sur)
       ?.  ?=(%o -.jon)  ~
@@ -166,17 +176,17 @@
         =/  entry=[@t json]  i.entries
         =.  f
           ?:  .=('ids' -.entry)
-            =/  vl  (ar +.entry hex:de:common)    
+            =/  vl  ((ar hex:de:common) +.entry)
             ?~  vl  f
             =/  values  (silt u.vl)
             f(ids `values)
           ?:  .=('authors' -.entry)
-            =/  vl  (ar +.entry hex:de:common)    
+            =/  vl  ((ar hex:de:common) +.entry)
             ?~  vl  f
             =/  values  (silt u.vl)
             f(authors `values)
           ?:  .=('kinds' -.entry)
-            =/  vl  (ar +.entry ud:de:common)    
+            =/  vl  ((ar ni) +.entry)
             ?~  vl  f
             =/  values  (silt u.vl)
             f(kinds `values)
@@ -189,13 +199,13 @@
           ?:  .=('until' -.entry)
             =/  value  (du:de:common +.entry)
             f(until value)
-          ::  anything else is a tag
-            =/  ctags  ?~  tags.f  *(map @t (set @t))  u.tags.f
-            =/  vl  (ar +.entry so)
+        ::   ::  anything else is a tag
+            =/  vl  ((ar so) +.entry)
             ?~  vl  f
+            =/  ctags  ?~  tags.f  *(map @t (set @t))  u.tags.f
             =/  values  (silt u.vl)
             =/  ntags  (~(put by ctags) -.entry values)
-            f(tags ntags)
+            f(tags `ntags)
         $(entries t.entries)
       
       
