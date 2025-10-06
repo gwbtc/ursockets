@@ -627,7 +627,7 @@ _http_ws_plan_event(u3_hws* web_u, u3_noun event)
   u3_noun pay = u3nc(u3i_chub((c3_d)web_u->wid_l), event);
   u3_noun cad = u3nc(u3i_string("websocket-event"), pay);
 
-  u3l_log("http: ws emit wid=%u event=%s", web_u->wid_l, u3r_string(u3h(cad)));
+  // u3l_log("http: ws emit wid=%u event=%s", web_u->wid_l, u3r_string(u3h(cad)));
 
   u3_auto_plan(&web_u->htd_u->car_u, u3_ovum_init(0, c3__e, wir, cad));
 }
@@ -1256,7 +1256,7 @@ _http_ws_accept(u3_hws* web_u)
 
   req_u->sat_e = u3_rsat_ripe;
 
-  u3l_log("http: ws accept wid=%u req=%p rec=%p", web_u->wid_l, (void*)req_u, (void*)req_u->rec_u);
+  // u3l_log("http: ws accept wid=%u req=%p rec=%p", web_u->wid_l, (void*)req_u, (void*)req_u->rec_u);
 
   //  guard against h2o freeing the request while we upgrade; if that happens,
   //  _http_req_close() will no longer tear down the websocket session.
@@ -1281,7 +1281,7 @@ _http_ws_accept(u3_hws* web_u)
   web_u->sat_e = u3_hws_open;
   req_u->wsu_u = web_u;
 
-  u3l_log("http: ws proceed scheduled wid=%u conn=%p", web_u->wid_l, (void*)web_u->woc_u);
+  // u3l_log("http: ws proceed scheduled wid=%u conn=%p", web_u->wid_l, (void*)web_u->woc_u);
 
   /* h2o will invoke h2o_websocket_proceed() once the HTTP upgrade completes
    * (see on_complete in lib/websocket.c). Calling it here would dereference a
@@ -1429,6 +1429,14 @@ _http_ws_message_cb(h2o_websocket_conn_t *conn,
     return;
   }
 
+  if ( WSLAY_CONNECTION_CLOSE == arg->opcode ) {
+    if ( u3_hws_closed != web_u->sat_e ) {
+      web_u->sat_e = u3_hws_closed;
+      _http_ws_plan_event(web_u, u3nc(u3i_string("disconnect"), u3_nul));
+    }
+    return;
+  }
+
   u3_noun payload;
   if ( 0 == arg->msg_length ) {
     payload = u3_nul;
@@ -1436,7 +1444,6 @@ _http_ws_message_cb(h2o_websocket_conn_t *conn,
   else {
     u3_noun octs = u3nc(u3i_chub((c3_d)arg->msg_length),
                         u3i_bytes(arg->msg_length, (const c3_y*)arg->msg));
-    // the unit
     payload = u3nc(u3_nul, octs);
   }
 
