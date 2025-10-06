@@ -186,8 +186,7 @@ _http_vec_to_meth(h2o_iovec_t vec_u)
          ( 0 == strncmp(vec_u.base, "DELETE",  vec_u.len) ) ? u3i_string("DELETE") :
          ( 0 == strncmp(vec_u.base, "OPTIONS", vec_u.len) ) ? u3i_string("OPTIONS") :
          ( 0 == strncmp(vec_u.base, "TRACE",   vec_u.len) ) ? u3i_string("TRACE") :
-         // TODO ??
-         // ( 0 == strncmp(vec_u.base, "PATCH",   vec_u.len) ) ? c3__patc :
+         ( 0 == strncmp(vec_u.base, "PATCH",   vec_u.len) ) ? u3i_string("PATCH") :
          u3_none;
 }
 
@@ -366,66 +365,69 @@ _http_heds_from_noun(u3_noun hed)
 /* _http_req_is_auth(): returns c3y if rec_u contains a valid auth cookie
 */
 static c3_o
-_http_req_is_auth(u3_hfig* fig_u, h2o_req_t* rec_u)
+_http_cookie_has_token(u3_hfig* fig_u, h2o_iovec_t coo_u)
 {
-  //  try to find a cookie header
-  //
-  h2o_iovec_t coo_u = {NULL, 0};
-  {
-    //TODO  http2 allows the client to put multiple 'cookie' headers,
-    //      runtime should support that once eyre does too.
-    ssize_t hin_i = h2o_find_header_by_str(&rec_u->headers, "cookie", 6, -1);
-    if ( hin_i != -1 ) {
-      coo_u = rec_u->headers.entries[hin_i].value;
-    }
-  }
-
-  //  if there is no cookie header, it can't possibly be authenticated
-  //
-  if ( NULL == coo_u.base ) {
+  if ( NULL == coo_u.base || 0 == coo_u.len ) {
     return c3n;
   }
-  //  if there is a cookie, see if it contains a valid auth token
-  //
-  else {
-    c3_c* key_c = fig_u->key_c;
-    c3_c  val_c[128];
-    c3_y  val_y = 0;
-    size_t  i_i = 0;
-    size_t  j_i = 0;
 
-    //  step through the cookie string
-    //
-    while (i_i < coo_u.len) {
-      //  if we found our key, read the value
-      //
-      if (key_c[j_i] == '\0' && coo_u.base[i_i] == '=') {
-        i_i++;
-        while ( i_i < coo_u.len
-             && coo_u.base[i_i] != ';'
-             && val_y < sizeof(val_c) ) {
-          val_c[val_y] = coo_u.base[i_i];
-          val_y++;
-          i_i++;
-        }
-        break;
-      }
-      //  keep reading the key as long as it matches
-      //
-      else if (coo_u.base[i_i] == key_c[j_i]) {
-        j_i++;
-      }
-      else {
-        j_i = 0;
-      }
+  c3_c* key_c = fig_u->key_c;
+  c3_c  val_c[128];
+  c3_y  val_y = 0;
+  size_t  i_i = 0;
+  size_t  j_i = 0;
+
+  while ( i_i < coo_u.len ) {
+    if ( ('\0' == key_c[j_i]) && ('=' == coo_u.base[i_i]) ) {
       i_i++;
+      while ( i_i < coo_u.len
+           && ';' != coo_u.base[i_i]
+           && val_y < sizeof(val_c) )
+      {
+        val_c[val_y++] = coo_u.base[i_i++];
+      }
+      break;
+    }
+    else if ( coo_u.base[i_i] == key_c[j_i] ) {
+      j_i++;
+    }
+    else {
+      j_i = 0;
+    }
+    i_i++;
+  }
+
+  if ( 0 == val_y ) {
+    return c3n;
+  }
+
+  u3_noun tok = u3i_bytes(val_y, (const c3_y*)val_c);
+  c3_o aut = u3kdi_has(u3k(fig_u->ses), tok);
+  u3_assert( (c3y == aut) || (c3n == aut) );
+  u3z(tok);
+  return aut;
+}
+
+static c3_o
+_http_req_is_auth(u3_hfig* fig_u, h2o_req_t* rec_u)
+{
+  ssize_t idx_i = -1;
+
+  while ( 1 ) {
+    idx_i = h2o_find_header_by_str(&rec_u->headers,
+                                   H2O_STRLIT("cookie"),
+                                   idx_i);
+    if ( -1 == idx_i ) {
+      break;
     }
 
-    u3_noun aut = u3kdi_has(u3k(fig_u->ses), u3i_bytes(val_y, (c3_y*)val_c));
-    u3_assert(c3y == aut || c3n == aut);
-
-    return aut;
+    h2o_iovec_t coo_u = rec_u->headers.entries[idx_i].value;
+    if ( c3y == _http_cookie_has_token(fig_u, coo_u) ) {
+      return c3y;
+    }
   }
+
+  return c3n;
 }
 
 /* _http_req_find(): find http request in connection by sequence.
