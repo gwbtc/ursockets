@@ -1,5 +1,7 @@
 /-  sur=nostrill, nsur=nostr, tf=trill-feed, comms=nostrill-comms
 /+  lib=nostrill, nostr-keys, sr=sortug, scri,
+    ws=websockets,
+    nreq=nostr-req,
     shim, dbug,
     evlib=nostr-events,
     mutations-nostr,
@@ -55,21 +57,13 @@
     %handle-http-request         handle-shim
     %websocket-handshake         handle-ws-handshake
     %websocket-server-message    handle-ws-msg
-  ==
-  ++  give-ws-payload
-    |=  [wid=@ event=websocket-event:eyre]
-    ^-  (list card:agent:gall)
-    =/  =cage
-      [%websocket-response !>([wid event])]
-    =/  wsid  (scot %ud wid)
-    :~  [%give %fact ~[/websocket-server/[wsid]] cage]
-    ==
-  
+  ==  
   ++  handle-ws-handshake
     =/  order  !<([@ inbound-request:eyre] vase)
-    =/  response  [%accept ~]
     :_  this
-    (give-ws-payload -.order response)
+    ::  TODO refuse if...?
+    (accept-handshake:ws -.order)
+  ::  we behave like a Server here, mind you. messages from clients, not relays
   ++  handle-ws-msg
     =/  order  !<([wid=@ msg=websocket-message:eyre] vase)
     :: ~&  opcode=op=opcode.msg.order  ::  0 for continuation, 1 for text, 2 for binary, 9 for ping 0xa for pong
@@ -79,11 +73,16 @@
     ~&  >>  ws-msg-jsons=jsons
     =/  jsonm  (de:json:html jsons)
     ?~  jsonm  `this
+    =/  client-msg  (parse-client-msg:nreq u.jsonm)
+    ?~  client-msg  ~&  "wrong nostr ws msg from client"  `this
     :: TODO de-json thing and handle whatever
-    :_  this
-    =/  octs  (as-octs:mimes:html '"lol-lmao"')
-    =/  response  [%message 1 `octs]
-    (give-ws-payload -.order response)
+    =^  cs  state  ?-  -.u.client-msg
+      %req    `state
+      %event  (handle-client-event:mutan -.order event.u.client-msg)
+      %auth   `state
+      %close  `state
+    ==
+    [cs state]
   ::
   :: 
   ++  handle-comms

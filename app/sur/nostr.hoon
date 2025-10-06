@@ -61,16 +61,16 @@ $%  [%event sub-id=@t =event]
     :: from our shim
     [%error msg=@t]
 ==
++$  client-msg
+$%  [%req relay-req]
+    [%event =event]
+    [%auth =event]
+    [%close sub-id=@t]
+==
 ++  shim
   |%
   ++  url  'http://localhost:8888/shim'
-  +$  req
-  $%  [%req relay-req]
-      [%event =event]
-      [%auth =event]
-      [%close sub-id=@t]
-  ==
-  +$  bulk-req  [relays=(list @t) =req]
+  +$  bulk-req  [relays=(list @t) req=client-msg]
   +$  http-req  [relay=@t delay=@ud sub-id=@t filters=(list filter)]
   +$  res  $%([%http p=(list relay-msg)] [%ws relay=@t msg=relay-msg])
   --

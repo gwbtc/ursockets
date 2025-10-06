@@ -21,7 +21,7 @@
       filters+a+(turn fs filter)
     ~
     ==
-  ++  req  |=  =req:shim:sur  ^-  json
+  ++  req  |=  req=client-msg:sur  ^-  json
     =/  en-ev  event
     :-  %a  :-  s+(crip (cuss (trip -.req)))
     ?-  -.req
@@ -107,6 +107,18 @@
         other+o+other.meta
         ~
     ==
+  ++  relay-msg  |=  msg=relay-msg:sur  ^-  json
+  =/  head  [%s -.msg]
+  :-  %a  :-  head
+  ?-  -.msg
+    %event   ~[[%s sub-id.msg] (event event.msg)]
+    %ok      ~[(hex:en:common id.msg) [%b accepted.msg] [%s msg.msg]]
+    %eose    ~[[%s sub-id.msg]]
+    %closed  ~[[%s sub-id.msg]]
+    %notice  ~[[%s msg.msg]]
+    %auth    ~[[%s challenge.msg]]
+    %error  ~
+  ==
   --
 ++  de
 =,  dejs-soft:format
@@ -131,7 +143,63 @@
       notice+so
       error+so
     ==
-
+  ++  client-msg
+    |=  jon=json  ^-  (unit client-msg:sur)
+    ?.  ?=(%a -.jon)  ~
+    ?~  p.jon  ~
+    =/  head  i.p.jon
+    ?~  t.p.jon  ~
+    =/  second  i.t.p.jon
+    ?.  ?=(%s -.head)  ~
+    :: TODO make sure they're always caps
+    ?+  p.head  ~
+      %'EVENT'  `[%event ((event second))]
+      %'REQ'    `[%req (so second) (turn t.t.p.jon filter)]  
+      %'CLOSE'  `[%close (so second)]
+      %'AUTH'    [%auth (event second)]
+    ==
+    ++  filter  |=  jon=json  ^-  (unit filter:sur)
+      ?.  ?=(%o -.jon)  ~
+      =/  f  *filter:sur
+      =/  entries  ~(tap by p.jon)
+      |-  ?~  entries  `f
+        =/  entry=[@t json]  i.entries
+        =.  f
+          ?:  .=('ids' -.entry)
+            =/  vl  (ar +.entry hex:de:common)    
+            ?~  vl  f
+            =/  values  (silt u.vl)
+            f(ids `values)
+          ?:  .=('authors' -.entry)
+            =/  vl  (ar +.entry hex:de:common)    
+            ?~  vl  f
+            =/  values  (silt u.vl)
+            f(authors `values)
+          ?:  .=('kinds' -.entry)
+            =/  vl  (ar +.entry ud:de:common)    
+            ?~  vl  f
+            =/  values  (silt u.vl)
+            f(kinds `values)
+          ?:  .=('limit' -.entry)
+            =/  value  (ni +.entry)
+            f(limit value)
+          ?:  .=('since' -.entry)
+            =/  value  (du:de:common +.entry)
+            f(since value)
+          ?:  .=('until' -.entry)
+            =/  value  (du:de:common +.entry)
+            f(until value)
+          ::  anything else is a tag
+            =/  ctags  ?~  tags.f  *(map @t (set @t))  u.tags.f
+            =/  vl  (ar +.entry so)
+            ?~  vl  f
+            =/  values  (silt u.vl)
+            =/  ntags  (~(put by ctags) -.entry values)
+            f(tags ntags)
+        $(entries t.entries)
+      
+      
+      
     
     :: | { event: { subscription_id: string; event: NostrEvent } }
     :: | { ok: { event_id: string; accepted: boolean; message: string } }

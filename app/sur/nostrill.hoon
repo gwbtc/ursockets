@@ -10,6 +10,7 @@
       feed=feed:trill
       feed-perms=gate:gate
       ::  nostr feed from relays
+      :: TODO deprecate and parse properly into a feed:trill
       =nostr-feed
       ::  profiles
       profiles=(map user user-meta:nostr)

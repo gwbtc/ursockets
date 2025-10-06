@@ -1,5 +1,7 @@
 .claude
 .zig-cache
+fakezod
 AGENTS.md
 CLAUDE.md
 NOTES.md
+run.sh
