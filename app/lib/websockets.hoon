@@ -10,5 +10,8 @@
   ++  accept-handshake  |=  wid=@
     =/  response  [%accept ~]
     (give-ws-payload wid response)
+  ++  refuse-handshake  |=  wid=@
+    =/  response  [%reject ~]
+    (give-ws-payload wid response)
 
 --

@@ -1,0 +1,15 @@
+import Urbit from "urbit-api";
+
+export const URL = import.meta.env.PROD ? "" : "http://localhost:8090";
+
+export async function start(): Promise<Urbit> {
+  const airlock = new Urbit(URL, "");
+  const res = await fetch(URL + "/~/host");
+  const ship = await res.text();
+  airlock.ship = ship.slice(1);
+  airlock.our = ship;
+  airlock.desk = "nostrill";
+  await airlock.poke({ app: "hood", mark: "helm-hi", json: "opening airlock" });
+  await airlock.eventSource();
+  return airlock;
+}

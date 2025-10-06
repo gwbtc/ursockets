@@ -30,8 +30,8 @@
   ^-  (quip card:agent:gall agent:gall)
   =/  default  (default-state:lib bowl)
   :_  this(state default)
-  :~  shim-binding:cards
-  ==
+      bindings:cards
+
 ::
 ++  on-save
   ^-  vase
@@ -42,7 +42,9 @@
   ^-  (quip card:agent:gall agent:gall)
   =/  old-state  !<(versioned-state old-state)
   ?-  -.old-state
-    %0  `this(state old-state)
+    %0   :_  this(state old-state)
+         bindings:cards
+  
   ==
   :: `this(state (default-state:lib bowl))
 ::
@@ -60,31 +62,48 @@
   ==  
   ++  handle-ws-handshake
     =/  order  !<([@ inbound-request:eyre] vase)
+    ~&  >>  nostrill-ws-handshake=order
+    =/  url  url.request.order
+    =/  pat=(unit path)  (rush url stap)
+    ?~  pat  ~&  "pat-parsing-failed"  `this
+    =/  ok=?  ?+  u.pat  .n
+      [%nostrill-ui ~]   authenticated.order
+      [%nostrill ~]     .y  :: TODO which nostr clients do we filter
+      [%nostr-shim ~]   .y  :: TODO deprecate?
+    ==
     :_  this
-    ::  TODO refuse if...?
-    (accept-handshake:ws -.order)
+    ?:  ok  (accept-handshake:ws -.order)  (refuse-handshake:ws -.order)
   ::  we behave like a Server here, mind you. messages from clients, not relays
   ++  handle-ws-msg
-    =/  order  !<([wid=@ msg=websocket-message:eyre] vase)
+    =/  order  !<([wid=@ =path msg=websocket-message:eyre] vase)
     :: ~&  opcode=op=opcode.msg.order  ::  0 for continuation, 1 for text, 2 for binary, 9 for ping 0xa for pong
     =/  msg  message.msg.order
     ?~  msg  `this
-    =/  jsons=@t  q.data.u.msg
-    ~&  >>  ws-msg-jsons=jsons
-    =/  jsonm  (de:json:html jsons)
-    ?~  jsonm  `this
-    =/  client-msg  (parse-client-msg:nreq u.jsonm)
-    ?~  client-msg  ~&  "wrong nostr ws msg from client"  `this
-    :: TODO de-json thing and handle whatever
-    =^  cs  state  ?-  -.u.client-msg
-      %req    `state
-      %event  (handle-client-event:mutan -.order event.u.client-msg)
-      %auth   `state
-      %close  `state
+    =/  wsdata=@t  q.data.u.msg
+    ~&  >>  ws-msg-data=[path.order wsdata]
+    |^
+    ?+  path.order  `this
+      [%nostrill-ui ~]  handle-ui-ws
+      [%nostrill ~]     handle-nostr-client-ws
     ==
-    [cs this]
   ::
-  :: 
+    ++  handle-ui-ws  
+      =/  cs  (ui-ws-res:lib -.order wsdata)  
+      [cs this]
+    ++  handle-nostr-client-ws 
+      =/  jsonm  (de:json:html wsdata)
+      ?~  jsonm  `this
+      =/  client-msg  (parse-client-msg:nreq u.jsonm)
+      ?~  client-msg  ~&  "wrong nostr ws msg from client"  `this
+      :: TODO de-json thing and handle whatever
+      =^  cs  state  ?-  -.u.client-msg
+        %req    `state
+        %event  (handle-client-event:mutan -.order event.u.client-msg)
+        %auth   `state
+        %close  `state
+      ==
+      [cs this]
+  --
   ++  handle-comms
     =/  pok  (cast-poke:coms q.vase)
     ?:  ?=(%dbug -.pok)  (debug +.pok)

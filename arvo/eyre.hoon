@@ -820,7 +820,7 @@
     =^  ?(invalid=@uv [suv=@uv =identity som=(list move)])  state
       (session-for-request:authentication request)
     ?@  -
-      ::  the request provided a session cookie that's not (or no longer)
+      ::  the request provided a session coocokie that's not (or no longer)
       ::  valid. to make sure they're aware, tell them 401
       ::
       ::NOTE  some code duplication with below, but request handling deserves
@@ -944,7 +944,6 @@
     ?:  &(?=([~ @ ^] cached) ?=(%'GET' method.request))
       (handle-cache-req authenticated request u.val.u.cached)
     ::
-    ~&  >>  eyre-request-action=-.action
     ?-    -.action
         %gen
       =/  bek=beak  [our desk.generator.action da+now]
@@ -1043,21 +1042,26 @@
   ++  ws-event
     |=  [wid=@ event=websocket-event]
     =/  conn  (~(get by connections.state) duct)
+    :: ~&  ws-conn=conn
     ?~  conn  `state
     ?.  ?=(%app -.action.u.conn)  `state
+    =/  url  url.request.inbound-request.u.conn
+    =/  pat=(unit path)  (rush url stap)
+    ?~  pat  ~&  error-parsing-path=pat  `state
     =/  app  app.action.u.conn
-    ~&  ws-event=[wid app]
-    =/  identity  [%ours ~]
-    =/  wsid  (scot %p wid)
+    =/  identity  identity.u.conn
+    =/  wsid  (scot %ud wid)
+    :: ~&  >>  ws-event=[identity app pat wsid]
     :: TODO damn how
+    :: ~&  eyre-ws-event=-.event
     ?+  -.event  `state
       %message
         :_  state
         :~  %+  deal-as
-            /run-ws-app-request/(scot %uw (cut 3 [2 4] eny))
+            /run-ws-app-request/[wsid]
             :^  identity  our  app
             :+  %poke  %websocket-server-message
-            !>([wid message.event])
+            !>([wid u.pat message.event])
         ==
       %disconnect
         =.  connections.state  (~(del by connections.state) duct)
@@ -1070,30 +1074,33 @@
   ++  ws-handshake
     |=  [wid=@ secure=? =address:eyre =request:http]
     ^-  [(list move) server-state]
-    ~&  >>>  sending-ws-handshake=[wid eyre-id]
 
     =/  host=(unit @t)  (get-header:http 'host' header-list.request)
     =/  [=action suburl=@t]
       (get-action-for-binding host url.request)
     :: TODO enable other actions
-    ?>  ?=(%app -.action)
+    ?.  ?=(%app -.action)  `state
 
   :: TODO!!  get clear what all the identity thing has to be
-    =/  =identity  [%ours ~]
     =/  app  app.action
-    =^  ?(invalid=@uv [suv=@uv fi=^identity som=(list move)])  state
+    =^  ?(invalid=@uv [@uv identity (list move)])  state
       (session-for-request:authentication request)
-    =/  connection=outstanding-connection
+    =/  [session-id=@uv =identity som=(list move)]
       ?@  -  ~&  invalid-session=-  
-        [action [.n secure address request] [invalid identity] ~ 0]
-        [action [.n secure address request] [suv identity] ~ 0]
+        [invalid [%fake *@p] ~]  -
+
+    =/  authenticated  ?=(%ours -.identity)
     
+    =/  connection=outstanding-connection
+        [action [authenticated secure address request] [session-id identity] ~ 0]
 
     =.  connections.state
       (~(put by connections.state) duct connection)
     ::  eyre-id is assigned way up in this arm
     =/  wsid  (scot %ud wid)
     :_  state  
+    ~&  som=som
+    %+  weld  som
     :~  %+  deal-as
           /ws-watch-response/[wsid]
         [identity our app %watch /websocket-server/[wsid]]
@@ -3202,7 +3209,6 @@
   ++  handle-ws-response
     |=  [wid=@ event=websocket-event]
     ^-  [(list move) server-state]    
-    ~&  eyre-handle-ws-response=event
     :: TODO remove if not accepted?
     =.  connections.state
       ?.  ?=(%reject -.event)  connections.state
@@ -3655,7 +3661,6 @@
   ^-  [(list move) _http-server-gate]
   ::
   =/  task=task  ((harden task) wrapped-task)
-  ~&  >  eyre-task=[-.task duct=duct]
   ::
   ::  XX handle more error notifications
   ::
@@ -3952,7 +3957,6 @@
     =^  moves  server-state.ax  (set-response:server +.task)
     [moves http-server-gate]
       %websocket-event
-    ~&  websocket-event=+.task
     =^  moves  server-state.ax  (ws-event:server +.task)
     [moves http-server-gate]
 
@@ -3965,8 +3969,6 @@
 ++  take
   ~/  %eyre-take
   |=  [=wire =duct dud=(unit goof) =sign]
-  ~&  >>>  duct=duct
-  ~&   >>  take-wire-eyre=wire
   ^-  [(list move) _http-server-gate]
   =>  %=    .
           sign
@@ -4001,7 +4003,6 @@
   ++  watch-ws-response
     =/  event-args  [[eny duct now rof] server-state.ax]
     ?>  ?=([@ *] t.wire)
-    ~&  >>  ws-sign=[`@t`-.sign `@t`+<.sign ((soft @t) +>-.sign)]
     ?+  sign  `http-server-gate
       [%gall %unto %watch-ack *]
         ?~  p.p.sign
@@ -4017,14 +4018,12 @@
         [moves http-server-gate]
       [%gall %unto %fact *]
         =/  mark  p.cage.p.sign
-        ~&  >  eyre-ws-response-fact=mark
         ?.  ?=(%websocket-response mark)
           =/  handle-gall-error
             handle-gall-error:(per-server-event event-args)
           =^  moves  server-state.ax
             (handle-gall-error leaf+"eyre bad mark {(trip mark)}" ~)
           [moves http-server-gate]
-        ~&  websocket-vase=q.q.cage.p.sign
         =/  event  !<([@ websocket-event] q.cage.p.sign)
         =/  handle-ws-response  handle-ws-response:(per-server-event event-args)
         =^  moves  server-state.ax
@@ -4033,7 +4032,6 @@
 
     ==
   ++  run-ws-app-request
-    ~&  run-ws-app-req=sign
     
     `http-server-gate
 
@@ -4063,7 +4061,6 @@
     =/  event-args  [[eny duct now rof] server-state.ax]
     ::
     ?>  ?=([@ *] t.wire)
-    ~&  >>  http-sign=[`@t`-.sign `@t`+<.sign ((soft @t) +>-.sign)]
     ?:  ?=([%gall %unto %watch-ack *] sign)
       ?~  p.p.sign
         ::  received a positive acknowledgment: take no action
@@ -4085,7 +4082,6 @@
     ::
     ?>  ?=([%gall %unto %fact *] sign)
     =/  =mark  p.cage.p.sign
-    ~&  eyre-watch-response-fact=mark
     =/  =vase  q.cage.p.sign
     ?.  ?=  ?(%http-response-header %http-response-data %http-response-cancel)
         mark
