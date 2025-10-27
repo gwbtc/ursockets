@@ -2,7 +2,8 @@
 /+  lib=nostrill, nostr-keys, sr=sortug, scri,
     ws=websockets,
     nreq=nostr-req,
-    shim, dbug,
+    nostr-client,
+    dbug,
     evlib=nostr-events,
     mutations-nostr,
     mutations-trill,
@@ -22,10 +23,10 @@
     cards  ~(. cards:lib bowl)
     mutan  ~(. mutations-nostr [state bowl])
     mutat  ~(. mutations-trill [state bowl])
-    shimm  ~(. shim [state bowl])
     scry   ~(. scri [state bowl])
     coms   ~(. commlib [state bowl])
     fols   ~(. followlib [state bowl])
+    nclient  ~(. nostr-client [state bowl])
 ++  on-init
   ^-  (quip card:agent:gall agent:gall)
   =/  default  (default-state:lib bowl)
@@ -54,12 +55,26 @@
   |^
   ~&  nostrill-on-poke=mark
   ?+  mark  `this
-    %noun    handle-comms
+    %noun
+      ~&  vase=q.vase
+      handle-comms
     %json    on-ui
     %handle-http-request         handle-shim
+    %websocket-client-message     handle-relay-ws
     %websocket-handshake         handle-ws-handshake
     %websocket-server-message    handle-ws-msg
   ==  
+  +$  ws-msg  [@ud websocket-message:eyre]
+  ++  handle-relay-ws
+    =/  msg  !<(ws-msg vase)
+    =/  m=websocket-message:eyre  +.msg
+    ?~  message.m  `this
+    =/  =octs  u.message.m
+    =/  urelay-msg  (parse-body:nclient q.octs)
+    ?~  urelay-msg  `this
+    =/  relay-url  ''  :: TODO IMPORTANT!! where to keep this
+    =^  cards  state  (handle-ws:mutan relay-url u.urelay-msg)
+    [cards this]
   ++  handle-ws-handshake
     =/  order  !<([@ inbound-request:eyre] vase)
     ~&  >>  nostrill-ws-handshake=order
@@ -69,7 +84,6 @@
     =/  ok=?  ?+  u.pat  .n
       [%nostrill-ui ~]   authenticated.order
       [%nostrill ~]     .y  :: TODO which nostr clients do we filter
-      [%nostr-shim ~]   .y  :: TODO deprecate?
     ==
     :_  this
     ?:  ok  (accept-handshake:ws -.order)  (refuse-handshake:ws -.order)
@@ -113,15 +127,16 @@
         %res  (handle-res:coms +.pok)
       ==
     [cs this]
+  :: DEPRECATED
   ++  handle-shim
     =/  order  !<(order:web vase)
     ~&  request.req.order
     ?:  .=(url.request.req.order '/nostr-shim')
-      =/  msg  (parse-msg:shim order)
+      =/  msg  (parse-msg:nclient order)
       ?~  msg  `this
-      ?>  ?=(%ws -.u.msg)
       :: =^  cards  state  (handle-shim-msg:mutat u.msg)
-      =^  cards  state  (handle-ws:mutan +.u.msg)
+      =/  relay-url  ''
+      =^  cards  state  (handle-ws:mutan relay-url u.msg)
       [cards this]
 
     ::
@@ -186,22 +201,46 @@
       %del  =.  relays  (~(del by relays) +.poke)
             `this
       ::
-      %sync  =^  cs  state  get-posts:shimm
+      %sync  =^  cs  state  get-posts:nclient
              [cs this]
       ::
       %send
           =/  upoast  (get-poast:scry host.poke id.poke)
           ?~  upoast  `this
           =/  event  (post-to-event:evlib i.keys eny.bowl u.upoast)
-          =/  req=bulk-req:shim:nsur  [relays.poke %event event]
-          =/  cards  :~((send:shimm req))
-          [cards this]
+          :: TODO URGENT
+          :: =/  req=bulk-req:shim:nsur  [relays.poke %event event]
+          :: =/  cards  :~((send:nclient req))
+          :: [cards this]
+          `this
     ==
 
     
   ::
   ++  debug  |=  noun=*
     ?+  noun  `this
+      %iris
+        :_  this
+        =/  =task:iris  [%websocket-connect dap.bowl 'ws://localhost:8888']
+        :~  [%pass /iris-test %arvo %i task]
+        ==
+      %irisf
+        :_  this
+        =/  inc-subs  ~(tap by sup.bowl)
+        =/  ws-paths  %+  roll  inc-subs  |=  [i=[=duct =ship =path] acc=(list path)]
+          ~&  bitt=i
+          ?.  ?=([%websocket-client *] path.i)  acc
+          [path.i acc]
+        =/  jon  [%s 'lolazo']
+        =/  octs  (as-octs:mimes:html (en:json:html jon))
+        =/  msg=websocket-message:eyre  [1 `octs]
+        :~  [%give %fact ws-paths %message !>(msg)]
+        ==
+      [%iris @]
+        :_  this
+        =/  =task:iris  [%websocket-event +.noun %message 1 `(as-octs:mimes:html 'heyhey')]
+        :~  [%pass /iris-test2 %arvo %i task]
+        ==
       %wtf
         =/  lol=(unit @)  ~
         =/  l  ~|  "wtf"  (need lol)
@@ -232,7 +271,7 @@
       %http
       `this
       %rt  ::  relay test
-        =^  cards  state  get-posts:shimm
+        =^  cards  state  get-posts:nclient
         [cards this]
       %rt0
         =/  ids
@@ -304,6 +343,7 @@
   ~&  on-watch=`path`pole
   ?+  pole  !!
   [%http-response *]  `this
+  [%websocket-client wids=@t ~]  `this
   [%websocket-server *]  `this
   [%follow ~]  :_  this  (give-feed:coms pole)
   [%beg %feed ~]
@@ -364,16 +404,41 @@
 ++  on-arvo
   |~  [wire=(pole knot) =sign-arvo]
   ^-  (quip card:agent:gall agent:gall)
+  ~&  >>  on-arvo=[`path`wire -.sign-arvo +<.sign-arvo]
   ?+  wire  `this
-    [%http sub-id=@t *]  
+    [%ws %to-nostr-relay *]  
       ?>  ?=([%khan %arow *] sign-arvo)
       ?:  ?=(%| -.p.sign-arvo)  `this
-      =/  jstring  !<(@ +>.p.sign-arvo)
-      =/  msg  (parse-body:shimm jstring)
-      ?~  msg  ~&  `@t`jstring  `this
-      ?>  ?=(%http -.u.msg)
-      =^  cards  state  (handle-http:mutan sub-id.wire +.u.msg)
+      =/  =cage  +.p.sign-arvo
+      =/  v=vase  q.cage
+      =/  gift  !<(gift:iris v)
+      ?.  ?=(%websocket-response -.gift)  `this
+      ~&  m5=+.gift
+      =/  wid=@  +<.gift
+      =/  ev=websocket-event:eyre  +>.gift
+      ?.  ?=(%message -.ev)  `this
+      ?~  message.message.ev  `this
+      =/  =octs  u.message.message.ev
+      =/  jstring=@t  q.octs
+      ~&  >>  jstring=jstring
+      
+      :: =/  msg  (parse-body:nclient jstring)
+    :: ~&  "m5"
+    ::   ?~  msg  ~&  badparse=`@t`jstring  `this
+    ::   ~&  >>  ws-relay-msg=msg
+      :: ?>  ?=(%http -.u.msg)
+      :: =^  cards  state  (handle-http:mutan sub-id.wire +.u.msg)
       `this
+    :: [%ws sub-id=@t *]  
+    ::   ?>  ?=([%khan %arow *] sign-arvo)
+    ::   ?:  ?=(%| -.p.sign-arvo)  `this
+    ::   =/  jstring  !<(@ +>.p.sign-arvo)
+    ::   =/  msg  (parse-body:nclient jstring)
+    ::   ?~  msg  ~&  `@t`jstring  `this
+    ::   ~&  >>  ws-ui-msg=msg
+    ::   :: ?>  ?=(%http -.u.msg)
+    ::   :: =^  cards  state  (handle-http:mutan sub-id.wire +.u.msg)
+    ::   `this
   ==
 ::
 ++  on-fail

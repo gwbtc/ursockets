@@ -58,8 +58,6 @@ $%  [%event sub-id=@t =event]
     [%closed sub-id=@t msg=@t]
     [%notice msg=@t]
     [%auth challenge=@t]
-    :: from our shim
-    [%error msg=@t]
 ==
 +$  client-msg
 $%  [%req relay-req]
@@ -67,14 +65,6 @@ $%  [%req relay-req]
     [%auth =event]
     [%close sub-id=@t]
 ==
-++  shim
-  |%
-  ++  url  'http://localhost:8888/shim'
-  +$  bulk-req  [relays=(list @t) req=client-msg]
-  +$  http-req  [relay=@t delay=@ud sub-id=@t filters=(list filter)]
-  +$  res  $%([%http p=(list relay-msg)] [%ws relay=@t msg=relay-msg])
-  --
-
 :: https://github.com/sesseor/nostr-relays-list/blob/main/relays.txt
 ++  public-relays  ^-  (list @t)
   :~

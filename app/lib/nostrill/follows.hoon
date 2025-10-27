@@ -1,19 +1,19 @@
 /-  sur=nostrill, nsur=nostr, comms=nostrill-comms, feed=trill-feed
-/+  lib=nostrill, js=json-nostr, shim, sr=sortug, constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill
+/+  lib=nostrill, js=json-nostr, nostr-client, sr=sortug, constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill
 |_  [=state:sur =bowl:gall]
 ++  handle-add  |=  =user:sur
   ^-  (quip card:agent:gall _state)
   ?-  -.user
     %urbit  =/  c  (urbit-watch +.user)
             :-  :~(c)  state
-    %nostr  =/  shimm  ~(. shim [state bowl])  
+    %nostr  =/  nclient  ~(. nostr-client [state bowl])  
             :: TODO now or on receival?
             =.  following.state  (~(put by following.state) user *feed:feed)
             =/  graph  (~(get by follow-graph.state) [%urbit our.bowl])
             =/  follows  ?~  graph  (silt ~[user])  (~(put in u.graph) user)
             =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] follows)
             
-            =^  cards  state  (get-user-feed:shimm +.user)
+            =^  cards  state  (get-user-feed:nclient +.user)
             [cards state]
   ==
 ++  handle-del  |=  =user:sur

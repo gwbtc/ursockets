@@ -6,7 +6,6 @@
     njs=json-nostr,
     feedlib=trill-feed,
     postlib=trill-post,
-    shim,
     constants,
     sr=sortug
 

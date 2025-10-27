@@ -7,7 +7,7 @@
     server,
     njs=json-nostr,
     postlib=trill-post,
-    shim,
+    nostr-client,
     sr=sortug
 
 |_  [=state:sur =bowl:gall]
@@ -50,22 +50,9 @@
 ++  populate-profiles
   |=  pubkeys=(set @ux)
   ^-  (quip card _state)
-  =/  shimm  ~(. shim [state bowl])
-  =^  cards  state  (get-profiles-http:shimm pubkeys)
+  =/  nclient  ~(. nostr-client [state bowl])
+  =^  cards  state  (get-profiles:nclient pubkeys)
   [cards state]
-
-
-  
-  
-
-++  handle-http
-  |=  [sub-id=@t msgs=(list relay-msg:nsur)]
-    ~&  handling-http=[sub-id (lent msgs)]
-    =|  cards=(list card)
-    |-  ?~  msgs  [cards state]
-      =^  cards  state  (handle-msg i.msgs)
-      $(msgs t.msgs)
-
 
 ++  handle-msg  |=  msg=relay-msg:nsur
   ^-  (quip card _state)
@@ -80,8 +67,6 @@
               `state
     %notice  ~&  >>  notice=+.msg  :: TODO pass to UI?
               `state
-    %error  ~&  >>>  relay-error=+.msg
-      `state
   ==
 
 ++  handle-ws  |=  [relay=@t msg=relay-msg:nsur]
@@ -112,9 +97,6 @@
                 `state
       %notice  ~&  >>  notice=+.msg  :: TODO pass to UI?
                 `state
-      %error  ~&  >>>  relay-error=+.msg
-        =.  relays.state  (~(del by relays.state) relay)
-        `state
     ==
   [cards state]
 
@@ -158,7 +140,7 @@
   ~&  parsing-nostr-event=kind.event
 :: https://nostrdata.github.io/kinds/
   ?:  .=(kind.event 666)  :: one_off subs eose  cf. 999
-    parse-shim-oneose
+    parse-relay-oneose
   ?:  .=(kind.event 0)  ::  user metadata
     parse-metadata
   ?:  .=(kind.event 1)  ::  apparently a poast
@@ -238,7 +220,7 @@
       :: =.  follow-set  (~(put in follow-set) meta)
       :: =.  follow-graph.state  (~(put by follow-graph.state) pubkey.event follow-set)
       $(tags.event t.tags.event)
-  ++  parse-shim-oneose
+  ++  parse-relay-oneose
   ^-  (quip card _state)
     =/  rs  (~(get by relays.state) relay)
     ?~  rs  `state

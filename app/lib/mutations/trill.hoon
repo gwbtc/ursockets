@@ -6,7 +6,6 @@
     trill=trill-post,
     njs=json-nostr,
     postlib=trill-post,
-    shim,
     sr=sortug
 
 |_  [=state:sur =bowl:gall]

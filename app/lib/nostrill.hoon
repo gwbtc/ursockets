@@ -39,16 +39,12 @@
 
 ++  cards
 |_  =bowl:gall
-  ++  shim-binding  ^-  card:agent:gall
-    [%pass /binding %arvo %e %connect [~ /nostr-shim] dap.bowl]
-
   ++  relay-binding  ^-  card:agent:gall
     [%pass /binding %arvo %e %connect [~ /nostrill] dap.bowl]
   ++  ui-binding  ^-  card:agent:gall
     [%pass /binding %arvo %e %connect [~ /nostrill-ui] dap.bowl]
   ++  bindings
-    :~  shim-binding
-        relay-binding
+    :~  relay-binding
         ui-binding
     ==
   ++  update-ui  |=  =fact:ui:sur  ^-  card:agent:gall
