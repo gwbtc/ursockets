@@ -3942,6 +3942,8 @@
         [%receive id=@ud =http-event:http]
         :: UIP-125
         :: 
+        [%cancel-websocket id=@ud]
+        ::  receives websocket event from earth
         [%websocket-connect app=term url=@t]
         ::  receives websocket event from earth
         ::

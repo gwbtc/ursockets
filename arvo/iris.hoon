@@ -25,12 +25,14 @@
 ::
 +$  note
   $%  ::  %d: to dill
-      ::
       $:  %d
           ::
           ::
       $%  [%flog =flog:dill]
-  ==  ==  ==
+      ==  ==
+      ::
+      [%g $>(%deal task:gall)]
+  ==
 --
 ::  more structures
 ::
@@ -38,7 +40,8 @@
 +$  axle
   $:  ::  date: date at which light's state was updated to this data structure
       ::
-      date=%~2019.2.8
+      date=%~2025.10.28
+      :: date=%~2019.2.8
       ::
       ::
       =state
@@ -47,6 +50,8 @@
 ::
 +$  state
   $:  ::  next-id: monotonically increasing id number for the next connection
+      :: UIP-125
+      sockets=(map @ud websocket-connection)
       ::
       next-id=@ud
       ::  connection-by-id: open connections to the
@@ -287,31 +292,117 @@
       connection-by-id    (~(del by connection-by-id.state) id)
       connection-by-duct  (~(del by connection-by-duct.state) duct.u.con)
     ==
+  ++  cleanup-ws
+    |=  wid=@ud
+    ^-  [(list move) ^state]
+    ?~  con=(~(get by sockets.state) wid)
+      `state
+    =.  sockets.state  (~(del by sockets.state) wid)
+    :_  state
+    :~  (leave-agent wid app.u.con)
+    ==
+    
+  
+  ::  outgoing websockets connection
   ++  ws-connect
     |=  [desk=term url=@t]
-      ~&  iris-ws-connect=[desk url]
+      ~&  iris-ws-connect=[desk url duct]
+
+      ?:  (~(has by connection-by-duct.state) duct)
+      ~&  "cant sent second ws-connect on same duct"  `state
       :: TODO ... the wid comes from vere tho...?
       =^  id  next-id.state  [next-id.state +(next-id.state)]
-      ::  add a new open session
-      =/  wid  id
-      ::
-      =.  connection-by-id.state
-        %+  ~(put by connection-by-id.state)  id
-        [duct [0 3 ~ ~ 0 ~]]
-      ::  keep track of the duct for cancellation
-      ::
-      =.  connection-by-duct.state
-        (~(put by connection-by-duct.state) duct id)
-      :-  [outbound-duct.state %give %websocket-handshake wid url]~
+      =/  wc=websocket-connection  [desk duct id url %pending]
+      =.  sockets.state  (~(put by sockets.state) id wc)
+    :: ::  keep track of the duct for cancellation
+    :: ::
+    :: =.  connection-by-duct.state
+    ::   (~(put by connection-by-duct.state) duct id)
+
+      :: This sends it to Vere to actually do the request
+      :-  [outbound-duct.state %give %websocket-handshake id url]~
       state
+  :: 
+  ::  incoming websockets event
   ++  ws-event
-    |=  [id=@ud event=websocket-event:eyre]
-      ~&  iris-ws-event=[id event]
-      :-  [outbound-duct.state %give %websocket-response id event]~
-      state
+    |=  [wid=@ud event=websocket-event:eyre]
+      ~&  iris-ws-event=[wid event duct]
+      =/  wc  (~(got by sockets.state) wid)
+      ?-  -.event
+        %accept
+          =.  wc  wc(status %accepted)
+          =.  sockets.state  (~(put by sockets.state) wid wc)
+          :_  state  :~  (watch-agent wid app.wc)                         
+                     ==
+        %message  :_  state
+                  :~  (poke-agent [wid +.event] app.wc)
+                  ==
+        %reject      (cleanup-ws wid)
+        %disconnect  (cleanup-ws wid)
+      ==
+      :: this API sucks but for the time being
+      :: route differently if from runtime (incoming) or from urbit (look at first piece of the duct)
+      :: ?~  duct  `state
+      :: =/  connection  (~(got by connection-by-id.state) wid)
+      :: =/  pol  `(pole knot)`i.duct
+      :: :: from runtime, return to app
+      :: ?+  pol  `state
+      ::   [%http-client id=@t *]  (ws-response wid event)  
+      :: ::   :: [%gall %use %spider *]  
+      ::   [%gall %use app=@t *]
+      ::     :_  state
+      ::     ::  if connection accepted we subscribe to app
+      ::     :~  [outbound-duct.state %give %websocket-response wid event]
+      ::         :*  duct.connection
+      ::             %pass
+      ::             /iris-ws-watch
+      ::             %g  %deal
+      ::             [our our /iris]
+      ::             app.pol
+      ::             %watch  /websocket-client/(scot %ud wid)
+      ::         ==
+      ::     ==
+      :: ==
+
+
+      ++  ws-response
+      |=  [wid=@ud event=websocket-event:eyre]
+        =/  connection  (~(got by connection-by-id.state) wid)
+        ~&  >>  connection=connection
+        :_  
+        ?:  ?|  ?=(%reject -.event)  ?=(%disconnect -.event)  ==
+        (cleanup-connection wid)  state
+        :~  :*  duct.connection
+                %give
+                %websocket-response
+                wid
+                event
+        ==  ==
+      
+  ++  ws-cancel
+    |=  wid=@ud
+    =.  sockets.state  (~(del by sockets.state) wid)
+    :_  state
+    :: TODO this goes to vere
+    :~  [outbound-duct.state %give %cancel-request wid]
+    ==
+  
+  ++  watch-agent
+    |=  [wid=@ud app=term]  ^-  move
+      =/  wids  (scot %ud wid)
+      =/  =note  [%g %deal [our our /iris] app %watch /websocket-client/[wids]]
+      [duct %pass /iris-ws-watch/[wids] note]
+  ++  leave-agent
+    |=  [wid=@ud app=term]  ^-  move
+      =/  wids  (scot %ud wid)
+      =/  =note  [%g %deal [our our /iris] app %leave ~]
+      [duct %pass /iris-ws-watch/[wids] note]
+  ++  poke-agent
+    |=  [msg=[@ud websocket-message:eyre] app=term]  ^-  move
+      =/  =note  [%g %deal [our our /iris] app %poke %websocket-client-message !>(msg)]
+    [duct %pass /iris-ws-poke note]
   --
 --
-::  end the =~
 ::
 .  ==
 ::  begin with a default +axle as a blank slate
@@ -390,24 +481,66 @@
     %websocket-event
     =^  moves  state.ax  (ws-event:client +.task)
     [moves light-gate]
+    %cancel-websocket
+    =^  moves  state.ax  (ws-cancel:client +.task)
+    [moves light-gate]
   ==
 ::  http-client issues no requests to other vanes
+::  until now!
 ::
 ++  take
-  |=  [=wire =duct dud=(unit goof) sign=*]
+  |=  [wire=(pole knot) =duct dud=(unit goof) hin=sign-arvo]
   ^-  [(list move) _light-gate]
+  ~&  iris-take=[wire duct]
   ?<  ?=(^ dud)
-  !!
+  :_  light-gate
+  ?+  wire  ~
+    [%iris-ws-watch wids=@t ~]  =/  wid  (slav %ud wids.wire)
+    ~&  iris-take=-.hin
+    ?+    -.hin  ~
+        %gall
+          ?>  ?=(%unto +<.hin)
+          ~&  hin=p.hin
+          ?+    -.p.hin  ~
+            ?(%poke-ack %watch-ack)
+              ?~  p.p.hin  ~
+              ~
+            %kick  
+                =/  event-args  [[eny duct now rof] state.ax]
+                =/  client  (per-client-event event-args)
+                =^  movs  state.ax  (cleanup-ws:client wid)
+                movs
+            %fact
+              =*  cag  cage.p.hin
+              ?+    p.cag  ~&(bad-fact+p.cag !!)
+                %message  =/  msg  !<(websocket-message:eyre q.cag)
+                          :~  [outbound-duct.state.ax %give %websocket-response wid %message msg]
+                          ==
+    ::       =/  =tang  !<(tang q.cag)
+    ::       ::  %-  (slog 'khan-fact' tang)
+    ::       :: [hen %give %arow %| p.cag tang]~
+          :: ~
+    ::     ::
+    ::         %thread-done
+    ::       :: [hen %give %arow %& %noun q.cag]~
+    ::       ~
+        ==
+      ==
+    ==
+  ==
 ::
 ++  light-gate  ..$
 ::  +load: migrate old state to new state (called on vane reload)
 ::
 ++  load
   |=  old=axle
-  ^+  ..^$
+  :: |=  old=*
+  :: ^+  ..^$
   ::
   ~!  %loading
-  ..^$(ax old)
+    ..^$(ax old)
+    :: ..^$
+
 ::  +stay: produce current state
 ::
 ++  stay  `axle`ax
