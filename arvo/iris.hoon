@@ -258,6 +258,7 @@
     =/  connection  (~(got by connection-by-id.state) id)
     ::  reassemble the octs that we've received into their final form
     ::
+    ~&  iris-sending-finished=[id=id duct=duct connection=connection]
     =/  data=octs
       %-  combine-octs
       %-  flop
@@ -312,12 +313,10 @@
       ~&  "cant sent second ws-connect on same duct"  `state
       :: TODO ... the wid comes from vere tho...?
       =^  id  next-id.state  [next-id.state +(next-id.state)]
+
       =/  wc=websocket-connection  [desk duct id url %pending]
       =.  sockets.state  (~(put by sockets.state) id wc)
     :: ::  keep track of the duct for cancellation
-    :: ::
-    :: =.  connection-by-duct.state
-    ::   (~(put by connection-by-duct.state) duct id)
 
       :: This sends it to Vere to actually do the request
       :-  [outbound-duct.state %give %websocket-handshake id url]~
@@ -327,55 +326,38 @@
   ++  ws-event
     |=  [wid=@ud event=websocket-event:eyre]
       ~&  iris-ws-event=[wid event duct]
-      =/  wc  (~(got by sockets.state) wid)
-      ?-  -.event
-        %accept
-          =.  wc  wc(status %accepted)
-          =.  sockets.state  (~(put by sockets.state) wid wc)
-          :_  state  :~  (watch-agent wid app.wc)                         
-                     ==
-        %message  :_  state
-                  :~  (poke-agent [wid +.event] app.wc)
-                  ==
-        %reject      (cleanup-ws wid)
-        %disconnect  (cleanup-ws wid)
-      ==
-      :: this API sucks but for the time being
-      :: route differently if from runtime (incoming) or from urbit (look at first piece of the duct)
-      :: ?~  duct  `state
-      :: =/  connection  (~(got by connection-by-id.state) wid)
-      :: =/  pol  `(pole knot)`i.duct
-      :: :: from runtime, return to app
-      :: ?+  pol  `state
-      ::   [%http-client id=@t *]  (ws-response wid event)  
-      :: ::   :: [%gall %use %spider *]  
-      ::   [%gall %use app=@t *]
-      ::     :_  state
-      ::     ::  if connection accepted we subscribe to app
-      ::     :~  [outbound-duct.state %give %websocket-response wid event]
-      ::         :*  duct.connection
-      ::             %pass
-      ::             /iris-ws-watch
-      ::             %g  %deal
-      ::             [our our /iris]
-      ::             app.pol
-      ::             %watch  /websocket-client/(scot %ud wid)
-      ::         ==
-      ::     ==
-      :: ==
+      =/  wc  (~(get by sockets.state) wid)
+      ?~  wc  `state
+      =/  wc  u.wc
+      ~&  wc=wc
+      =^  moves  state
+        ?-  -.event
+          %accept
+            =.  wc  wc(status %accepted)
+            =.  sockets.state  (~(put by sockets.state) wid wc)
+            :_  state
+            :: :~  (watch-agent wid app.wc)                         
+            :: ==
+            ~
+          %message  :_  state
+                    :: :~  (poke-agent [wid +.event] app.wc)
+                    :: ==
+                    ~
+          %reject  (cleanup-ws wid)
 
+          %disconnect  (cleanup-ws wid)
+        ==
+      =/  m2  (ws-response wc event)
+      [(welp m2 moves) state]
 
       ++  ws-response
-      |=  [wid=@ud event=websocket-event:eyre]
-        =/  connection  (~(got by connection-by-id.state) wid)
-        ~&  >>  connection=connection
-        :_  
-        ?:  ?|  ?=(%reject -.event)  ?=(%disconnect -.event)  ==
-        (cleanup-connection wid)  state
-        :~  :*  duct.connection
+      |=  [wc=websocket-connection event=websocket-event:eyre]
+        ~&  ws-response=wc
+        :~  :*
+                duct.wc
                 %give
                 %websocket-response
-                wid
+                id.wc
                 event
         ==  ==
       
@@ -550,15 +532,18 @@
   ^-  roon
   |=  [lyc=gang pov=path car=term bem=beam]
   ^-  (unit (unit cage))
+  ~&  >>  iris-scry=[lyc=lyc pov=pov car=car bem=bem syd=q.bem]
+  ?.  ?=(%x car)  [~ ~]
+  ?:  ?=(%ws q.bem)  ``noun+!>(sockets.state.ax)
   =*  ren  car
   =*  why=shop  &/p.bem
   =*  syd  q.bem
   =*  lot=coin  $/r.bem
-  =*  tyl  s.bem
+  =*  tyl  s.bem  
   ::
   ?.  ?=(%& -.why)  ~
   =*  his  p.why
-  ?:  &(?=(%x ren) =(tyl //whey) =([~ ~] lyc))
+  ?:  &(=(tyl //whey) =([~ ~] lyc))
     =/  maz=(list mass)
       :~  nex+&+next-id.state.ax
           outbound+&+outbound-duct.state.ax
