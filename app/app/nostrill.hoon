@@ -416,6 +416,20 @@
    [%x %j %feed host=@ start=@ end=@ count=@ newest=@ replies=@ *]
      (sfeed:scry host.pole start.pole end.pole count.pole newest.pole replies.pole)
    [%x %j %thread host=@ id=@ *]  (thread:scry host.pole id.pole)
+    ::  test scry
+    ::
+    [%x %feed host=@ *]
+    :^  ~  ~  %noun  
+    !>
+    ?:  =(our.bowl (slav %p host.pole))
+      %-  sort  :_  gth
+      %+  turn  (tap:orm:tf feed.state)
+      |=([key=@da val=*] key)
+    =/  host-feed  (~(get by following.state) urbit+(slav %p host.pole))
+    ?~  host-feed  ~
+    %-  sort  :_  gth
+    %+  turn  (tap:orm:tf u.host-feed)
+    |=([key=@da val=*] key)
   ==
   
 ::
