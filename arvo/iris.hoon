@@ -322,7 +322,7 @@
       :-  [outbound-duct.state %give %websocket-handshake id url]~
       state
   :: 
-  ::  incoming websockets event
+  ::  incoming websockets event to be sent BY VERE NOT USERSPACE
   ++  ws-event
     |=  [wid=@ud event=websocket-event:eyre]
       ~&  iris-ws-event=[wid event duct]
@@ -336,13 +336,11 @@
             =.  wc  wc(status %accepted)
             =.  sockets.state  (~(put by sockets.state) wid wc)
             :_  state
-            :: :~  (watch-agent wid app.wc)                         
-            :: ==
-            ~
+            :~  (watch-agent wid app.wc)                         
+            ==
           %message  :_  state
-                    :: :~  (poke-agent [wid +.event] app.wc)
-                    :: ==
-                    ~
+                    :~  (poke-agent [wid +.event] app.wc)
+                    ==
           %reject  (cleanup-ws wid)
 
           %disconnect  (cleanup-ws wid)
@@ -517,7 +515,7 @@
 ++  load
   |=  old=axle
   :: |=  old=*
-  :: ^+  ..^$
+  ^+  ..^$
   ::
   ~!  %loading
     ..^$(ax old)
@@ -533,8 +531,27 @@
   |=  [lyc=gang pov=path car=term bem=beam]
   ^-  (unit (unit cage))
   ~&  >>  iris-scry=[lyc=lyc pov=pov car=car bem=bem syd=q.bem]
+  :: TODO this is obviously insecure so should be deprecated soon
   ?.  ?=(%x car)  [~ ~]
-  ?:  ?=(%ws q.bem)  ``noun+!>(sockets.state.ax)
+  =/  caller  +<.pov
+  ?:  ?=(%ws q.bem)
+    ?+  s.bem  ~
+      ~  ``noun+!>(sockets.state.ax)
+      [%id @ ~]
+        =/  wid  (slav %ud i.s.bem)
+        =/  socket  (~(got by sockets.state.ax) wid)
+        ?.  .=(app.socket caller)  ~
+        ``noun+!>(socket)
+      [%url @ ~]
+        =/  sockets  ~(tap by sockets.state.ax)
+        ::  pass a (unit websocket-connection)
+        :-  ~  :-  ~  :-  %noun  !>
+        |-  ?~  sockets  ~
+          =/  socket=websocket-connection:iris  q.i.sockets
+          ?.  .=(app.socket caller)  $(sockets t.sockets)
+          ?:  .=(url.socket i.t.s.bem)  `socket
+          $(sockets t.sockets)
+    ==
   =*  ren  car
   =*  why=shop  &/p.bem
   =*  syd  q.bem

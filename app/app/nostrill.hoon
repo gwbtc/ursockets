@@ -60,13 +60,15 @@
       handle-comms
     %json    on-ui
     %handle-http-request         handle-shim
-    %websocket-client-message     handle-relay-ws
+    %websocket-client-message    handle-relay-ws
     %websocket-handshake         handle-ws-handshake
     %websocket-server-message    handle-ws-msg
   ==  
   +$  ws-msg  [@ud websocket-message:eyre]
   ++  handle-relay-ws
+    ^-  (quip card:agent:gall agent:gall)
     =/  msg  !<(ws-msg vase)
+    ~&  handle-relay-ws=msg
     =/  m=websocket-message:eyre  +.msg
     ?~  message.m  `this
     =/  =octs  u.message.m
@@ -76,6 +78,7 @@
     =^  cards  state  (handle-ws:mutan relay-url u.urelay-msg)
     [cards this]
   ++  handle-ws-handshake
+    ^-  (quip card:agent:gall agent:gall)
     =/  order  !<([@ inbound-request:eyre] vase)
     ~&  >>  nostrill-ws-handshake=order
     =/  url  url.request.order
@@ -89,6 +92,7 @@
     ?:  ok  (accept-handshake:ws -.order)  (refuse-handshake:ws -.order)
   ::  we behave like a Server here, mind you. messages from clients, not relays
   ++  handle-ws-msg
+    ^-  (quip card:agent:gall agent:gall)
     =/  order  !<([wid=@ =path msg=websocket-message:eyre] vase)
     :: ~&  opcode=op=opcode.msg.order  ::  0 for continuation, 1 for text, 2 for binary, 9 for ping 0xa for pong
     =/  msg  message.msg.order
@@ -102,9 +106,11 @@
     ==
   ::
     ++  handle-ui-ws  
+      ^-  (quip card:agent:gall agent:gall)
       =/  cs  (ui-ws-res:lib -.order wsdata)  
       [cs this]
     ++  handle-nostr-client-ws 
+      ^-  (quip card:agent:gall agent:gall)
       =/  jsonm  (de:json:html wsdata)
       ?~  jsonm  `this
       =/  client-msg  (parse-client-msg:nreq u.jsonm)
@@ -129,6 +135,7 @@
     [cs this]
   :: DEPRECATED
   ++  handle-shim
+    ^-  (quip card:agent:gall agent:gall)
     =/  order  !<(order:web vase)
     ~&  request.req.order
     ?:  .=(url.request.req.order '/nostr-shim')
@@ -224,6 +231,10 @@
         =/  =task:iris  [%websocket-connect dap.bowl 'ws://localhost:8888']
         :~  [%pass /iris-test %arvo %i task]
         ==
+      %wsted
+        =/  relay-url  'ws://localhost:8888'
+        =^  cs  state  (test-connection:nclient relay-url)
+        [cs this]
       %irisf
         :_  this
         =/  inc-subs  ~(tap by sup.bowl)
@@ -241,6 +252,10 @@
         =/  =task:iris  [%websocket-event +.noun %message 1 `(as-octs:mimes:html 'heyhey')]
         :~  [%pass /iris-test2 %arvo %i task]
         ==
+      %iriss
+      =/  res  (check-connected:ws 'ws://localhost:8888' bowl)
+      ~&  res
+      `this
       %wtf
         =/  lol=(unit @)  ~
         =/  l  ~|  "wtf"  (need lol)

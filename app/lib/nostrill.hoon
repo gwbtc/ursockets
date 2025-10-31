@@ -34,7 +34,9 @@
   =/  resmsg  (cat 3 msg (cat 3 msg msg))
   =/  octs  (as-octs:mimes:html resmsg)
   =/  res-event=websocket-event:eyre  [%message 1 `octs]
-  (give-ws-payload:ws wid res-event)
+  :~  (give-ws-payload-server:ws wid res-event)
+  ==
+  
 ::
 
 ++  cards

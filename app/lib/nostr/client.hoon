@@ -1,5 +1,5 @@
 /-  sur=nostrill, nsur=nostr
-/+  js=json-nostr, sr=sortug, nostr-keys, constants, server
+/+  js=json-nostr, sr=sortug, nostr-keys, constants, server, ws=websockets
 /=  web  /web/router
 |_  [=state:sur =bowl:gall]
 
@@ -88,14 +88,30 @@
     =/  =filter:nsur  [~ ~ `kinds `tags ~ ~ ~]
   (send-req ~[filter])
 
-:: TODO URGENT
+::
+++  test-connection
+  |=  relay-url=@t
+  =/  kinds  (silt ~[1])
+  =/  since  (sub now.bowl ~h1)
+  =/  =filter:nsur  [~ ~ `kinds ~ `since ~ ~]
+  =/  sub-id  (gen-sub-id:nostr-keys eny.bowl)
+  =/  req=client-msg:nsur  [%req sub-id ~[filter]]
+  :-  :~  (send relay-url req)  ==  state
+
 ++  send
   |=  [relay-url=@t req=client-msg:nsur]  ^-  card:agent:gall
+    ~&  >>>  send=relay-url
     =/  req-body=json  (req:en:js req)
     =/  octs  (json-to-octs:server req-body)
     =/  wev=websocket-event:eyre  [%message 1 `octs]
+    =/  conn  (check-connected:ws relay-url bowl)
+    ~&  >>>  send-client-conn=conn
+    ?~  conn  :: if no ws connection we start a thread which will connect first, then send the message
     =/  pat  /to-nostr-relay
     [%pass (weld /ws pat) %arvo %k %fard dap.bowl %ws %noun !>([relay-url wev])]  
+    ::
+    (give-ws-payload-client:ws id.u.conn [1 `octs])
+    
 
 :: ++  send-http
 ::   |=  req=http-req:shim:nsur
