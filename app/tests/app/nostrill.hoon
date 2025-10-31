@@ -437,6 +437,34 @@
         (ex-leave-task fol)
     ==
 ::
+++  do-arvo-ws
+  |=  msg=@t
+  %+  do-arvo:test-agent 
+    /ws/to-nostr-relay 
+  :+  %khan  %arow 
+  :-  %&  :-  %$
+  !>('done')
+::   !>  :+  %websocket-response  %message
+::   %-  need 
+::   (as-octs:mimes:html msg)
+::
+++  do-poke-ws-client
+  |=  [=keys:nostr =bowl:gall sub-id=@t content=@t]
+  =/  m  (mare:test-agent ,[(list card) event:nostr])
+  ^-  form:m
+  =/  e=event:nostr  
+    %^  post-to-event:nostr-events  keys  eny.bowl
+    %^  build-post:tp  ~2010.10.10  -.keys 
+    (build-sp:tp our.bowl our.bowl content ~ ~)
+  =/  data-octs=octs
+    %-  json-to-octs:server
+    %-  relay-msg:en:json-nostr 
+    [%event sub-id e]
+  ;<  caz=(list card)  bind:m
+    %-  do-poke:test-agent
+    websocket-client-message+!>([*@ud [1 `data-octs]])
+  (pure:m [caz e])
+::
 ++  test-poke-ui-fols-nostr-user
   %-  eval-mare:test-agent
   =/  m  (mare:test-agent ,~)
@@ -446,9 +474,11 @@
   ;<  =bowl:gall  bind:m  get-bowl:test-agent
   ;<  saved-1=vase  bind:m  get-save:test-agent
   =/  state-1  !<(state-0:sur saved-1)
-  =/  fol-nostr  -:(gen-keys:nostr-keys eny.bowl)
+  =/  fol-keys  (gen-keys:nostr-keys eny.bowl)
+  =/  fol-pub  -:fol-keys
+  =/  sub-id=@t  (gen-sub-id:nostr-keys eny.bowl)
   ::  send req to websockets to fol
-  =/  filters  ~[[~ `(silt ~[fol-nostr]) `(silt ~[1]) ~ ~ ~ ~]]
+  =/  filters  ~[[~ `(silt ~[fol-pub]) `(silt ~[1]) ~ ~ ~ ~]]
   =/  url  ~(tap by relays.state-1)
   =/  ex-ev=[@t websocket-event:eyre]
     :-   ?~  url  ''  -.i:url  
@@ -456,35 +486,56 @@
     %-  some
     %-  json-to-octs:server
     %-  req:en:json-nostr
-    [%req (gen-sub-id:nostr-keys eny.bowl) filters]
+    [%req sub-id filters]
     ==
   ;<  caz-fol-nostr=(list card)  bind:m
-    (do-fols-add-nostr bowl fol-nostr)
-  ::;<  ~  bind:m  
+    (do-fols-add-nostr bowl fol-pub)
+  ;<  ~  bind:m  
     %+  ex-cards:test-agent  caz-fol-nostr
     :~  (ex-arvo:test-agent /ws/to-nostr-relay [%k %fard dap.bowl %ws noun+!>(ex-ev)])
     ==
-  ::  move this on success (event message from ws)
-  :: ;<  saved-2=vase  bind:m  get-save:test-agent
-  :: =/  state-2  !<(state-0:sur saved-2)
-  :: =/  has-fol  (has:in (~(got by follow-graph.state-2) urbit+our.bowl) fol-nostr)
-  :: ::;<  ~  bind:m
-  ::   %+  ex-equal:test-agent
-  ::   !>(has-fol)  !>(&) 
-  ::  -----------------------------------------------
-  ::  logic handled in ++on-arvo -> handle-http:mutan
-  ::  next step get updates from nostr relay ?
-  ::  TODO: handle cases:
-  ::  a. pretend we got poke with update
-  ::  event and eose 
-  ::  b. pretend we got rejected
-  ::  rejection can look like: 
-  ::  auth msg
-  ::  c. for paid and private relays:
-  ::  notice and eose msgs
-  ::  d. if pubkey doesn't exist:
-  ::  eose msg
-  ::  
+  ::  check state if nostr user was added to follow 
+  ;<  saved-2=vase  bind:m  get-save:test-agent
+  =/  state-2  !<(state-0:sur saved-2)
+  ~&  our.bowl
+  ~&  nostr+(hex:de:common (hex:en:common fol-pub))
+  ~&  follow-graph.state-2
+  =/  has-fol  
+    =/  follow  (~(get by follow-graph.state-2) urbit+our.bowl) 
+    ?~  follow  %|
+    (~(has in u.follow) nostr+(need (hex:de:common (hex:en:common fol-pub))))
+  ;<  ~  bind:m  (ex-equal:test-agent !>(has-fol) !>(&))
+  ::
+  ::   get on-arvo 'done' from ws ted 
+  ::  ;<  caz-on-arvo=(list card)  bind:m  (do-arvo-ws '')
+  ::  got on-poke from iris with ws-msg 'EVENT', check in test if event been parsed and added to state
+  ::
+  ;<  [caz-poke-event=(list card) e=event:nostr]  bind:m  (do-poke-ws-client fol-keys bowl sub-id 'you got post')
+  ;<  saved-3=vase  bind:m  get-save:test-agent
+  =/  state-3  !<(state-0:sur saved-3)
+  =/  relay-url  'wss://relay.damus.io'  :: temp
+  =/  relay-state  (~(get by relays.state-3) relay-url)
+  =/  created-at  (to-unix-secs:jikan:sr ~2010.10.10)
+  =/  nostr-feed  (get:norm:sur nostr-feed.state-3 created-at)
+  =/  ex-state
+    :_  (put:norm:sur nostr-feed.state-2 created-at e)
+    %+  %~  put  by  relays.state-2
+      relay-url
+    =/  stats  (~(got by relays.state-2) relay-url)
+    =/  =event-stats:nostr  (~(got by reqs.stats) sub-id)
+    =/  reqs  
+      %+  ~(put by reqs.stats)  sub-id
+      :-  filters.event-stats
+          +(+.event-stats)
+    [`now.bowl reqs]
+  ::  check if event in state
+  ~&  >>  state-match/=([relay-state nostr-feed] ex-state)
+  ;<  ~  bind:m  (ex-equal:test-agent !>([relay-state nostr-feed]) !>(ex-state))
+  %+  ex-cards:test-agent  caz-poke-event  ~
+
+  ::  if response is successful we want to know we follow user to store parsed ws-messages in state
+  ::  if response is auth msg we should handle auth and proceed from there
+  ::  if response is notice or just eose without event prior our req to follow was declined, remove from state send ui update
 ::
 ++  test-beg-feed-ok
   %-  eval-mare:test-agent

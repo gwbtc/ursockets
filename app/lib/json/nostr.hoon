@@ -92,7 +92,8 @@
         ~
     ==
   ++  relay-msg  |=  msg=relay-msg:sur  ^-  json
-  =/  head  [%s -.msg]
+  =/  to-cap  (crip (turn (trip -.msg) |=(a=@ (sub a 32))))
+  =/  head  [%s to-cap]
   :-  %a  :-  head
   ?-  -.msg
     %event   ~[[%s sub-id.msg] (event event.msg)]
@@ -123,10 +124,14 @@
     :: TODO make sure they're always caps
     ?+  p.head  ~
       %'EVENT'
+        ~&  >>  [second (so second)]
         =/  d  (so second)  ?~  d  ~
+        ~&  d/d
          ?~  t.t.p.jon  ~  
          =/  third  i.t.t.p.jon
+         ~&  third/third
          =/  t  (event third)   ?~  t  ~
+         ~&  t/t
         `[%event u.d u.t] 
       %'OK'
          =/  d  (hex:de:common second)  ?~  d  ~
