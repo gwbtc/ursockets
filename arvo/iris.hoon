@@ -325,7 +325,7 @@
   ::  incoming websockets event to be sent BY VERE NOT USERSPACE
   ++  ws-event
     |=  [wid=@ud event=websocket-event:eyre]
-      ~&  iris-ws-event=[wid event duct]
+      ~&  iris-ws-event=[wid -.event duct]
       =/  wc  (~(get by sockets.state) wid)
       ?~  wc  `state
       =/  wc  u.wc
@@ -478,32 +478,39 @@
     [%iris-ws-watch wids=@t ~]  =/  wid  (slav %ud wids.wire)
     ~&  iris-take=-.hin
     ?+    -.hin  ~
-        %gall
-          ?>  ?=(%unto +<.hin)
-          ~&  hin=p.hin
-          ?+    -.p.hin  ~
-            ?(%poke-ack %watch-ack)
-              ?~  p.p.hin  ~
-              ~
-            %kick  
+      %gall
+        ?>  ?=(%unto +<.hin)
+        ~&  hin=p.hin
+        ?+    -.p.hin  ~
+          ?(%poke-ack %watch-ack)
+            ?~  p.p.hin  ~
+            ~
+          %kick  
+              =/  event-args  [[eny duct now rof] state.ax]
+              =/  client  (per-client-event event-args)
+              =^  movs  state.ax  (cleanup-ws:client wid)
+              movs
+          %fact
+            =*  cag  cage.p.hin
+            ?+    p.cag  ~&(bad-fact+p.cag !!)
+              %message  =/  msg  !<(websocket-message:eyre q.cag)
+                        :~  [outbound-duct.state.ax %give %websocket-response wid %message msg]
+                        ==
+              %disconnect
                 =/  event-args  [[eny duct now rof] state.ax]
                 =/  client  (per-client-event event-args)
                 =^  movs  state.ax  (cleanup-ws:client wid)
-                movs
-            %fact
-              =*  cag  cage.p.hin
-              ?+    p.cag  ~&(bad-fact+p.cag !!)
-                %message  =/  msg  !<(websocket-message:eyre q.cag)
-                          :~  [outbound-duct.state.ax %give %websocket-response wid %message msg]
-                          ==
-    ::       =/  =tang  !<(tang q.cag)
-    ::       ::  %-  (slog 'khan-fact' tang)
-    ::       :: [hen %give %arow %| p.cag tang]~
-          :: ~
-    ::     ::
-    ::         %thread-done
-    ::       :: [hen %give %arow %& %noun q.cag]~
-    ::       ~
+                %+  welp  movs
+                :~  [outbound-duct.state.ax %give %websocket-response wid %disconnect ~]
+                ==
+  ::       =/  =tang  !<(tang q.cag)
+  ::       ::  %-  (slog 'khan-fact' tang)
+  ::       :: [hen %give %arow %| p.cag tang]~
+        :: ~
+  ::     ::
+  ::         %thread-done
+  ::       :: [hen %give %arow %& %noun q.cag]~
+  ::       ~
         ==
       ==
     ==
@@ -538,7 +545,8 @@
     ?+  s.bem  ~
       ~  ``noun+!>(sockets.state.ax)
       [%id @ ~]
-        =/  wid  (slav %ud i.s.bem)
+
+        =/  wid  (slav %ud i.t.s.bem)
         =/  socket  (~(got by sockets.state.ax) wid)
         ?.  .=(app.socket caller)  ~
         ``noun+!>(socket)

@@ -60,21 +60,30 @@
       handle-comms
     %json    on-ui
     %handle-http-request         handle-shim
+    %websocket-thread            handle-ws-thread
     %websocket-client-message    handle-relay-ws
     %websocket-handshake         handle-ws-handshake
     %websocket-server-message    handle-ws-msg
   ==  
   +$  ws-msg  [@ud websocket-message:eyre]
+  ++  handle-ws-thread
+    ~&  >>  "proxying ws thread"
+    =/  msg  !<(ws-msg vase)
+    :_  this
+    ~&  "giving payload"
+    :~  (give-ws-payload-client:ws msg)
+    ==
   ++  handle-relay-ws
     ^-  (quip card:agent:gall agent:gall)
     =/  msg  !<(ws-msg vase)
-    ~&  handle-relay-ws=msg
+    ~&  handle-relay-ws=-.msg
     =/  m=websocket-message:eyre  +.msg
     ?~  message.m  `this
     =/  =octs  u.message.m
     =/  urelay-msg  (parse-body:nclient q.octs)
     ?~  urelay-msg  `this
-    =/  relay-url  ''  :: TODO IMPORTANT!! where to keep this
+    ~&  >>  urelay-msg
+    =/  relay-url  (get-url:ws -.msg bowl)
     =^  cards  state  (handle-ws:mutan relay-url u.urelay-msg)
     [cards this]
   ++  handle-ws-handshake
@@ -232,7 +241,8 @@
         :~  [%pass /iris-test %arvo %i task]
         ==
       %wsted
-        =/  relay-url  'ws://localhost:8888'
+        :: =/  relay-url  'ws://localhost:8888'
+        =/  relay-url  'wss://nos.lol'
         =^  cs  state  (test-connection:nclient relay-url)
         [cs this]
       %irisf
