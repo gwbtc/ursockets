@@ -8,34 +8,39 @@
 /=  agent  /app/nostrill
 |%
 +$  card  card:agent:gall
-++  bowl-our
-  |=  run=@ud
-  ^-  bowl:gall
-  :*  [~zod ~bus %nostrill ~]
-      [~ ~ ~]
-      [run `@uvJ`(shax run) (add (mul run ~s1) *time) [~zod %nostrill ud+run]]
-  ==
-::
-++  bowl-bus
-  |=  run=@ud
-  ^-  bowl:gall
-  :*  [~bus ~zod %nostrill ~]
-      [~ ~ ~]
-      [run `@uvJ`(shax run) (add (mul run ~s1) *time) [~zod %nostrill ud+run]]
-  ==
-::
 ++  state  $%(state-0:sur)
 --
 |%
+::
+++  get-state
+  =/  m  (mare:test-agent ,state-0:sur)
+  ^-  form:m
+  ;<  saved=vase  bind:m  get-save:test-agent
+  =/  state  !<(state-0:sur saved)
+  (pure:m state)
 ::
 ++  scry-gate
   |=  =path
   ^-  (unit vase)
   ?+  path  ~
-    [%j ship=@ %sein now=@ get=@ *]  
+      [%j ship=@ %sein now=@ get=@ *]  
     `!>((slav %p get.i.t.t.t.t.path))
-    [%e ship=@ %host now=@ *]
+    ::
+      [%e ship=@ %host now=@ *]
     `!>(`hart:eyre`[| ~ [%.y ~[%localhost]]])
+    ::
+      [%ix ship=@ %ws now=@tas %url url=@t ~]  
+      :: this scry relies on scry time 
+      ::  at ~2000.1.1 it would return !>(~)
+      ::  at ~2000.1.1 + 1h returns %pending 
+      ::  any other case would return %accepted
+    =/  t  *@da
+    =/  now  `@da`(slav %da (head +.+.+.path))
+    ?:  =(now t)  `!>(~)
+    =/  url=@t  (head +.+.+.+.+.path)
+    ?:  =(now (add t ~h1)) 
+       `!>(`(unit websocket-connection:iris)`(some [%nostrill ~ *@ud url %pending]))
+    `!>(`(unit websocket-connection:iris)`(some [%nostrill ~ *@ud url %accepted]))
   ==
 ::
 ++  ex-update
@@ -69,11 +74,9 @@
   (pure:m caz)
 ::
 ++  ex-cards-post-poke
-  |=  [post-poke=?([%add ~] [%reply id=@da] [%quote id=@da] [%rp id=@da]) state=state-0:sur =bowl:gall]
+  |=  [post-poke=?([%add ~] [%reply id=@da] [%quote id=@da] [%rp id=@da]) state=state-0:sur =bowl:gall host=@p]
   =/  profile  (~(get by profiles.state) [%urbit our.bowl])
   =/  pubkey  pub.i.keys.state
-  ::  XX: for now host is our, can be changed if post we replying/quoting etc. is other @p
-  =/  host  our.bowl
   =/  p=post:post
     ?-  -.post-poke
       ::
@@ -98,8 +101,35 @@
         ~[[%ref %trill host /(crip (scow:sr %ud id.post-poke))]]
       (build-post:tp now.bowl pubkey sp)
     ==
-  :~  (ex-ui-update [%post %add [p (some pubkey) ~ ~ profile]])
-      (ex-update [%post %add p])
+  %+  weld
+    :~  (ex-ui-update [%post %add [p (some pubkey) ~ ~ profile]])
+    ==
+  ?:  =(host our.bowl)  
+    :~  (ex-update [%post %add p])
+    ==
+  ?+  -.post-poke  ~
+      %reply
+    ::  XX: mark isn't implemented in the agent
+    :~
+      %:  ex-poke:test-agent  /req-reply
+      [host %nostrill]  %engagement-req
+      !>([%reply host id.post-poke])
+      ==
+    ==
+  ==
+::
+++  make-json-reply 
+  |=  [post-id=@da host=@p]
+  =,  enjs:format
+  %-  pairs 
+  :~  :-  'post'
+      %+  frond  'reply'
+      %-  pairs
+      :~  ['content' s+'Reply']
+          ['host' s+(scot %p host)]
+          ['id' (ud:en:common post-id)]
+          ['thread' (ud:en:common post-id)]
+      ==
   ==
 ::
 ++  test-poke-ui-post
@@ -110,8 +140,7 @@
   ;<  caz=(list card)  bind:m  (do-init:test-agent %nostrill agent)
   ;<  =bowl:gall  bind:m  get-bowl:test-agent
   =/  post-id  now.bowl
-  ;<  saved-1=vase  bind:m  get-save:test-agent
-  =/  state-1  !<(state-0:sur saved-1)
+  ;<  state-1=state-0:sur  bind:m  get-state
   ::  poke add-post
   ;<  caz-add=(list card)  bind:m  
     %+  do-on-ui-poke  bowl  
@@ -122,33 +151,19 @@
     ==
   ;<  ~  bind:m
     %+  ex-cards:test-agent  caz-add
-    (ex-cards-post-poke [%add ~] state-1 bowl)
+    (ex-cards-post-poke [%add ~] state-1 bowl our.bowl)
   :: poke reply to post 
-  ;<  saved-2=vase  bind:m  get-save:test-agent
-  =/  state-2  !<(state-0:sur saved-2)
+  ;<  state-2=state-0:sur  bind:m  get-state
   ;<  ~  bind:m  (wait:test-agent ~h1)  ::  preventing id duplication(post overwrite)
   ;<  =bowl:gall  bind:m  get-bowl:test-agent
   =/  reply-id  now.bowl
-  =/  json-reply
-    =,  enjs:format
-    %-  pairs 
-    :~  :-  'post'
-        %+  frond  'reply'
-        %-  pairs
-        :~  ['content' s+'Reply']
-            ['host' s+(scot %p our.bowl)]
-            ['id' (ud:en:common post-id)]
-            ['thread' (ud:en:common post-id)]
-        ==
-    ==
   ;<  caz-reply=(list card)  bind:m  
-    %+  do-on-ui-poke  bowl  json-reply
+    %+  do-on-ui-poke  bowl  (make-json-reply post-id our.bowl)
   ;<  ~  bind:m
     %+  ex-cards:test-agent  caz-reply
-    (ex-cards-post-poke [%reply post-id] state-2 bowl)
+    (ex-cards-post-poke [%reply post-id] state-2 bowl our.bowl)
   ::  quote reply
-  ;<  saved-3=vase  bind:m  get-save:test-agent
-  =/  state-3  !<(state-0:sur saved-3)
+  ;<  state-3=state-0:sur  bind:m  get-state
   ;<  ~  bind:m  (wait:test-agent ~h1)  ::  preventing id duplication(post overwrite)
   ;<  =bowl:gall  bind:m  get-bowl:test-agent
   =/  quote-id  now.bowl
@@ -167,10 +182,9 @@
     ==
   ;<  ~  bind:m
     %+  ex-cards:test-agent  caz-quote
-    (ex-cards-post-poke [%quote reply-id] state-3 bowl)
+    (ex-cards-post-poke [%quote reply-id] state-3 bowl our.bowl)
   ::  repost quote post
-  ;<  saved-4=vase  bind:m  get-save:test-agent
-  =/  state-4  !<(state-0:sur saved-4)
+  ;<  state-4=state-0:sur  bind:m  get-state
   ;<  ~  bind:m  (wait:test-agent ~h1)  ::  preventing id duplication(post overwrite)
   ;<  =bowl:gall  bind:m  get-bowl:test-agent
   ;<  caz-rp=(list card)  bind:m  
@@ -186,28 +200,48 @@
     ==
   ;<  ~  bind:m
     %+  ex-cards:test-agent  caz-rp
-    (ex-cards-post-poke [%rp quote-id] state-3 bowl)
-  ;<  saved-fin=vase  bind:m  get-save:test-agent
-  =/  state-fin  !<(state-0:sur saved-fin)
-  =/  feed-size  (wyt:orm:tf feed:state-fin)
-  ::;<  ~  bind:m
+    (ex-cards-post-poke [%rp quote-id] state-3 bowl our.bowl)
+  ;<  state-5=state-0:sur  bind:m  get-state
+  =/  feed-size  (wyt:orm:tf feed:state-5)
+  ;<  ~  bind:m
     (ex-equal:test-agent !>(feed-size) !>(4))
   ::
-  ::  TODO: add case for reply from foreign ship, that is rejected by our ship
-  ::  flow:  1. reply from src to our, feed.state post added 
-  ::         2a. src ship isn't allowed to reply to our, send rejection
-  ::         2b. reply allowed, send %ok fact
-  ::         3a. src ship removes post from feed.state, with some ui card
-  ::         3b.  if reply wasn't rejected should recieve %ok fact and send update to followers 
-  ::
-  ::;<  ~  bind:m  (set-src:test-agent ~bus)
-  ::;<  caz-reply-2=(list card)  bind:m  
-  ::  %+  do-on-ui-poke  bowl  json-reply
-  ::;<  ~  bind:m
-  ::  %+  ex-cards:test-agent  caz-reply-2
-  ::  :~  (ex-ui-update [%post %add [p (some pubkey) ~ ~ profile]])
+  ::  reply from our ship to foreign ship rejected
+  ;<  ~  bind:m  (wait:test-agent ~h1)
+  ;<  =bowl:gall  bind:m  get-bowl:test-agent
+  =/  json-rep-2  (make-json-reply quote-id ~bus)
+  ;<  caz-reply-2=(list card)  bind:m  
+    %+  do-on-ui-poke  bowl  json-rep-2
+  =/  rep-id  now.bowl
+  ;<  ~  bind:m
+    %+  ex-cards:test-agent  caz-reply-2
+    (ex-cards-post-poke [%reply post-id] state-2 bowl ~bus)
+  ;<  ~  bind:m  (set-src:test-agent ~bus)
+  ::  XX: mark isn't implemented in the agent  
+  ::  ~bus send rejection poke
+  ;<  caz-response-reject=(list card)  bind:m  
+    %+  do-poke:test-agent  %engagement-res  !>([%reject rep-id])
+  ;<  state-6=state-0:sur  bind:m  get-state
+  =/  profile  (~(get by profiles.state-5) [%urbit our.bowl])
+  =/  post-rep  (got:orm:tf feed.state-6 rep-id)
+  ;<  ~  bind:m
+    %+  ex-cards:test-agent  caz-response-reject
+    :~  (ex-ui-update [%post %del [post-rep `pub.i.keys.state-6 ~ ~ profile]])
+    ==
+  ;<  state-fin=state-0:sur  bind:m  get-state
+  =/  feed-size-2  (wyt:orm:tf feed:state-fin)
+  ;<  ~  bind:m
+    (ex-equal:test-agent !>(feed-size-2) !>(4))
+  ;<  ~  bind:m  (set-src:test-agent our.bowl)
+  ;<  =bowl:gall  bind:m  get-bowl:test-agent
+  ;<  caz-reply-3=(list card)  bind:m  
+    %+  do-on-ui-poke  bowl  json-rep-2
+  ;<  ~  bind:m  (set-src:test-agent ~bus)
+  ::  XX: mark isn't implemented in the agent  
+  ;<  caz-response-ok=(list card)  bind:m  
+    %+  do-poke:test-agent  %engagement-res  !>([%ok rep-id])
+  %+  ex-cards:test-agent  caz-response-ok  ~
   ::  ::  poke card to src with likely engagement:comms data type 
-  ::  ==
 ::
 ++  test-poke-ui-prof
   =|  run=@ud
@@ -217,8 +251,7 @@
   ;<  caz=(list card)  bind:m  (do-init:test-agent %nostrill agent)
   ;<  =bowl:gall  bind:m  get-bowl:test-agent
   =/  post-id  now.bowl
-  ;<  saved-1=vase  bind:m  get-save:test-agent
-  =/  state-1  !<(state-0:sur saved-1)
+  ;<  state-1=state-0:sur  bind:m  get-state
   ;<  caz-add=(list card)  bind:m  
     %+  do-on-ui-poke  bowl  
     =,  enjs:format
@@ -232,8 +265,7 @@
             ['other' (pairs ~[['location' s+'Urbit'] ['status' s+'testing']])]
         ==
     ==
-  ;<  saved-2=vase  bind:m  get-save:test-agent
-  =/  state-2  !<(state-0:sur saved-2)
+  ;<  state-2=state-0:sur  bind:m  get-state
   =/  ex-data
     :*  'zod'
         'about me'
@@ -263,13 +295,14 @@
     ::    (ex-ui-update [%prof *user-meta:nostr])
     ::==
     ~
-  ;<  saved-3=vase  bind:m  get-save:test-agent
-  =/  state-3  !<(state-0:sur saved-3)
+  ;<  state-3=state-0:sur  bind:m  get-state
   %+  ex-equal:test-agent
     !>((~(get by profiles.state-3) [%urbit our.bowl]))
     !>(~)
 ::
 ++  fol  ~bus
+::
+++  relay-url  'wss://nos.lol'  :: temp
 ::
 ++  do-fols-add-urbit
   |=  =bowl:gall
@@ -318,8 +351,7 @@
       !>((~(has by wex.bowl) [/follow fol %nostrill]))
       !>(ex-bowl)
   ~&  >>  %in-state
-  ;<  saved=vase  bind:m  get-save:test-agent
-  =/  state  !<(state-0:sur saved)
+  ;<  state=state-0:sur  bind:m  get-state
   %+  ex-equal:test-agent
     !>((~(has by following.state) urbit+fol))
     !>(ex-state)
@@ -380,8 +412,7 @@
     %-  do-agent-follow
     :-  %fact
     noun+!>([%init `res:comms`[%ok [%feed fc `mock-profile]]])
-  ;<  saved=vase  bind:m  get-save:test-agent
-  =/  state  !<(state-0:sur saved)
+  ;<  state=state-0:sur  bind:m  get-state
   ;<  ~  bind:m  (ex-fols & &)
   ;<  ~  bind:m
     %+  ex-equal:test-agent
@@ -402,9 +433,8 @@
     %-  do-agent-follow
     :-  %fact
     noun+!>([%post [%add mock-post]])
-  ;<  saved-4=vase  bind:m  get-save:test-agent
-  =/  state-4  !<(state-0:sur saved-4)
-  =/  bus-post  (has:orm:tf (~(got by following.state-4) urbit+fol) now.bowl)
+  ;<  state-2=state-0:sur  bind:m  get-state
+  =/  bus-post  (has:orm:tf (~(got by following.state-2) urbit+fol) now.bowl)
   ;<  ~  bind:m
     %+  ex-equal:test-agent
       !>(bus-post)
@@ -438,18 +468,13 @@
     ==
 ::
 ++  do-arvo-ws
-  |=  msg=@t
-  %+  do-arvo:test-agent 
-    /ws/to-nostr-relay 
+  %+  do-arvo:test-agent  /ws/to-nostr-relay 
   :+  %khan  %arow 
   :-  %&  :-  %$
-  !>('done')
-::   !>  :+  %websocket-response  %message
-::   %-  need 
-::   (as-octs:mimes:html msg)
+  !>([%ok 1])
 ::
 ++  do-poke-ws-client
-  |=  [=keys:nostr =bowl:gall sub-id=@t content=@t]
+  |=  [=keys:nostr =bowl:gall sub-id=@t content=@t msg=@tas]
   =/  m  (mare:test-agent ,[(list card) event:nostr])
   ^-  form:m
   =/  e=event:nostr  
@@ -459,21 +484,26 @@
   =/  data-octs=octs
     %-  json-to-octs:server
     %-  relay-msg:en:json-nostr 
-    [%event sub-id e]
+    ?+  msg  [%notice 'wrong msg']
+        %event
+      [%event sub-id e]
+      ::
+        %eose  
+      [%eose sub-id]
+    ==
   ;<  caz=(list card)  bind:m
     %-  do-poke:test-agent
     websocket-client-message+!>([*@ud [1 `data-octs]])
   (pure:m [caz e])
 ::
-++  test-poke-ui-fols-nostr-user
+++  test-poke-ui-fols-nostr-user-ok
   %-  eval-mare:test-agent
   =/  m  (mare:test-agent ,~)
   ^-  form:m
   ;<  ~  bind:m  (set-scry-gate:test-agent scry-gate)
   ;<  *  bind:m  (do-init:test-agent %nostrill agent)
   ;<  =bowl:gall  bind:m  get-bowl:test-agent
-  ;<  saved-1=vase  bind:m  get-save:test-agent
-  =/  state-1  !<(state-0:sur saved-1)
+  ;<  state-1=state-0:sur  bind:m  get-state
   =/  fol-keys  (gen-keys:nostr-keys eny.bowl)
   =/  fol-pub  -:fol-keys
   =/  sub-id=@t  (gen-sub-id:nostr-keys eny.bowl)
@@ -481,7 +511,7 @@
   =/  filters  ~[[~ `(silt ~[fol-pub]) `(silt ~[1]) ~ ~ ~ ~]]
   =/  url  ~(tap by relays.state-1)
   =/  ex-ev=[@t websocket-event:eyre]
-    :-   ?~  url  ''  -.i:url  
+    :-   relay-url
     :*  %message  1
     %-  some
     %-  json-to-octs:server
@@ -494,48 +524,56 @@
     %+  ex-cards:test-agent  caz-fol-nostr
     :~  (ex-arvo:test-agent /ws/to-nostr-relay [%k %fard dap.bowl %ws noun+!>(ex-ev)])
     ==
-  ::  check state if nostr user was added to follow 
-  ;<  saved-2=vase  bind:m  get-save:test-agent
-  =/  state-2  !<(state-0:sur saved-2)
-  ~&  our.bowl
-  ~&  nostr+(hex:de:common (hex:en:common fol-pub))
-  ~&  follow-graph.state-2
-  =/  has-fol  
-    =/  follow  (~(get by follow-graph.state-2) urbit+our.bowl) 
-    ?~  follow  %|
-    (~(has in u.follow) nostr+(need (hex:de:common (hex:en:common fol-pub))))
-  ;<  ~  bind:m  (ex-equal:test-agent !>(has-fol) !>(&))
-  ::
+  ::  check state if nostr user was added to follow
+  ;<  state-2=state-0:sur  bind:m  get-state
+  =/  in-following  (~(has by following.state-2) nostr+fol-pub)
+  =/  in-graph  
+    ?~  graph=(~(get by follow-graph.state-2) urbit+our.bowl)  |
+    (~(has in u.graph) nostr+fol-pub)
+  ;<  ~  bind:m  (ex-equal:test-agent !>([in-following in-graph]) !>([& &]))
   ::   get on-arvo 'done' from ws ted 
-  ::  ;<  caz-on-arvo=(list card)  bind:m  (do-arvo-ws '')
+  ;<  caz-on-arvo=(list card)  bind:m  do-arvo-ws
+  ::  state should have sub-id in relay stats at this point
+  ;<  saved-got-stats=vase  bind:m  get-save:test-agent
+  =/  state-got-stats  !<(state-0:sur saved-got-stats)
   ::  got on-poke from iris with ws-msg 'EVENT', check in test if event been parsed and added to state
   ::
-  ;<  [caz-poke-event=(list card) e=event:nostr]  bind:m  (do-poke-ws-client fol-keys bowl sub-id 'you got post')
-  ;<  saved-3=vase  bind:m  get-save:test-agent
-  =/  state-3  !<(state-0:sur saved-3)
-  =/  relay-url  'wss://relay.damus.io'  :: temp
+  ;<  [caz-poke-event=(list card) e=event:nostr]  bind:m  (do-poke-ws-client fol-keys bowl sub-id 'you got post' %event)
+  ;<  ~  bind:m  %+  ex-cards:test-agent  caz-poke-event  ~
+  ;<  state-3=state-0:sur  bind:m  get-state
+  ~&  >>  relays-data/relays.state-3
   =/  relay-state  (~(get by relays.state-3) relay-url)
-  =/  created-at  (to-unix-secs:jikan:sr ~2010.10.10)
-  =/  nostr-feed  (get:norm:sur nostr-feed.state-3 created-at)
+  =/  nostr-feed  (get:norm:sur nostr-feed.state-3 created-at.e)
   =/  ex-state
-    :_  (put:norm:sur nostr-feed.state-2 created-at e)
-    %+  %~  put  by  relays.state-2
-      relay-url
-    =/  stats  (~(got by relays.state-2) relay-url)
-    =/  =event-stats:nostr  (~(got by reqs.stats) sub-id)
-    =/  reqs  
-      %+  ~(put by reqs.stats)  sub-id
-      :-  filters.event-stats
-          +(+.event-stats)
-    [`now.bowl reqs]
+    :_  (put:norm:sur nostr-feed.state-got-stats created-at.e e)
+    %+  ~(put by relays.state-got-stats)
+       relay-url  
+    =/  r-stats  
+      ?~  s=(~(get by relays.state-got-stats) relay-url)  *relay-stats:nostr  u.s
+    :-  ?~  connected.r-stats  `now.bowl
+        connected.r-stats
+    %+  ~(put by reqs.r-stats)  sub-id
+    ?~  e-stats=(~(get by reqs.r-stats) sub-id)  
+      *event-stats:nostr
+    :-  filters.u.e-stats
+      +(received.u.e-stats)
   ::  check if event in state
-  ~&  >>  state-match/=([relay-state nostr-feed] ex-state)
   ;<  ~  bind:m  (ex-equal:test-agent !>([relay-state nostr-feed]) !>(ex-state))
-  %+  ex-cards:test-agent  caz-poke-event  ~
-
-  ::  if response is successful we want to know we follow user to store parsed ws-messages in state
-  ::  if response is auth msg we should handle auth and proceed from there
-  ::  if response is notice or just eose without event prior our req to follow was declined, remove from state send ui update
+  ::  got eose after an event 
+  ;<  [caz-poke-eose=(list card) e=event:nostr]  bind:m  (do-poke-ws-client fol-keys bowl sub-id '' %eose)
+  ;<  state-4=state-0:sur  bind:m  get-state
+  ::  XX: find out desired logic for state after %eose 
+  ::  TODO: compare state expected and new
+  ::  feed recieved send to UI all new events 
+  %+  ex-cards:test-agent  caz-poke-eose  
+  :~
+    (ex-ui-update [%nostr nostr-feed.state-4])
+  ==
+  ::  Response to message req is an auth message, handle auth and proceed from there
+::  ++  test-poke-ui-fols-nostr-user-auth
+::
+::  Response is a notice or single eose message, remove from state send ui update(currently no UI updates for follow flow)
+:: ++  test-poke-ui-fols-nostr-user-rejected
 ::
 ++  test-beg-feed-ok
   %-  eval-mare:test-agent
@@ -555,8 +593,7 @@
   ;<  caz=(list card)  bind:m
     (do-watch:test-agent /beg/feed)
   ::  Verify response cards
-  ;<  saved=vase  bind:m  get-save:test-agent
-  =/  state  !<(state-0:sur saved)
+  ;<  state=state-0:sur  bind:m  get-state
   =/  profile  (~(get by profiles.state) urbit+our.bowl)
   =/  lp  latest-page:feedlib
   =/  lp2  lp(count backlog.feed-perms.state)
@@ -573,9 +610,8 @@
   ^-  form:m
   ;<  ~  bind:m  (set-scry-gate:test-agent scry-gate)
   ;<  *  bind:m  (do-init:test-agent %nostrill agent)
-  ;<  saved=vase  bind:m  get-save:test-agent
-  =/  state-1  !<(state-0:sur saved)
-  =/  lock-state  state-1(lock.feed-perms (lock-all:gate lock.feed-perms.state-1))
+  ;<  state=state-0:sur  bind:m  get-state
+  =/  lock-state  state(lock.feed-perms (lock-all:gate lock.feed-perms.state))
   ;<  *  bind:m  (do-load:test-agent agent `!>(lock-state))
   ;<  ~  bind:m  (set-src:test-agent ~bus)
   ;<  caz=(list card)  bind:m
@@ -599,8 +635,7 @@
     %-  pairs
     :~  'post'^(frond 'add' (frond 'content' s+'Test post'))
     ==
-  ;<  saved=vase  bind:m  get-save:test-agent
-  =/  state-1  !<(state-0:sur saved)
+  ;<  state-1=state-0:sur  bind:m  get-state
   ::  on-watch beg thread missing id in path
   ::
   ::  TODO:  should we get kick card instead ? or it's so unlikely to happened that it's fine ?
@@ -636,12 +671,12 @@
       (ex-card:test-agent %give %kick ~[/beg/thread/[thread-id]] ~)
     ==
   =/  lock-state
-    %=    state-1
+    %=  state-1
         feed  
-      %+  put:orm:tf  feed.state-1 
-      %=  thread  
-        ship.read.p  [~ & |]
-      ==
+        %+  put:orm:tf  feed.state-1 
+        %=  thread  
+          ship.read.p  [~ & |]
+        ==
     ==
   ::  on-watch beg thread with locked permissions
   ::
@@ -734,68 +769,67 @@
 ::  recieve event from client 
 ::  
 ::
-++  test-ws-server-message-nostrill-event
-  %-  eval-mare:test-agent
-  =/  m  (mare:test-agent ,~)
-  ^-  form:m
-  ;<  ~  bind:m    (set-scry-gate:test-agent scry-gate)
-  ;<  *  bind:m    (do-init:test-agent %nostrill agent)
-  ;<  =bowl:gall  bind:m  get-bowl:test-agent
-  =+  order=[wid=*@ path=*path *websocket-message:eyre]
-  ::  case: message can't be parsed to JSON
-  ::
-  =.  path.order  /nostrill
-  =.  message.order  `(as-octs:mimes:html '{data: 10)')
-  ;<  caz-not-json=(list card)  bind:m
-    (do-poke:test-agent websocket-server-message+!>(order))
-  ;<  ~  bind:m  (ex-cards:test-agent caz-not-json ~)
-  ::  case: unrecognised message from nostr
-  ::
-  =.  message.order  `(as-octs:mimes:html '["OK", "b1a649ebe8", true, ""]')
-  ;<  caz-not-recognised-event=(list card)  bind:m
-    (do-poke:test-agent websocket-server-message+!>(order))
-  ;<  ~  bind:m  (ex-cards:test-agent caz-not-recognised-event ~)
-  ::  case: handle %event client message
-  ::
-  =/  keys  (gen-keys:nostr-keys eny.bowl)
-  =/  p=post:post
-    %^  build-post:tp  now.bowl  -.keys
-    (build-sp:tp our.bowl our.bowl 'Hello world' ~ ~)
-  =/  =event:nostr
-    (post-to-event:nostr-events keys eny.bowl p)
-  =.  message.order  `(as-octs:mimes:html (en:json:html (req:en:json-nostr [%event event])))
-  ;<  caz-json-event=(list card)  bind:m
-    (do-poke:test-agent websocket-server-message+!>(order))
-  =/  ex-msg-octs
-    %-  json-to-octs:server 
-    %-  relay-msg:en:json-nostr
-    ::  currently implemented flow, indicates that we can't store recieved event 
-    ::
-    [%ok id.event | 'we\'re full']
-  ;<  ~  bind:m  
-    %+  ex-cards:test-agent  caz-json-event
-    (ex-fact-ws-response -.order [%message 1 `ex-msg-octs])
-  ::  case: following nostr user and recieving event mesage
-  ::
-  ;<  *  bind:m  
-    %+  do-on-ui-poke  bowl
-    =,  enjs:format
-    %-  pairs  
-    :~  
-      :-  'fols'
-      (frond 'add' (frond 'nostr' s+(crip (scow:sr %ux -.keys))))
-    ==
-  ;<  caz-json-event-2=(list card)  bind:m
-    (do-poke:test-agent websocket-server-message+!>(order))
-  ;<  ~  bind:m  
-    %+  ex-cards:test-agent  caz-json-event-2
-    (ex-fact-ws-response -.order [%message 1 `ex-msg-octs])
-  ;<  saved-1=vase  bind:m  get-save:test-agent
-  =/  state  !<(state-0:sur saved-1)
-  =/  ex-feed  (put:orm:tf *feed:tf [id.p p])
-  %+  ex-equal:test-agent
-    !>((~(get by following.state) [%nostr -.keys]))
-    !>(`ex-feed) 
+:: ++  test-ws-server-message-nostrill-event
+::   %-  eval-mare:test-agent
+::   =/  m  (mare:test-agent ,~)
+::   ^-  form:m
+::   ;<  ~  bind:m    (set-scry-gate:test-agent scry-gate)
+::   ;<  *  bind:m    (do-init:test-agent %nostrill agent)
+::   ;<  =bowl:gall  bind:m  get-bowl:test-agent
+::   =+  order=[wid=*@ path=*path *websocket-message:eyre]
+::   ::  case: message can't be parsed to JSON
+::   ::
+::   =.  path.order  /nostrill
+::   =.  message.order  `(as-octs:mimes:html '{data: 10)')
+::   ;<  caz-not-json=(list card)  bind:m
+::     (do-poke:test-agent websocket-server-message+!>(order))
+::   ;<  ~  bind:m  (ex-cards:test-agent caz-not-json ~)
+::   ::  case: unrecognised message from nostr
+::   ::
+::   =.  message.order  `(as-octs:mimes:html '["OK", "b1a649ebe8", true, ""]')
+::   ;<  caz-not-recognised-event=(list card)  bind:m
+::     (do-poke:test-agent websocket-server-message+!>(order))
+::   ;<  ~  bind:m  (ex-cards:test-agent caz-not-recognised-event ~)
+::   ::  case: handle %event client message
+::   ::
+::   =/  keys  (gen-keys:nostr-keys eny.bowl)
+::   =/  p=post:post
+::     %^  build-post:tp  now.bowl  -.keys
+::     (build-sp:tp our.bowl our.bowl 'Hello world' ~ ~)
+::   =/  =event:nostr
+::     (post-to-event:nostr-events keys eny.bowl p)
+::   =.  message.order  `(as-octs:mimes:html (en:json:html (req:en:json-nostr [%event event])))
+::   ;<  caz-json-event=(list card)  bind:m
+::     (do-poke:test-agent websocket-server-message+!>(order))
+::   =/  ex-msg-octs
+::     %-  json-to-octs:server 
+::     %-  relay-msg:en:json-nostr
+::     ::  currently implemented flow, indicates that we can't store recieved event 
+::     ::
+::     [%ok id.event | 'we\'re full']
+::   ;<  ~  bind:m  
+::     %+  ex-cards:test-agent  caz-json-event
+::     (ex-fact-ws-response -.order [%message 1 `ex-msg-octs])
+::   ::  case: following nostr user and recieving event mesage
+::   ::
+::   ;<  *  bind:m  
+::     %+  do-on-ui-poke  bowl
+::     =,  enjs:format
+::     %-  pairs  
+::     :~  
+::       :-  'fols'
+::       (frond 'add' (frond 'nostr' s+(crip (scow:sr %ux -.keys))))
+::     ==
+::   ;<  caz-json-event-2=(list card)  bind:m
+::     (do-poke:test-agent websocket-server-message+!>(order))
+::   ;<  ~  bind:m  
+::     %+  ex-cards:test-agent  caz-json-event-2
+::     (ex-fact-ws-response -.order [%message 1 `ex-msg-octs])
+::   ;<  state=state-0:sur  bind:m  get-state
+::   =/  ex-feed  (put:orm:tf *feed:tf [id.p p])
+::   %+  ex-equal:test-agent
+::     !>((~(get by following.state) [%nostr -.keys]))
+::     !>(`ex-feed) 
 ::
 ::  there are few other cases that will come as client message, they aren't handled just yet 
 ::  ++ test-ws-server-message-req - stores subscription, with filters 
