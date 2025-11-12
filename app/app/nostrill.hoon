@@ -1,6 +1,7 @@
 /-  sur=nostrill, nsur=nostr, tf=trill-feed, comms=nostrill-comms
 /+  lib=nostrill, nostr-keys, sr=sortug, scri,
     ws=websockets,
+    bip-b173,
     nreq=nostr-req,
     nostr-client,
     dbug,
@@ -140,6 +141,7 @@
       ?-  -.pok
         %req  (handle-req:coms +.pok)
         %res  (handle-res:coms +.pok)
+        %eng  (handle-eng:coms +.pok)
       ==
     [cs this]
   :: DEPRECATED
@@ -281,6 +283,10 @@
             =/  key  i.ks
             ~&  pub=(scow:sr %ux -.key)
             ~&  priv=(scow:sr %ux +.key)
+            =/  npub  (encode-pubkey:bip-b173 %main [33 -.key])
+            ~&  npub=npub
+            :: =/  nsec
+            :: ~&  nsec=nsec
             $(ks t.ks)
       %feed
         :: =/  lol  debug-own-feed:mutat
@@ -357,6 +363,16 @@
       :_  this   =/  subs  ~(tap by sup.bowl)
         %+  turn  subs  |=  [* p=@p pat=path]
         [%give %kick ~[pat] ~]
+    %leave
+      :_  this   =/  subs  ~(tap by wex.bowl)
+        %+  turn  subs  |=  [[wire sip=@p term] q=*]
+        (urbit-leave:fols sip)
+    %comms
+     :_  this
+     :~  (urbit-watch:fols ~zod)
+         [%pass /foldbug %agent [~zod dap.bowl] %poke %bitch !>(~)]
+     ==
+
 
     ==
       

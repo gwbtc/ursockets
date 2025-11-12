@@ -1,5 +1,5 @@
-/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, feed=trill-feed
-/+  js=json-nostr, sr=sortug,constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, feed=trill-feed, post=trill-post
+/+  js=json-nostr, sr=sortug,constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill, lib=nostrill
 |_  [=state:sur =bowl:gall]
 ++  cast-poke
   |=  raw=*  ^-  poke:comms
@@ -87,6 +87,64 @@
     =/  c1  [%give %fact paths cage]
     :~(c1)
 
+::  engagement pokes, heads up when replying etc. to a post on your feed
+++  handle-eng
+  |=  e=engagement:comms
+  ?-  -.e
+    %reply
+      =/  poast  (get:orm:feed feed.state parent.e)
+      ?~  poast  `state
+      =.  children.u.poast  (~(put in children.u.poast) id.child.e)
+      =.  feed.state  (put:orm:feed feed.state parent.e u.poast)
+      =.  feed.state  (put:orm:feed feed.state id.child.e child.e)
+      =/  f=fact:comms  [%post %add child.e]
+      =/  f2=fact:comms  [%post %changes u.poast]
+      :_  state
+      :~  (update-followers:cards:lib f)
+          (update-followers:cards:lib f2)
+      ==
+    %del-reply
+      =.  feed.state  =<  +  (del:orm:feed feed.state child.e)
+      =/  poast  (get:orm:feed feed.state parent.e)
+      ?~  poast  `state
+      =.  children.u.poast  (~(del in children.u.poast) child.e)
+      =.  feed.state  (put:orm:feed feed.state parent.e u.poast)
+      :_  state
+      :~  (update-followers:cards:lib [%post %changes u.poast])
+          (update-followers:cards:lib [%post %del child.e])
+      ==
+    :: TODO ideally we want the full quote to display it within the post engagement. So do we change quoted.engagement.post? What if the quoter edits the quote down the line, etc.
+    %quote
+      =/  poast  (get:orm:feed feed.state src.e)
+      ?~  poast  `state
+      =/  spid  [*signature:post src.bowl id.post.e]
+      =.  quoted.engagement.u.poast  (~(put in quoted.engagement.u.poast) spid)
+      =.  feed.state  (put:orm:feed feed.state src.e u.poast)
+      =/  f=fact:comms  [%post %changes u.poast]
+      :_  state
+      :~  (update-followers:cards:lib f)
+      ==
+    %rp
+      =/  poast  (get:orm:feed feed.state src.e)
+      ?~  poast  `state
+      =/  spid  [*signature:post src.bowl rt.e]
+      =.  shared.engagement.u.poast  (~(put in shared.engagement.u.poast) spid)
+      =.  feed.state  (put:orm:feed feed.state src.e u.poast)
+      =/  f=fact:comms  [%post %changes u.poast]
+      :_  state
+      :~  (update-followers:cards:lib f)
+      ==
+    %reaction
+      =/  poast  (get:orm:feed feed.state post.e)
+      ?~  poast  `state
+      :: TODO signatures et al.
+      =.  reacts.engagement.u.poast  (~(put by reacts.engagement.u.poast) src.bowl [reaction.e *signature:post])
+      =.  feed.state  (put:orm:feed feed.state post.e u.poast)
+      =/  f=fact:comms  [%post %changes u.poast]
+      :_  state
+      :~  (update-followers:cards:lib f)
+      ==
+  ==
 
 
 --

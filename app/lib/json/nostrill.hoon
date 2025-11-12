@@ -15,6 +15,7 @@
     feed+(feed-with-cursor:en:trill feed ~ ~)
     nostr+(en-nostr-feed nostr-feed)
     following+(enfollowing following)
+    following2+(feed-with-cursor:en:trill following2 ~ ~)
     ['followGraph' (engraph follow-graph)]
   ~
   ==
@@ -190,9 +191,10 @@
     add+postadd
     reply+reply
     quote+quote
-    rp+rp
+    rp+pid
     :: rt+de-rt
-    :: del+hex:de:common
+    reaction+reaction
+    del+pid
   ==
 ++  postadd
   %-  ot  :~
@@ -211,10 +213,16 @@
     host+(se:de:common %p)
     id+de-atom-id
   ==
-++  rp
+++  pid
   %-  ot  :~
     host+(se:de:common %p)
     id+de-atom-id
+  ==
+++  reaction
+  %-  ot  :~
+    host+(se:de:common %p)
+    id+de-atom-id
+    reaction+so
   ==
 ++  rt
   %-  ot  :~

@@ -48,7 +48,8 @@
 
 ++  handle-follow-ok  |=  [=user:sur =fc:feed profile=(unit user-meta:nsur)]
   ^-  (quip card:agent:gall _state)
-  =.  following.state  (~(put by following.state) user feed.fc)
+  =.  following.state   (~(put by following.state) user feed.fc)
+  =.  following2.state  (add-new-feed:feedlib following2.state feed.fc)
   =/  graph  (~(get by follow-graph.state) [%urbit our.bowl])
   =/  follows  ?~  graph  (silt ~[user])  (~(put in u.graph) user)
   =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] follows)

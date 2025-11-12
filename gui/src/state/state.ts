@@ -26,6 +26,7 @@ export type LocalState = {
   profiles: Map<string, UserProfile>; // pubkey key
   addProfile: (key: string, u: UserProfile) => void;
   following: Map<string, FC>;
+  following2: FC;
   followers: string[];
   // Notifications
   notifications: Notification[];
@@ -50,7 +51,8 @@ export const useStore = creator((set, get) => ({
     await api.subscribeStore((data) => {
       console.log("store sub", data);
       if ("state" in data) {
-        const { feed, nostr, following, relays, profiles, pubkey } = data.state;
+        const { feed, nostr, following, following2, relays, profiles, pubkey } =
+          data.state;
         const flwing = new Map(Object.entries(following as Record<string, FC>));
         flwing.set(api!.airlock.our!, feed);
         set({
@@ -58,6 +60,7 @@ export const useStore = creator((set, get) => ({
           nostrFeed: nostr,
           profiles: new Map(Object.entries(profiles)),
           following: flwing,
+          following2,
           pubkey,
         });
       } else if ("fact" in data) {
@@ -103,6 +106,7 @@ export const useStore = creator((set, get) => ({
   nostrFeed: [],
   following: new Map(),
   followers: [],
+  following2: { feed: {}, start: "", end: "" },
   UISettings: {},
   modal: null,
   setModal: (modal) => set({ modal }),

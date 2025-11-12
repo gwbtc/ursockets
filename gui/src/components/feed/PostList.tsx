@@ -20,6 +20,8 @@ function TrillFeed({ data, refetch }: { data: FC; refetch: Function }) {
   return (
     <>
       {Object.keys(data.feed)
+        // omit replies
+        .filter((i) => !data.feed[i].parent)
         .sort()
         .reverse()
         .slice(0, 50)

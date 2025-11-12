@@ -48,9 +48,9 @@
 ++  get-posts
   ^-  (quip card _state)
   =/  kinds  (silt ~[1])
-  =/  since  (sub now.bowl ~m1)
+  =/  last-week  (sub now.bowl ~d1)
   :: =/  since  (to-unix-secs:jikan:sr last-week)
-  =/  =filter:nsur  [~ ~ `kinds ~ `since ~ ~]
+  =/  =filter:nsur  [~ ~ `kinds ~ `last-week ~ ~]
   (send-req ~[filter])
 
 ++  get-user-feed
@@ -92,7 +92,7 @@
 ++  test-connection
   |=  relay-url=@t
   =/  kinds  (silt ~[1])
-  =/  since  (sub now.bowl ~m1)
+  =/  since  (sub now.bowl ~m10)
   =/  =filter:nsur  [~ ~ `kinds ~ `since ~ ~]
   =/  sub-id  (gen-sub-id:nostr-keys eny.bowl)
   =/  req=client-msg:nsur  [%req sub-id ~[filter]]

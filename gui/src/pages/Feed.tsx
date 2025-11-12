@@ -57,7 +57,7 @@ function FeedPage({ t }: { t: FeedType }) {
         {active === "global" ? (
           <Global />
         ) : active === "following" ? (
-          <Global />
+          <Following />
         ) : active === "nostr" ? (
           <Nostr />
         ) : null}
@@ -86,6 +86,21 @@ function Global() {
   // else if ("bucun" in data) return <p>Error</p>;
   // else return <Inner data={data} refetch={refetch} />;
   return <p>Error</p>;
+}
+function Following() {
+  const following = useLocalState((s) => s.following2);
+  console.log({ following });
+
+  // console.log(data, "scry feed data");
+  // if (isPending) return <img className="x-center" src={spinner} />;
+  // else if ("bucun" in data) return <p>Error</p>;
+  // else return <Inner data={data} refetch={refetch} />;
+
+  return (
+    <div>
+      <PostList data={following} refetch={() => {}} />
+    </div>
+  );
 }
 function Nostr() {
   const { nostrFeed, api } = useLocalState((s) => ({

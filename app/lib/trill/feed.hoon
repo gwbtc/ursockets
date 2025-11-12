@@ -67,4 +67,35 @@
     (put:form:post acc id full-node)
   ?~  children  [%empty ~]
   :-  %full  g
+::
+++  add-new-feed
+|=  [global=feed:feed new=feed:feed]  ^-  feed:feed
+  =/  poasts  (tap:orm:feed new)
+  |-  ?~  poasts  global
+    =/  poast  +.i.poasts
+    =.  global  (insert-to-global global poast)
+    $(poasts t.poasts)
+
+++  consolidate-feeds
+|=  feeds=(list [* feed:feed])  ^-  feed:feed 
+  =|  nf=feed:feed
+  |-  ?~  feeds  nf
+    =/  poasts  (tap:orm:feed +.i.feeds)
+    =.  nf  |-  ?~  poasts  nf
+      =/  poast  +.i.poasts
+      =.  nf  (insert-to-global nf poast)
+      $(poasts t.poasts)
+    $(feeds t.feeds)
+
+++  find-available-id
+=|  tries=@ud
+|=  [f=feed:feed id=@da]  ^-  @da
+  ?:  (gte tries 20)  ~|('find-available-id stack overflow' !!)
+  ?.  (has:orm:feed f id)  id
+  $(id +(id), tries +(tries))
+
+++  insert-to-global
+|=  [f=feed:feed p=post:post]  ^-  feed:feed
+  =/  nid  (find-available-id f id.p)
+  (put:orm:feed f nid p)
 --

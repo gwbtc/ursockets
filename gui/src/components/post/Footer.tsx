@@ -41,6 +41,7 @@ function Footer({ poast, refetch }: PostProps) {
     // Scroll to top where composer is located
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+  console.log({ poast });
   const childrenCount = poast.children
     ? poast.children.length
       ? poast.children.length
@@ -52,7 +53,7 @@ function Footer({ poast, refetch }: PostProps) {
     e.preventDefault();
     const r = await api!.deletePost(our);
     if (r) toast.success("Repost deleted");
-    refetch();
+    // refetch();
     if (location.includes(poast.id)) navigate("/");
   }
   async function sendRP(e: React.MouseEvent) {

@@ -1,15 +1,15 @@
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import useLocalState from "@/state/state";
-import PostList from "@/components/feed/PostList";
-import Composer from "@/components/composer/Composer";
 import Icon from "@/components/Icon";
 import spinner from "@/assets/triangles.svg";
 import { ErrorPage } from "@/Router";
 import "@/styles/trill.css";
 import "@/styles/feed.css";
 import Post from "@/components/post/Post";
-import { toFlat } from "@/logic/trill/helpers";
+import { extractThread, toFlat } from "@/logic/trill/helpers";
+import type { FullNode } from "@/types/trill";
+import Composer from "@/components/composer/Composer";
 
 export default function Thread() {
   const params = useParams<{ host: string; id: string }>();
@@ -19,7 +19,7 @@ export default function Thread() {
   async function fetchThread() {
     return await api!.scryThread(host, id);
   }
-  const { isPending, data, error, refetch } = useQuery({
+  const { isPending, data, error } = useQuery({
     queryKey: ["thread", params.host, params.id],
     queryFn: fetchThread,
     enabled: !!api && !!params.host && !!params.id,
@@ -66,7 +66,8 @@ export default function Thread() {
       </main>
     );
   }
-
+  console.log({ data });
+  // TODO make Composer a modal when in Thread mode
   return (
     <main>
       <div className="thread-header">
@@ -90,13 +91,52 @@ export default function Thread() {
 
       <div id="feed-proper">
         <Composer />
-        <div className="thread-content">
+        <div id="thread-head">
           <Post poast={toFlat(data.ok)} />
+        </div>
+        <div id="thread-children">
+          <ChildTree node={data.ok} />
         </div>
       </div>
     </main>
   );
 }
+
+function ChildTree({ node }: { node: FullNode }) {
+  const { threadChildren, replies } = extractThread(node);
+  return (
+    <>
+      <div id="tail">
+        {threadChildren.map((n) => {
+          return <Post key={n.id} poast={toFlat(n)} />;
+        })}
+      </div>
+      <div id="replies">
+        {replies.map((n) => (
+          <ReplyThread key={n.id} node={n} />
+        ))}
+      </div>
+    </>
+  );
+}
+
+function ReplyThread({ node }: { node: FullNode }) {
+  // const { threadChildren, replies } = extractThread(node);
+  const { replies } = extractThread(node);
+  return (
+    <div className="trill-reply-thread">
+      <div className="head">
+        <Post poast={toFlat(node)} />
+      </div>
+      <div className="tail">
+        {replies.map((r) => (
+          <Post key={r.id} poast={toFlat(r)} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // function OwnData(props: Props) {
 //   const { api } = useLocalState((s) => ({
 //     api: s.api,

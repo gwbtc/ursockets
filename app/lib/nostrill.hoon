@@ -55,5 +55,8 @@
   :: ++  update-followers  |=  =fact:comms  ^-  card:agent:gall
   ++  update-followers  |=  =fact:comms  ^-  card:agent:gall
     [%give %fact ~[/follow] %noun !>(fact)]
+  ::
+  ++  poke-host  |=  [sip=@p =poke:comms]  ^-  card:agent:gall
+    [%pass /heads-up %agent [sip dap.bowl] %poke %noun !>(poke)]
   --
 --

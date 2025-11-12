@@ -557,7 +557,8 @@
         |-  ?~  sockets  ~
           =/  socket=websocket-connection:iris  q.i.sockets
           ?.  .=(app.socket caller)  $(sockets t.sockets)
-          ?:  .=(url.socket i.t.s.bem)  `socket
+          ?:  .=(url.socket i.t.s.bem)  `sock
+          et
           $(sockets t.sockets)
     ==
   =*  ren  car

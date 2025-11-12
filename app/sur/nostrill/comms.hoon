@@ -3,12 +3,15 @@
 +$  poke
   $%  [%req req]
       [%res res]
+      [%eng engagement]
       [%dbug *]
   ==
-+$  emgagement
-  $%  [%reply host=@p id=@da]
-      [%del-reply host=@p id=@da]
-      [%reaction host=@p id=@da reaction=@t]
++$  engagement
+  $%  [%reply parent=@da child=post:post]
+      [%del-reply parent=@da child=@da]
+      [%quote src=@da =post:post]
+      [%rp src=@da rt=@da]
+      [%reaction post=@da reaction=@t]
   ==
 +$  req
   $%  [%feed ~]

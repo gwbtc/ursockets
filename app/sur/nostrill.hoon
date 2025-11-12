@@ -15,6 +15,7 @@
       ::  profiles
       profiles=(map user user-meta:nostr)
       following=(map user =feed:trill)
+      following2=feed:trill
       follow-graph=(map user (set user))
     :: TODO global feed somehow?
 
@@ -39,7 +40,6 @@ $:  pub=(unit @ux)
   $%  [%fols fols-poke]
       [%begs begs-poke]
       [%post post-poke]
-      :: [%reac reac-poke]
       [%prof prof-poke]
       [%keys ~]  ::  cycle-keys
       [%rela relay-poke]
@@ -50,11 +50,12 @@ $:  pub=(unit @ux)
   ==
   +$  post-poke
   $%  [%add content=@t]
-      [%reply content=@t host=@p id=@ thread=@]
-      [%quote content=@t host=@p id=@]
-      [%rp host=@p id=@]  :: NIP-18
+      [%reply content=@t host=@p id=@da thread=@da]
+      [%quote content=@t host=@p id=@da]
+      [%rp host=@p id=@da]  :: NIP-18
+      [%reaction host=@p id=@da reaction=@t]
       :: [%rt id=@ux pubkey=@ux relay=@t]  :: NIP-18
-      :: [%del pubkey=@ux]
+      [%del host=@p id=@da]
   ==
   +$  fols-poke
   $%  [%add =user]
