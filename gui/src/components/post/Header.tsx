@@ -10,6 +10,7 @@ function Header(props: PostProps) {
   // console.log(props.poast.author.length, "length");
   function go(e: React.MouseEvent) {
     e.stopPropagation();
+    navigate(`/feed/${poast.host}`);
   }
   function openThread(e: React.MouseEvent) {
     e.stopPropagation();

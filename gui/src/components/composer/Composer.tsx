@@ -1,5 +1,4 @@
 import useLocalState from "@/state/state";
-import type { Poast } from "@/types/trill";
 import Sigil from "@/components/Sigil";
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import Snippets, { ReplySnippet } from "./Snippets";
@@ -42,19 +41,6 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
   async function poast(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     // TODO
-    // const parent = replying ? replying : null;
-    // const tokens = tokenize(input);
-    // const post: SentPoast = {
-    //   host: parent ? parent.host : our,
-    //   author: our,
-    //   thread: parent ? parent.thread : null,
-    //   parent: parent ? parent.id : null,
-    //   contents: input,
-    //   read: openLock,
-    //   write: openLock,
-    //   tags: input.match(HASHTAGS_REGEX) || [],
-    // };
-    // TODO make it user choosable
     setLoading(true);
 
     const res =

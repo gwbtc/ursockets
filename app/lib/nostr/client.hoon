@@ -100,17 +100,22 @@
 
 ++  send
   |=  [relay-url=@t req=client-msg:nsur]  ^-  card:agent:gall
-    ~&  >>>  send=relay-url
+    ~&  >>>  sendws=relay-url
     =/  req-body=json  (req:en:js req)
     =/  octs  (json-to-octs:server req-body)
     =/  wmsg=websocket-message:eyre  [1 `octs]
-    =/  conn  (check-connected:ws relay-url bowl)
-    ~&  >>>  send-client-conn=conn
-    ?~  conn  :: if no ws connection we start a thread which will connect first, then send the message
-    =/  pat  /to-nostr-relay
-    [%pass (weld /ws pat) %arvo %k %fard dap.bowl %ws %noun !>([relay-url wmsg])]  
+    ~&  >>  sup=sup.bowl
+    :: =/  conn  (check-connected:ws relay-url bowl)
+    :: ~&  >>>  send-client-conn=conn
+    :: ?~  conn  :: if no ws connection we start a thread which will connect first, then send the message
+    :: =/  pat  /to-nostr-relay
+    :: [%pass (weld /ws pat) %arvo %k %fard dap.bowl %ws %noun !>([relay-url wmsg])]  
     ::
-    (give-ws-payload-client:ws id.u.conn wmsg)
+    :: (give-ws-payload-client:ws id.u.conn wmsg)
+    :: (give-ws-payload-client:ws wid wmsg)
+
+    =/  =task:iris  [%websocket-connect dap.bowl relay-url]
+    [%pass /ws-req/nostrill %arvo %i task]
     
 
 :: ++  send-http

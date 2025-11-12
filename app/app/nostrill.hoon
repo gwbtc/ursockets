@@ -164,7 +164,6 @@
   ::
   ++  on-ui
     =/  jon=json  !<(json vase)
-    ~&  >  on-ui-jon=jon
     =/  upoke=(unit poke:ui:sur)  (ui:de:jsonlib jon)
     ?~  upoke  ~&  bad-ui-poke=jon  `this
     ?-  -.u.upoke

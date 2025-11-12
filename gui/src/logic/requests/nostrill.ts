@@ -108,7 +108,7 @@ export default class IO {
     return this.poke({ post: json });
   }
   async addRP(pid: PID) {
-    const json = { quote: { host: pid.ship, id: pid.id } };
+    const json = { rp: { host: pid.ship, id: pid.id } };
     return this.poke({ post: json });
   }
 
@@ -122,29 +122,26 @@ export default class IO {
   //   return this.poke(json);
   // }
 
-  async deletePost(id: string) {
-    const host = `~${this.airlock.ship}`;
+  async deletePost(host: Ship, id: string) {
     const json = {
-      "del-post": {
-        ship: host,
-        id: id,
+      del: {
+        host,
+        id,
       },
     };
-    return this.poke(json);
+    return this.poke({ post: json });
   }
 
   async addReact(ship: Ship, id: PostID, reaction: string) {
     const json = {
-      "new-react": {
-        react: reaction,
-        pid: {
-          id: id,
-          ship: ship,
-        },
+      reaction: {
+        reaction: reaction,
+        id: id,
+        host: ship,
       },
     };
 
-    return this.poke(json);
+    return this.poke({ post: json });
   }
 
   //  follows

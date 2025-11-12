@@ -51,7 +51,7 @@ function Footer({ poast, refetch }: PostProps) {
   async function cancelRP(e: React.MouseEvent) {
     e.stopPropagation();
     e.preventDefault();
-    const r = await api!.deletePost(our);
+    const r = await api!.deletePost(poast.host, poast.id);
     if (r) toast.success("Repost deleted");
     // refetch();
     if (location.includes(poast.id)) navigate("/");
@@ -60,31 +60,11 @@ function Footer({ poast, refetch }: PostProps) {
     // TODO update backend because contents are only markdown now
     e.stopPropagation();
     e.preventDefault();
-    // const c = [
-    //   {
-    //     ref: {
-    //       type: "trill",
-    //       ship: poast.host,
-    //       path: `/${poast.id}`,
-    //     },
-    //   },
-    // ];
-    // const post: SentPoast = {
-    //   host: our,
-    //   author: our,
-    //   thread: null,
-    //   parent: null,
-    //   contents: input,
-    //   read: openLock,
-    //   write: openLock,
-    //   tags: [], // TODO
-    // };
-    // const r = await api!.addPost(post, false);
-    // setReposting(true);
-    // if (r) {
-    //   setReposting(false);
-    //   toast.success("Your post was published");
-    // }
+    const pid = { ship: poast.host, id: poast.id };
+    const r = await api!.addRP(pid);
+    if (r) {
+      toast.success("Your repost was published");
+    }
   }
   function doReact(e: React.MouseEvent) {
     e.stopPropagation();
