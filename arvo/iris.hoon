@@ -371,12 +371,13 @@
     |=  [wid=@ud app=term]  ^-  move
       =/  wids  (scot %ud wid)
       =/  =note  [%g %deal [our our /iris] app %watch /websocket-client/[wids]]
-      [duct %pass /iris-ws-watch/[wids] note]
+      [duct %pass /ws-watch/[wids] note]
   ++  leave-agent
     |=  [wid=@ud app=term]  ^-  move
+      ~&  iris-leave-agent=[wid app]
       =/  wids  (scot %ud wid)
       =/  =note  [%g %deal [our our /iris] app %leave ~]
-      [duct %pass /iris-ws-watch/[wids] note]
+      [duct %pass /ws-watch/[wids] note]
   ++  poke-agent
     |=  [msg=[@ud websocket-message:eyre] app=term]  ^-  move
       =/  =note  [%g %deal [our our /iris] app %poke %websocket-client-message !>(msg)]
@@ -475,12 +476,12 @@
   ?<  ?=(^ dud)
   :_  light-gate
   ?+  wire  ~
-    [%iris-ws-watch wids=@t ~]  =/  wid  (slav %ud wids.wire)
-    ~&  iris-take=-.hin
+    [%ws-watch wids=@t ~]  =/  wid  (slav %ud wids.wire)
+    ~&  iris-ws-take=-.hin
     ?+    -.hin  ~
       %gall
         ?>  ?=(%unto +<.hin)
-        ~&  hin=p.hin
+        ~&  hin=-.p.hin
         ?+    -.p.hin  ~
           ?(%poke-ack %watch-ack)
             ?~  p.p.hin  ~
@@ -492,11 +493,14 @@
               movs
           %fact
             =*  cag  cage.p.hin
+            :: This comes from agent, goes to vere
+            ~&  >  iris-take-ws-fact=p.cag
             ?+    p.cag  ~&(bad-fact+p.cag !!)
               %message  =/  msg  !<(websocket-message:eyre q.cag)
                         :~  [outbound-duct.state.ax %give %websocket-response wid %message msg]
                         ==
               %disconnect
+                ~&  iris-take-ws-disconnect=wid
                 =/  event-args  [[eny duct now rof] state.ax]
                 =/  client  (per-client-event event-args)
                 =^  movs  state.ax  (cleanup-ws:client wid)
@@ -525,8 +529,8 @@
   ^+  ..^$
   ::
   ~!  %loading
-    ..^$(ax old)
-    :: ..^$
+    :: ..^$(ax old)
+    ..^$
 
 ::  +stay: produce current state
 ::
@@ -538,28 +542,40 @@
   |=  [lyc=gang pov=path car=term bem=beam]
   ^-  (unit (unit cage))
   ~&  >>  iris-scry=[lyc=lyc pov=pov car=car bem=bem syd=q.bem]
-  :: TODO this is obviously insecure so should be deprecated soon
   ?.  ?=(%x car)  [~ ~]
   =/  caller  +<.pov
   ?:  ?=(%ws q.bem)
+    ~&  iris-ws-scry-id=s.bem
     ?+  s.bem  ~
       ~  ``noun+!>(sockets.state.ax)
-      [%id @ ~]
 
+    [%app ~]
+            =|  conns=(list [wid=@ud url=@t status=$?(%accepted %pending)])
+            =/  sockets  ~(tap by sockets.state.ax)
+            ::  pass a (unit websocket-connection)
+            :-  ~  :-  ~  :-  %noun  !>
+            |-  ?~  sockets  conns
+              =/  socket=websocket-connection:iris  q.i.sockets
+              ?.  .=(app.socket caller)  $(sockets t.sockets)
+                =.  conns  :_  conns  [id.socket url.socket status.socket]
+                $(sockets t.sockets)
+     [%id @ ~]
+        ~&  caller=caller
         =/  wid  (slav %ud i.t.s.bem)
-        =/  socket  (~(got by sockets.state.ax) wid)
-        ?.  .=(app.socket caller)  ~
-        ``noun+!>(socket)
-      [%url @ ~]
-        =/  sockets  ~(tap by sockets.state.ax)
-        ::  pass a (unit websocket-connection)
-        :-  ~  :-  ~  :-  %noun  !>
-        |-  ?~  sockets  ~
-          =/  socket=websocket-connection:iris  q.i.sockets
-          ?.  .=(app.socket caller)  $(sockets t.sockets)
-          ?:  .=(url.socket i.t.s.bem)  `sock
-          et
-          $(sockets t.sockets)
+        =/  socket  (~(get by sockets.state.ax) wid)
+        ?~  socket  ``noun+!>(~)
+        ?.  .=(app.u.socket caller)  ~
+        ``noun+!>(`[id.u.socket url.u.socket status.u.socket])
+
+    [%url @ ~]
+            =/  sockets  ~(tap by sockets.state.ax)
+            ::  pass a (unit websocket-connection)
+            :-  ~  :-  ~  :-  %noun  !>
+            |-  ?~  sockets  ~
+              =/  socket=websocket-connection:iris  q.i.sockets
+              ?.  .=(app.socket caller)  $(sockets t.sockets)
+              ?:  .=(url.socket i.t.s.bem)  `[id.socket url.socket status.socket]
+              $(sockets t.sockets)
     ==
   =*  ren  car
   =*  why=shop  &/p.bem
@@ -578,5 +594,5 @@
           axle+&+ax
       ==
     ``mass+!>(maz)
-  [~ ~]
---
+    [~ ~]
+  --
