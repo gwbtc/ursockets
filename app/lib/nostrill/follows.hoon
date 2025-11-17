@@ -33,8 +33,10 @@
 
 ++  handle-follow-res  |=  =res:comms
   ?-  -.res
-    %ng  :: bruh
-          `state
+    %ng   
+          :_  state
+          =/  =fact:ui:sur  [%hark %fols [%urbit src.bowl] .n msg.res]
+          =/  c  (update-ui:cards:lib fact)  :~(c)
     %ok
       ?-  -.p.res
         %feed  (handle-follow-ok [%urbit src.bowl] fc.+.p.res profile.+.p.res)

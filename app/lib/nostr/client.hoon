@@ -28,27 +28,32 @@
 ::       ::  build http card
 ::       =/  [url=@t rs=relay-stats:nsur]  i.rls
 ::       ::  mutate relays stats
-::       =/  es=event-stats:nsur  [fs 0]  
-::       =/  nreqs  (~(put by reqs.rs) sub-id es)
 ::       =/  nrs  rs(reqs nreqs)
 ::       =.  relays.state  (~(put by relays.state) url nrs)
 ::       $(urls [url urls], rls t.rls)
 
 ++  send-req  |=  fs=(list filter:nsur)
     ^-  (quip card _state)
-    =/  rls  ~(tap by relays.state)
     =/  sub-id  (gen-sub-id:nostr-keys eny.bowl)
     =/  req=client-msg:nsur  [%req sub-id fs]
     =/  rls  ~(tap by relays.state)
     ?~  rls  !!
-    =/  url  -.i.rls
+    :: TODO not how this should work
+    =/  rs=relay-stats:nsur  +.i.rls
+    =/  wid  -.i.rls
+    =/  url  url.rs
+    =/  es=event-stats:nsur  [fs 0]  
+    =.  reqs.rs  (~(put by reqs.rs) sub-id es)
+    =.  relays.state  (~(put by relays.state) wid rs)
+    ~&  >  sending-ws-req=sub-id
     :-  :~  (send url req)  ==  state
 
 
 ++  get-posts
   ^-  (quip card _state)
   =/  kinds  (silt ~[1])
-  =/  last-week  (sub now.bowl ~d1)
+  :: =/  last-week  (sub now.bowl ~d7)
+  =/  last-week  (sub now.bowl ~m2)
   :: =/  since  (to-unix-secs:jikan:sr last-week)
   =/  =filter:nsur  [~ ~ `kinds ~ `last-week ~ ~]
   (send-req ~[filter])
@@ -105,48 +110,12 @@
     =/  octs  (json-to-octs:server req-body)
     =/  wmsg=websocket-message:eyre  [1 `octs]
     ~&  >>  sup=sup.bowl
-    :: =/  conn  (check-connected:ws relay-url bowl)
-    :: ~&  >>>  send-client-conn=conn
-    :: ?~  conn  :: if no ws connection we start a thread which will connect first, then send the message
-    :: =/  pat  /to-nostr-relay
-    :: [%pass (weld /ws pat) %arvo %k %fard dap.bowl %ws %noun !>([relay-url wmsg])]  
+    =/  conn  (check-connected:ws relay-url bowl)
+    ~&  >>>  send-client-conn=conn
+    ?~  conn  :: if no ws connection we start a thread which will connect first, then send the message
+    !!
+    :: =/  =task:iris  [%websocket-connect dap.bowl relay-url]
+    :: [%pass /ws-req/nostrill %arvo %i task]
     ::
-    :: (give-ws-payload-client:ws id.u.conn wmsg)
-    :: (give-ws-payload-client:ws wid wmsg)
-
-    =/  =task:iris  [%websocket-connect dap.bowl relay-url]
-    [%pass /ws-req/nostrill %arvo %i task]
-    
-
-:: ++  send-http
-::   |=  req=http-req:shim:nsur
-::   ^-  card:agent:gall
-::     =/  req-body  (http-req:en:js req)
-::     :: ~&  shim-req-json=(en:json:html req-body)
-::     =/  host  .^(hart:eyre %e /(scot %p our.bowl)/host/(scot %da now.bowl))
-::     =/  origin  %-  crip  (head:en-purl:html host)
-::     =/  headers  :~
-::       [key='content-type' value='application/json']
-::       [key='origin' value=origin]
-::     ==
-::     =/  =request:http  [%'POST' url:shim:nsur headers `(json-body:web req-body)]
-::     [%pass /http/[sub-id.req] %arvo %k %fard dap.bowl %fetch %noun !>(request)]  
-:: ::
-:: :: HTTP
-:: :: 
-
-:: ++  get-profiles-http
-::   |=  pubkeys=(set @ux)
-::     ^-  (quip card _state)
-::     =/  relays  ~(key by relays.state)
-::     :: TODO make a function to use most reliable
-::     =/  relay  (head ~(tap in relays))
-::     ~&  http=relay
-::     =/  sub-id  (gen-sub-id:nostr-keys eny.bowl)
-::     =/  kinds  (silt ~[0])
-::     =/  total=filter:nsur  [~ `pubkeys `kinds ~ ~ ~ ~]
-::     =/  req=http-req:shim:nsur  [relay http-delay:constants sub-id ~[total]]
-::     =/  =card  (send-http req)
-::     :-  :~(card)  state
-
+    (give-ws-payload-client:ws wid.u.conn wmsg)
 --

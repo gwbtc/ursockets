@@ -25,12 +25,13 @@
       (event:en:nostr ev)
 
   ++  en-relays
-  |=  r=(map @t relay-stats:nsur)  ^-  json
+  |=  r=(map @ relay-stats:nsur)  ^-  json
     %-  pairs  %+  turn  ~(tap by r)
-    |=  [url=@t rs=relay-stats:nsur]
-      :-  url  %-  pairs
-        :~  :-  %connected  ?~  connected.rs  ~  (time u.connected.rs)
-            :-  %reqs  (relay-stats reqs.rs)
+    |=  [wid=@ud rs=relay-stats:nsur]
+      :-  url.rs  %-  pairs
+        :~  :-  %start  (time start.rs)
+            :-  %wid    (numb wid)
+            :-  %reqs   (relay-stats reqs.rs)
         ==
   ++  relay-stats  |=  rm=(map @t event-stats:nsur)
     %-  pairs  %+  turn  ~(tap by rm)  |=  [sub-id=@t es=event-stats:nsur]
@@ -83,6 +84,7 @@
       %post    (postfact +.f)
       %enga    (enga +.f)
       %fols    (fols +.f)
+      %hark    (hark +.f)
     ==
   ++  fols  |=  ff=fols-fact:ui:sur  ^-  json
     %+  frond  -.ff
@@ -103,9 +105,50 @@
     (post-wrapper +.pf)
 
   ++  enga  |=  [pw=post-wrapper:sur reaction=*]
+     :: TODO
     ^-  json
     ~
+  ++  hark  |=  =notif:sur
+    ^-  json
+    %+  frond  -.notif
+    ?-  -.notif
+      %prof  (prof-notif +.notif)
+      %fols  (pairs :~(['user' (user user.notif)] ['accepted' %b accepted.notif] ['msg' %s msg.notif]))
+      %fans  (user p.notif)
+      %beg   (beg-notif +.notif)
+      %post  (post-notif +.notif)
+    ==
+  ++  prof-notif  |=  [u=user:sur prof=user-meta:nsur]
+    %-  pairs
+    :~  user+(user u)
+        profile+(user-meta:en:nostr prof)
+    ==
+  ++  beg-notif  |=  [beg=begs-poke:ui:sur accepted=? msg=@t]
+    ^-  json
+    %+  frond  -.beg
+    %-  pairs
+      :~  ['accepted' %b accepted]
+          ['msg' %s msg]
+        ?-  -.beg
+          %feed    ['ship' %s (scot %p +.beg)]
+          %thread  ['post' (pid:en:trill +.beg)]
+        ==
+      ==
 
+  ++  post-notif  |=  [pid=[@p @da] u=user:sur p=post-notif:sur]
+    ^-  json
+    %-  pairs
+      :~  ['post' (pid:en:trill pid)]
+          ['user' (user u)]
+          :-  -.p
+          ?-  -.p
+            %reply  (poast:en:trill +.p)
+            %quote  (poast:en:trill +.p)
+            %reaction  [%s +.p]
+            %rp    ~
+            %del   ~
+          ==
+      ==
   ++  post-wrapper  |=  p=post-wrapper:sur
     %-  pairs
     :~  post+(poast:en:trill post.p)
@@ -233,7 +276,7 @@
 ++  ui-relay
   %-  of  :~
     add+so
-    del+so
+    del+de-atom-id
     sync+ul
     send+de-relay-send
   ==

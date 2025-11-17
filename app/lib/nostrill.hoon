@@ -5,22 +5,18 @@
 ::
 ++  default-state  |=  =bowl:gall  ^-  state:sur
   =/  s  *state-0:sur
-  =/  l  public-relays:nsur
-  :: =/  l  (scag 1 l)
   :: =/  l  ~['wss://relay.damus.io' 'wss://nos.lol']
-  =/  rl  %+  turn  l  |=  t=@t  [t *relay-stats:nsur]
-  :: =/  l  ~[['wss://relay.damus.io' ~]]
   =/  key  (gen-keys:nostr-keys eny.bowl)
   =/  keyl  [key ~]
-  s(relays (malt rl), keys keyl) 
+  s(keys keyl) 
 
 ++  print-relay-stats
-  |=  rm=(map @t relay-stats:nsur)
+  |=  rm=(map @ relay-stats:nsur)
   =/  l  ~(tap by rm)
   |-  ?~  l  ~
-    =/  [url=@t rs=relay-stats:nsur]  i.l
-    ~&  relay=url
-    ~&  connected=connected.rs
+    =/  [wid=@ rs=relay-stats:nsur]  i.l
+    ~&  relay-url=url.rs
+    ~&  connected=start.rs
     ~&  sub-count=~(wyt by reqs.rs)
     =/  total-received
       %+  roll  ~(tap by reqs.rs)

@@ -41,6 +41,7 @@
   =/  profile  (~(get by profiles.state) [%urbit our.bowl])
   =/  pubkey  pub.i.keys.state
   =/  crds  ~(. cards:lib bowl)
+  ::  TODO UI notifications  [%hark ]
   
     ?-  -.poke
       %del  =.  feed.state  =<  +  (del:orm:feed feed.state id.poke)

@@ -28,7 +28,8 @@ $:  name=@t
     other=(map @t json)
 ==
 +$  relay-stats
-$:  connected=(unit @da)
+$:  start=@da
+    url=@t
     reqs=(map sub-id event-stats)
 ==
 +$  event-stats

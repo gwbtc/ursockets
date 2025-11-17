@@ -20,7 +20,7 @@
 ^-  agent:gall
 |_  =bowl:gall
 +*  this  .
-    rout  ~(. router:web [state bowl])
+    rout   ~(. router:web [state bowl])
     cards  ~(. cards:lib bowl)
     mutan  ~(. mutations-nostr [state bowl])
     mutat  ~(. mutations-trill [state bowl])
@@ -56,15 +56,13 @@
   |^
   ~&  nostrill-on-poke=mark
   ?+  mark  `this
-    %noun
-      ~&  vase=q.vase
-      handle-comms
-    %json    on-ui
-    %handle-http-request         handle-shim
-    %websocket-thread            handle-ws-thread
+    %noun  handle-comms
+    %json  on-ui
     %websocket-client-message    handle-relay-ws
     %websocket-handshake         handle-ws-handshake
     %websocket-server-message    handle-ws-msg
+    :: %websocket-thread            handle-ws-thread
+    :: :: %handle-http-request         handle-shim
   ==  
   +$  ws-msg  [@ud websocket-message:eyre]
   ++  handle-ws-thread
@@ -77,16 +75,18 @@
   ++  handle-relay-ws
     ^-  (quip card:agent:gall agent:gall)
     =/  msg  !<(ws-msg vase)
-    ~&  handle-relay-ws=-.msg
+    =/  wid  -.msg
+    ~&  handle-relay-ws=wid
+    =/  relay  (~(get by relays) wid)
+    ?~  relay  ~&  >>>  "wid not found in relays state"  `this
     =/  m=websocket-message:eyre  +.msg
-    ?~  message.m  `this
+    ?~  message.m  ~&  "empty message"  `this
     =/  =octs  u.message.m
     =/  urelay-msg  (parse-body:nclient q.octs)
-    ?~  urelay-msg  `this
-    ~&  >>  urelay-msg
-    =/  relay-url  (get-url:ws -.msg bowl)
-    =^  cards  state  (handle-ws:mutan relay-url u.urelay-msg)
+    ?~  urelay-msg  ~&  "msg parse error"  `this
+    =^  cards  state  (handle-ws:mutan wid u.relay u.urelay-msg)
     [cards this]
+
   ++  handle-ws-handshake
     ^-  (quip card:agent:gall agent:gall)
     =/  order  !<([@ inbound-request:eyre] vase)
@@ -119,7 +119,9 @@
       ^-  (quip card:agent:gall agent:gall)
       =/  cs  (ui-ws-res:lib -.order wsdata)  
       [cs this]
+
     ++  handle-nostr-client-ws 
+      ::  We are the server here
       ^-  (quip card:agent:gall agent:gall)
       =/  jsonm  (de:json:html wsdata)
       ?~  jsonm  `this
@@ -144,23 +146,6 @@
         %eng  (handle-eng:coms +.pok)
       ==
     [cs this]
-  :: DEPRECATED
-  ++  handle-shim
-    ^-  (quip card:agent:gall agent:gall)
-    =/  order  !<(order:web vase)
-    ~&  request.req.order
-    ?:  .=(url.request.req.order '/nostr-shim')
-      =/  msg  (parse-msg:nclient order)
-      ?~  msg  `this
-      :: =^  cards  state  (handle-shim-msg:mutat u.msg)
-      =/  relay-url  ''
-      =^  cards  state  (handle-ws:mutan relay-url u.msg)
-      [cards this]
-
-    ::
-    =/  cards  (rout:rout order)
-    [cards this]
-  
   ::
   ++  on-ui
     =/  jon=json  !<(json vase)
@@ -173,8 +158,8 @@
       %prof  (handle-prof +.u.upoke)
       %rela  (handle-rela +.u.upoke)
       %post  =^  cs  state
-             (handle-post:mutat +.u.upoke)
-            [cs this]
+               (handle-post:mutat +.u.upoke)
+             [cs this]
     ==
   ++  handle-cycle-keys
         =/  ks  (gen-keys:nostr-keys eny.bowl)
@@ -213,10 +198,14 @@
     ==
   ++  handle-rela  |=  poke=relay-poke:ui:sur
     ?-  -.poke
-      %add  =.  relays  (~(put by relays) +.poke *relay-stats:nsur)
-            `this
-      %del  =.  relays  (~(del by relays) +.poke)
-            `this
+      %add
+            :_  this
+            ::  TODO good UI for this
+            :~  (connect:ws +.poke bowl)
+            ==
+      %del
+            =^  cs  state  (unset-relay:mutan +.poke)
+            [cs this]
       ::
       %sync  =^  cs  state  get-posts:nclient
              [cs this]
@@ -237,15 +226,38 @@
   ++  debug  |=  noun=*
     ?+  noun  `this
       %iris
+        =/  endpoint  'ws://localhost:8888'
         :_  this
-        =/  =task:iris  [%websocket-connect dap.bowl 'ws://localhost:8888']
-        :~  [%pass /iris-test %arvo %i task]
+        :~  (connect:ws endpoint bowl)
         ==
-      %wsted
-        :: =/  relay-url  'ws://localhost:8888'
-        =/  relay-url  'wss://nos.lol'
-        =^  cs  state  (test-connection:nclient relay-url)
+      %iris2
+        =/  endpoint  'wss://nos:lol'
+        :_  this
+        :~  (connect:ws endpoint bowl)
+        ==
+      %wstest
+        :: =/  url  'ws://localhost:8888'
+        =/  url  'wss://nos.lol'
+        =^  cs  state  (test-connection:nclient url)
         [cs this]
+      %wsl
+        =/  l  (list-connected:ws bowl)
+        ~&  >  ws-connections=l
+        `this
+      %wsc
+        =.  relays  ~
+        `this
+      %ws-close
+        =/  sockets  .^((map @ud websocket-connection:iris) %ix /(scot %p our.bowl)/ws/(scot %da now.bowl))
+        ~&  iris-sockets=sockets
+        :_  this
+        =/  inc-subs  ~(tap by sup.bowl)
+        =/  ws-paths  %+  roll  inc-subs  |=  [i=[=duct =ship =path] acc=(list path)]
+          ?.  ?=([%websocket-client *] path.i)  acc
+          ~&  bitt=i
+          [path.i acc]
+        :~  [%give %fact ws-paths %disconnect !>(~)]
+        ==
       %irisf
         :_  this
         =/  inc-subs  ~(tap by sup.bowl)
@@ -267,6 +279,28 @@
       =/  res  (check-connected:ws 'ws://localhost:8888' bowl)
       ~&  res
       `this
+      %nostr
+        =/  rls  ~(tap by relays)
+        =/  m  |-  ?~  rls  ~
+          =/  stats=relay-stats:nsur  +.i.rls
+          ~&  >  ws-endpoint=url.stats
+          ~&  >>  conn=start.stats
+          =/  reqs  ~(tap by reqs.stats)
+          =/  mm  |-  ?~  reqs  ~
+            =/  sub  -.i.reqs
+            ~&  event-stats=+.i.reqs
+            $(reqs t.reqs)
+          $(rls t.rls)
+        ~&  >  "nostr feed"
+        =/  nf  (tap:norm:sur nostr-feed)
+        =/  nff  |-  ?~  nf  ~
+          =/  ev=event:nsur  +.i.nf
+          ~&  meta=[kind=kind.ev id=id.ev pubkey=pubkey.ev ts=created-at.ev]
+          ~&  >>  ev-txt=content.ev
+          
+          $(nf t.nf)
+        
+        `this
       %wtf
         =/  lol=(unit @)  ~
         =/  l  ~|  "wtf"  (need lol)
@@ -383,7 +417,9 @@
   ~&  on-watch=`path`pole
   ?+  pole  !!
   [%http-response *]  `this
-  [%websocket-client wids=@t ~]  `this
+  [%websocket-client wids=@t ~]
+    =^  cs  state  (set-relay:mutan (slav %ud wids.pole))
+    [cs this]
   [%websocket-server *]  `this
   [%follow ~]  :_  this  (give-feed:coms pole)
   [%beg %feed ~]
@@ -445,6 +481,9 @@
   |~  [wire=(pole knot) =sign-arvo]
   ^-  (quip card:agent:gall agent:gall)
   ~&  >>  on-arvo=[`path`wire -.sign-arvo +<.sign-arvo]
+  ?:  ?=(%iris -.sign-arvo)
+    :: ~&  >  +.sign-arvo
+    `this
   ?+  wire  `this
     [%ws %to-nostr-relay *]  
       ?>  ?=([%khan %arow *] sign-arvo)

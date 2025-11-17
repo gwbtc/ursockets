@@ -1,4 +1,15 @@
 |%
+  ++  connect  |=  [endpoint=@t =bowl:gall]
+    ^-  card:agent:gall
+    =/  =task:iris  [%websocket-connect dap.bowl endpoint]
+    [%pass /ws-connect %arvo %i task]
+
+  ++  disconnect  |=  wid=@ud
+    ^-  card:agent:gall
+    =/  =path  /websocket-client/(scot %ud wid)
+    =/  ws-paths  :~(path)
+    [%give %fact ws-paths %disconnect !>(~)]
+  ::
   ++  give-ws-payload-client
     |=  [wid=@ msg=websocket-message:eyre]
     ^-  card:agent:gall
@@ -32,15 +43,18 @@
     :~
     (give-ws-payload-server wid response)
     ==
-
+::  %iris scries
+  +$  socket  [wid=@ud url=@t status=$?(%accepted %pending)]
   ++  get-url
-    |=  [wid=@ud =bowl:gall]  ^-  @t
+    |=  [wid=@ud =bowl:gall]  ^-  (unit socket)
     =/  scry-path=path  /(scot %p our.bowl)/ws/(scot %da now.bowl)/id/(scot %ud wid)
-    =/  conn  .^(websocket-connection:iris %ix scry-path)
-    url.conn
+    .^((unit socket) %ix scry-path)
   ++  check-connected
-    |=  [url=@t =bowl:gall]  ^-  (unit websocket-connection:iris)
+    |=  [url=@t =bowl:gall]  ^-  (unit socket)
     =/  scry-path=path  /(scot %p our.bowl)/ws/(scot %da now.bowl)/url/[url]
-    =/  conn  .^((unit websocket-connection:iris) %ix scry-path)
-    conn
+    .^((unit socket) %ix scry-path)
+  ++  list-connected
+    |=  =bowl:gall  ^-  (list socket)
+    =/  scry-path=path  /(scot %p our.bowl)/ws/(scot %da now.bowl)/app
+    .^((list socket) %ix scry-path)
 --

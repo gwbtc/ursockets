@@ -4,7 +4,7 @@
 +$  state-0
   $:  %0
       :: nostr config
-      relays=(map @t relay-stats:nostr)
+      relays=(map @ud relay-stats:nostr)  ::  key is the websocket id
       keys=(lest keys:nostr)  :: cycled, i.keys is current one
       ::  own feed
       feed=feed:trill
@@ -18,6 +18,8 @@
       following2=feed:trill
       follow-graph=(map user (set user))
     :: TODO global feed somehow?
+    :: TODO use %hark agent instead?
+      :: notifications=((mop @da notif) gth)
 
   ==
 +$  nostr-feed  ((mop @ud event:nostr) gth)
@@ -34,6 +36,21 @@ $:  pub=(unit @ux)
 +$  user  $%([%urbit p=@p] [%nostr p=@ux])
 
 +$  follow  [pubkey=@ux name=@t relay=(unit @t)]
++$  notif
+  $%  [%prof =user prof=user-meta:nostr]      :: profile change
+      [%fols =user accepted=? msg=@t]             :: follow response 
+      [%beg beg=begs-poke:ui accepted=? msg=@t]   :: feed/post data request response
+      [%fans p=user]                       :: someone folowed me
+      [%post =pid:tp =user action=post-notif]               :: someone replied, reacted etc.
+  ==
++$  post-notif
+$%   [%reply p=post:tp]
+     [%quote p=post:tp]
+     [%reaction reaction=@t]
+     :: [%rt id=@ux pubkey=@ux relay=@t]  :: NIP-18
+     [%rp ~]  :: NIP-18
+     [%del ~]
+==
 ++  ui
   |%
   +$  poke
@@ -43,6 +60,7 @@ $:  pub=(unit @ux)
       [%prof prof-poke]
       [%keys ~]  ::  cycle-keys
       [%rela relay-poke]
+      :: [%notif @da]  :: dismiss notification
   ==
   +$  begs-poke
   $%  [%feed p=@p]
@@ -67,7 +85,7 @@ $:  pub=(unit @ux)
   ==
   +$  relay-poke
   $%  [%add p=@t]
-      [%del p=@t]
+      [%del p=@ud]
       ::
       [%sync ~]
       ::  send event for... relaying
@@ -79,6 +97,7 @@ $:  pub=(unit @ux)
       [%post post-fact]
       [%enga p=post-wrapper reaction=*]
       [%fols fols-fact]
+      [%hark =notif]
   ==
   +$  post-fact
   $%  [%add post-wrapper]
