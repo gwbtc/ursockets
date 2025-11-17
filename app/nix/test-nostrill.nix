@@ -60,7 +60,7 @@ let
 
   pokeReply = ship:
     pkgs.writeTextFile {
-      name = ":nostrill-json-post.hoon";
+      name = ":nostrill-json-reply.hoon";
       text = ''
         ${poke}
         =/  m  (strand ,vase)
@@ -139,47 +139,33 @@ let
         ;<  now=@da  bind:m  get-time
         =/  pax  /(scot %p ship)/nostrill/(scot %da now)/feed/(scot %p ~${ship})/noun
         =/  result  
-        %-  lent  
-        .^((list @da) %gx pax)
-        ~&  >>  result/result
+          %-  lent  
+          .^((list @da) %gx pax)
         =/  got  =(result ${res})
         (pure:m !>(got))
       '';
     };
 
-  scryThread = ship:
+  scryChildren = ship: ex:
     pkgs.writeTextFile {
-      name = "scry-${ship}-feed.hoon";
+      name = "scry-${ship}-children.hoon";
       text = ''
         ${poke}
         =/  m  (strand ,vase)
         ;<  [=ship =desk =case]  bind:m  get-beak
         ;<  now=@da  bind:m  get-time
         =/  pax-feed  /(scot %p ship)/nostrill/(scot %da now)/feed/(scot %p ~${ship})/noun
-        =/  id=@t
-          %-  crip 
-          %-  (w-co:co 1)
-          %-  rear
-          ^.((list @da) %gx pax-feed)
-        =/  pax  /(scot %p ship)/nostrill/(scot %da now)/thread/(scot %p ~${ship})/[id]/json
-        =/  result  .^(json %gx pax)
-        ~&  >>  result 
-        (pure:m !>(result))
+        =/  feed-list=(list @da)  .^((list @da) %gx pax-feed)
+        ?~  feed-list
+          ~&  >>  'feed is empty!'
+          (pure:m !>(=(${ex} 0)))
+        =/  id=@t  (scot %da (rear feed-list))
+        =/  pax  /(scot %p ship)/nostrill/(scot %da now)/children/(scot %p ~${ship})/[id]/noun
+        =/  result  .^((list @da) %gx pax)
+        =/  got  =(${ex} (lent result))
+        (pure:m !>(got))
       '';
     };
-
-  vatsThread = pkgs.writeTextFile {
-    name = "vats.hoon";
-    text = ''
-      ${poke}
-      =/  m  (strand ,vase)
-      ;<  =bowl:gall  bind:m  get-bowl
-      ;<  our=@p  bind:m  get-our  
-      ;<  now=@da  bind:m  get-time
-      =/  report=tang  (report-vats our now [%nostril ~] %$ |)
-      (pure:m !>((crip ~(ram re [%rose [~ ~ ~] report]))))
-    '';
-  };
 
 
 in pkgs.stdenvNoCC.mkDerivation {
@@ -266,10 +252,11 @@ in pkgs.stdenvNoCC.mkDerivation {
     #  Poking ~fun with reply post to ~bus
     echo ">>> TEST: fun-poke-nostrill-json-reply" | tee -a test-output.log
     ${click} -kp -i ${pokeReply "bus"} ./fun 2>&1 | tee -a test-output.log
-    sleep 1
+    sleep 2
 
-    #  Scrying thread on ~bus
-    ${click} -kp -i ${scryThread "bus"} ./bus 2>&1 | tee -a test-output.log
+    #  Scrying children from latest post to see if we got reply from ~fun on ~bus
+    echo ">>> TEST: bus-scry-nostrill-json-reply" | tee -a test-output.log
+    ${click} -kp -i ${scryChildren "bus" "1"} ./bus 2>&1 | tee -a test-output.log
     sleep 1
 
 

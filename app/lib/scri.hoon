@@ -75,4 +75,35 @@
   =/  =fc:feed  [nf ns ne]
   =/  profile  (~(get by profiles.state) user)
   [%ok %feed fc profile]
+::
+++  sfeedids
+  |=  hs=@ta
+  ^-  (unit (unit cage))
+  :^  ~  ~  %noun  
+  !>
+  =/  host=(unit @p)  (slaw %p hs)
+  ?~  host  ~
+  =/  fed=(unit feed:feed)  
+    ?:  .=(u.host our.bowl)  `feed.state  
+    (~(get by following.state) urbit+u.host)
+  ?~  fed  ~
+  %-  sort  :_  gth
+  %+  turn  (tap:orm:feed u.fed)
+  |=([key=@da val=*] key)
+::
+++  schildren
+  |=  [hs=@t i=@t]
+  ^-  (unit (unit cage))
+  :^  ~  ~  %noun  
+  !>
+  =/  host=(unit @p)  (slaw %p hs)
+  =/  id=(unit @da)  (slaw %da i)
+  ?~  host  ~
+  ?~  id  ~
+  =/  fed=(unit feed:feed)  
+    ?:  .=(u.host our.bowl)  `feed.state  
+    (~(get by following.state) urbit+u.host)
+  ?~  fed  ~
+  =/  p=(unit post:post)  (get:orm:feed u.fed u.id)
+  ?~  p  ~  ~(tap in children.u.p)
 --
