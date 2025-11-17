@@ -14,7 +14,7 @@
         pkgs = import nixpkgs { inherit system; };
 
         # !! Add path to local urbit binary
-        urbitBin = ./urbit
+        urbitBin = ./urbit;
         # !! Add current nostril pill to repo
         pill = ./nostril.pill;
 
