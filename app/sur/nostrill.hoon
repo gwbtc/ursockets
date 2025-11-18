@@ -88,17 +88,29 @@ $%   [%reply p=post:tp]
   $%  [%add p=@t]
       [%del p=@ud]
       ::
-      [%sync ~]
+      relay-handling
+  ==
+  +$  relay-handling
+  $%  [%sync ~]
+      [%user pubkey=@ux]
+      [%thread id=@ux]
       ::  send event for... relaying
       [%send host=@p id=@ relays=(list @t)]
   ==
   :: facts
   +$  fact
-  $%  [%nostr feed=nostr-feed]
+  $%  [%nostr nostr-fact]
       [%post post-fact]
       [%enga p=post-wrapper reaction=*]
       [%fols fols-fact]
       [%hark =notif]
+  ==
+  +$  nostr-fact
+  $%  [%feed feed=nostr-feed]
+      [%user feed=nostr-feed]
+      [%thread feed=nostr-feed]
+      [%event event:nostr]
+      [%relays (map @ relay-stats:nostr)]
   ==
   +$  post-fact
   $%  [%add post-wrapper]

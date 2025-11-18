@@ -77,10 +77,10 @@
 
 
   ++  tags
-  |=  tm=(map @t (set @t))  ^-  (list [@t json])  ::  entries to the filter obeject
-    %+  turn  ~(tap by tm)    |=  [key=@t values=(set @t)]
+  |=  tm=(map @t (list @t))  ^-  (list [@t json])  ::  entries to the filter obeject
+    %+  turn  ~(tap by tm)    |=  [key=@t values=(list @t)]
       =/  nkey  (cat 3 '#' key)
-      [nkey %a (turn ~(tap in values) cord:en:common)]
+      [nkey %a (turn values cord:en:common)]
 
   ++  user-meta
   |=  meta=user-meta:sur
@@ -212,9 +212,8 @@
         ::   ::  anything else is a tag
             =/  vl  ((ar so) +.entry)
             ?~  vl  f
-            =/  ctags  ?~  tags.f  *(map @t (set @t))  u.tags.f
-            =/  values  (silt u.vl)
-            =/  ntags  (~(put by ctags) -.entry values)
+            =/  ctags  ?~  tags.f  *(map @t (list @t))  u.tags.f
+            =/  ntags  (~(put by ctags) -.entry u.vl)
             f(tags `ntags)
         $(entries t.entries)
       
