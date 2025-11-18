@@ -87,6 +87,9 @@ struct _u3_cws {
   wslay_event_context_ptr wsl_w;       // wslay context
   struct wslay_event_callbacks wcb_u;  // wslay callbacks
   c3_y*                out_y;          // pending write buffer
+  c3_o                 wsl_on;         // inside wslay send/recv
+  c3_o                 clo_ev;         // send disconnect event on deferred close
+  c3_o                 clo_on;         // deferred close pending
   struct _u3_cws*      nex_u;          // next in list
   struct _u3_cws*      pre_u;          // prev in list
 };
@@ -982,6 +985,29 @@ _cttp_ws_close(u3_cws* cws_u, c3_o send_event)
     return;
   }
 
+  if ( c3y == cws_u->wsl_on ) {
+    if ( c3y == send_event ) {
+      cws_u->clo_ev = c3y;
+    }
+    cws_u->clo_on = c3y;
+    return;
+  }
+
+  if ( cws_u->ceq_u ) {
+    u3_creq* ceq_u = cws_u->ceq_u;
+    cws_u->ceq_u = 0;
+
+    if ( ceq_u->wsu_u == cws_u ) {
+      ceq_u->wsu_u = 0;
+
+      if ( ceq_u->cli_u ) {
+        h2o_http1client_cancel(ceq_u->cli_u);
+      }
+
+      _cttp_creq_free(ceq_u);
+    }
+  }
+
   if ( u3_cws_closed != cws_u->sat_e ) {
     u3l_log("cttp: ws close wid=%u send=%c", cws_u->wid_l, (c3y==send_event?'y':'n'));
     cws_u->sat_e = u3_cws_closed;
@@ -1021,6 +1047,22 @@ _cttp_ws_close(u3_cws* cws_u, c3_o send_event)
   c3_free(cws_u->url_c);
 
   c3_free(cws_u);
+}
+
+static c3_o
+_cttp_ws_flush_close(u3_cws* cws_u)
+{
+  if ( c3n == cws_u->clo_on ) {
+    return c3n;
+  }
+
+  c3_o send_event = cws_u->clo_ev;
+
+  cws_u->clo_on = c3n;
+  cws_u->clo_ev = c3n;
+
+  _cttp_ws_close(cws_u, send_event);
+  return c3y;
 }
 
 static ssize_t
@@ -1160,7 +1202,13 @@ _cttp_ws_proceed(u3_cws* cws_u)
     if ( !h2o_socket_is_writing(cws_u->sok_u) &&
          wslay_event_want_write(cws_u->wsl_w) )
     {
+      cws_u->wsl_on = c3y;
       int sas_i = wslay_event_send(cws_u->wsl_w);
+      cws_u->wsl_on = c3n;
+
+      if ( c3y == _cttp_ws_flush_close(cws_u) ) {
+        return;
+      }
 
       if ( 0 == sas_i ) {
         handled = c3y;
@@ -1181,7 +1229,13 @@ _cttp_ws_proceed(u3_cws* cws_u)
     }
 
     if ( cws_u->sok_u->input->size && wslay_event_want_read(cws_u->wsl_w) ) {
+      cws_u->wsl_on = c3y;
       int ras_i = wslay_event_recv(cws_u->wsl_w);
+      cws_u->wsl_on = c3n;
+
+      if ( c3y == _cttp_ws_flush_close(cws_u) ) {
+        return;
+      }
 
       if ( 0 == ras_i ) {
         handled = c3y;
@@ -1376,6 +1430,9 @@ _cttp_ws_start(u3_cttp* ctp_u, c3_l wid_l, u3_atom url)
 
   cws_u->wid_l = wid_l;
   cws_u->sat_e = u3_cws_pending;
+  cws_u->wsl_on = c3n;
+  cws_u->clo_ev = c3n;
+  cws_u->clo_on = c3n;
 
   _cttp_ws_generate_key(cws_u);
   _cttp_ws_link(ctp_u, cws_u);
