@@ -41,7 +41,6 @@ function Footer({ poast, refetch }: PostProps) {
     // Scroll to top where composer is located
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  console.log({ poast });
   const childrenCount = poast.children
     ? poast.children.length
       ? poast.children.length

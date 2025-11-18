@@ -555,6 +555,13 @@ h6 {
       & .author {
         flex: unset;
         gap: 0;
+        margin: 0.7rem 0.3rem;
+        font-weight: 700;
+        flex-grow: 1;
+
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
 
         & .name {
           display: flex;
@@ -564,6 +571,11 @@ h6 {
             font-family: "Source Code Pro";
           }
         }
+      }
+
+      post-body {
+        max-height: 300px;
+        overflow-y: auto;
       }
 
       & .date {

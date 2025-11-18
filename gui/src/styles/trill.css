@@ -25,10 +25,6 @@
   /* min-height: 150px; */
 }
 
-.trill-post .author {
-  flex: 1 0 auto;
-}
-
 .trill-reply-thread {
   border-top: 1px solid var(--text-color);
 }
@@ -74,14 +70,6 @@
   font-size: 1rem;
 }
 
-.trill-post .p-only {
-  margin: 0.7rem 0.3rem;
-  font-weight: 700;
-}
-
-.trill-post .p {
-  /* margin-top: -5px; */
-}
 
 .trill-post a {
   text-decoration: 0;

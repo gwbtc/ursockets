@@ -22,7 +22,7 @@ export interface PostProps {
   profile?: UserProfile;
 }
 function Post(props: PostProps) {
-  console.log("post", props);
+  // console.log("post", props);
   const { poast } = props;
   if (!poast || poast.contents === null) {
     return null;
@@ -60,7 +60,7 @@ function TrillPost(props: PostProps) {
     setModal(<ShipModal ship={poast.author} />);
   }
   const avatar = profile ? (
-    <div className="avatar cp" role="link" onMouseUp={openModal}>
+    <div className="avatar sigil cp" role="link" onMouseUp={openModal}>
       <img src={profile.picture} />
     </div>
   ) : (

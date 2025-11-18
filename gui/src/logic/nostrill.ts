@@ -36,12 +36,13 @@ export function eventToPoast(event: Event): Poast | null {
     time: ts,
     engagement: engagementBunt,
     children: [],
+    event,
   };
   for (const tag of event.tags) {
     const f = tag[0];
     if (!f) continue;
     const ff = f.toLowerCase();
-    console.log("tag", ff);
+    // console.log("tag", ff);
     if (ff === "e") {
       const [, eventId, _relayURL, marker, _pubkey, ..._] = tag;
       // TODO

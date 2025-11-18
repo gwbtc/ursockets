@@ -90,6 +90,9 @@ export const useStore = creator((set, get) => ({
             set({ following });
           }
         }
+        if ("nostr" in data.fact) {
+          set({ nostrFeed: data.fact.nostr });
+        }
       }
     });
     set({ api });
