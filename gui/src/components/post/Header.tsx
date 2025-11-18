@@ -8,12 +8,12 @@ function Header(props: PostProps) {
   // console.log(props.poast.author.length, "length");
   function go(e: React.MouseEvent) {
     e.stopPropagation();
-    navigate(`/feed/${poast.host}`);
+    navigate(`/u/${poast.host}`);
   }
   function openThread(e: React.MouseEvent) {
     e.stopPropagation();
     const sel = window.getSelection()?.toString();
-    if (!sel) navigate(`/feed/${poast.host}/${poast.id}`);
+    if (!sel) navigate(`/t/${poast.host}/${poast.id}`);
   }
   const { poast } = props;
   const name = profile ? (

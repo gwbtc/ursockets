@@ -14,9 +14,8 @@ const queryClient = new QueryClient();
 function App() {
   const [loading, setLoading] = useState(true);
   console.log("NOSTRILL INIT");
-  const { init, modal } = useLocalState((s) => ({
+  const { init } = useLocalState((s) => ({
     init: s.init,
-    modal: s.modal,
   }));
   useEffect(() => {
     init().then((_res: any) => {
@@ -36,7 +35,6 @@ function App() {
         <QueryClientProvider client={queryClient}>
           {/* {isMobile ? <MobileUI /> : <DesktopUI />} */}
           <Router />
-          {modal && modal}
           <Toaster position="top-center" />
         </QueryClientProvider>
       </ThemeProvider>

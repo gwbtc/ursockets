@@ -91,7 +91,12 @@ export const useStore = creator((set, get) => ({
           }
         }
         if ("nostr" in data.fact) {
-          set({ nostrFeed: data.fact.nostr });
+          if ("feed" in data.fact.nostr)
+            set({ nostrFeed: data.fact.nostr.feed });
+          if ("relays" in data.fact.nostr)
+            set({ relays: data.fact.nostr.relays });
+          // if ("user" in data.fact.nostr)
+          // if ("thread" in data.fact.nostr)
         }
       }
     });

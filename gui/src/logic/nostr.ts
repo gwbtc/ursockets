@@ -21,6 +21,20 @@ export function generateNprofile(pubkey: string) {
   const nprofile = nip19.nprofileEncode(prof);
   return nprofile;
 }
+export function isValidNostrKey(key: string): boolean {
+  try {
+    nip19.decode(key);
+    return true;
+  } catch (e) {
+    try {
+      nip19.npubEncode(key);
+      return true;
+    } catch (e2) {
+      console.error(e2, "not valid nostr key");
+      return false;
+    }
+  }
+}
 
 // let sk = generateSecretKey()
 // let nsec = nip19.nsecEncode(sk)

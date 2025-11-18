@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import useLocalState from "@/state/state";
 import Icon from "@/components/Icon";
 import spinner from "@/assets/triangles.svg";
-import { ErrorPage } from "@/Router";
+import { ErrorPage } from "@/pages/Error";
 import "@/styles/trill.css";
 import "@/styles/feed.css";
 import Post from "@/components/post/Post";

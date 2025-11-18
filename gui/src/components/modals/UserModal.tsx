@@ -1,3 +1,5 @@
+import "@/styles/Profile.css";
+import "@/styles/UserModal.css";
 import Modal from "./Modal";
 import Avatar from "../Avatar";
 import Icon from "@/components/Icon";
@@ -10,14 +12,15 @@ import { generateNprofile } from "@/logic/nostr";
 import { useState } from "react";
 
 export default function ({ userString }: { userString: string }) {
-  const { setModal, api, pubkey, profiles, following, followers } = useLocalState((s) => ({
-    setModal: s.setModal,
-    api: s.api,
-    pubkey: s.pubkey,
-    profiles: s.profiles,
-    following: s.following,
-    followers: s.followers,
-  }));
+  const { setModal, api, pubkey, profiles, following, followers } =
+    useLocalState((s) => ({
+      setModal: s.setModal,
+      api: s.api,
+      pubkey: s.pubkey,
+      profiles: s.profiles,
+      following: s.following,
+      followers: s.followers,
+    }));
   const [_, navigate] = useLocation();
   const [loading, setLoading] = useState(false);
 
@@ -64,25 +67,28 @@ export default function ({ userString }: { userString: string }) {
   }
 
   async function handleFollow(e: React.MouseEvent) {
+    if ("error" in user) return;
     e.stopPropagation();
     if (!api) return;
 
     setLoading(true);
     try {
       if (isFollowing) {
-        const result = await api.unfollow(userString);
-        if ("ok" in result) {
-          toast.success(`Unfollowed ${profile?.name || userString}`);
-        } else {
-          toast.error(result.error);
-        }
+        const result = await api.unfollow(user);
+        console.log(result);
+        // if ("ok" in result) {
+        //   toast.success(`Unfollowed ${profile?.name || userString}`);
+        // } else {
+        //   toast.error(result.error);
+        // }
       } else {
-        const result = await api.follow(userString);
-        if ("ok" in result) {
-          toast.success(`Following ${profile?.name || userString}`);
-        } else {
-          toast.error(result.error);
-        }
+        const result = await api.follow(user);
+        console.log(result);
+        // if ("ok" in result) {
+        //   toast.success(`Following ${profile?.name || userString}`);
+        // } else {
+        //   toast.error(result.error);
+        // }
       }
     } catch (err) {
       toast.error("Action failed");
@@ -101,9 +107,10 @@ export default function ({ userString }: { userString: string }) {
   }
 
   const displayName = profile?.name || ("urbit" in user ? user.urbit : "Anon");
-  const truncatedId = userString.length > 20
-    ? `${userString.slice(0, 10)}...${userString.slice(-8)}`
-    : userString;
+  const truncatedId =
+    userString.length > 20
+      ? `${userString.slice(0, 10)}...${userString.slice(-8)}`
+      : userString;
 
   // Check if a string is a URL
   const isURL = (str: string): boolean => {
@@ -111,7 +118,7 @@ export default function ({ userString }: { userString: string }) {
       new URL(str);
       return true;
     } catch {
-      return str.startsWith('http://') || str.startsWith('https://');
+      return str.startsWith("http://") || str.startsWith("https://");
     }
   };
 
@@ -121,7 +128,7 @@ export default function ({ userString }: { userString: string }) {
   // Filter out banner from other fields since we display it separately
   const otherFields = profile?.other
     ? Object.entries(profile.other).filter(
-        ([key]) => key.toLowerCase() !== 'banner'
+        ([key]) => key.toLowerCase() !== "banner",
       )
     : [];
 
@@ -130,7 +137,7 @@ export default function ({ userString }: { userString: string }) {
       <div className="user-modal">
         {/* Banner Image */}
         {bannerImage && (
-          <div className="user-modal-banner">
+          <div className="user-banner">
             <img src={bannerImage} alt="Profile banner" />
           </div>
         )}
@@ -174,7 +181,9 @@ export default function ({ userString }: { userString: string }) {
                 <span className="badge badge-nostr">Nostr</span>
               )}
               {itsMe && <span className="badge badge-me">You</span>}
-              {isFollower && !itsMe && <span className="badge badge-follows">Follows you</span>}
+              {isFollower && !itsMe && (
+                <span className="badge badge-follows">Follows you</span>
+              )}
             </div>
           </div>
         </div>
@@ -213,7 +222,11 @@ export default function ({ userString }: { userString: string }) {
                     onClick={(e) => e.stopPropagation()}
                   >
                     {value}
-                    <Icon name="nostr" size={12} className="external-link-icon" />
+                    <Icon
+                      name="nostr"
+                      size={12}
+                      className="external-link-icon"
+                    />
                   </a>
                 ) : (
                   <span className="field-value">{value}</span>
@@ -235,21 +248,20 @@ export default function ({ userString }: { userString: string }) {
               {loading ? "..." : isFollowing ? "Following" : "Follow"}
             </button>
           )}
+          <>
+            <button
+              className="action-btn secondary"
+              onClick={() => {
+                navigate(`/u/${userString}`);
+                close();
+              }}
+            >
+              <Icon name="home" size={16} />
+              View Feed
+            </button>
+          </>
 
-          {"urbit" in user ? (
-            <>
-              <button
-                className="action-btn secondary"
-                onClick={() => {
-                  navigate(`/feed/${userString}`);
-                  close();
-                }}
-              >
-                <Icon name="home" size={16} />
-                View Feed
-              </button>
-            </>
-          ) : (
+          {"nostr" in user ? (
             <button
               className="action-btn secondary"
               onClick={handleAvatarClick}
@@ -257,7 +269,7 @@ export default function ({ userString }: { userString: string }) {
               <Icon name="nostr" size={16} />
               View on Primal
             </button>
-          )}
+          ) : null}
         </div>
       </div>
     </Modal>

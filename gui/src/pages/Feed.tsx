@@ -1,35 +1,30 @@
-// import spinner from "@/assets/icons/spinner.svg";
 import "@/styles/trill.css";
 import "@/styles/feed.css";
-import UserLoader from "./User";
 import PostList from "@/components/feed/PostList";
 import useLocalState from "@/state/state";
 import { useParams } from "wouter";
 import spinner from "@/assets/triangles.svg";
 import { useState } from "react";
 import Composer from "@/components/composer/Composer";
-import { ErrorPage } from "@/Router";
+import { ErrorPage } from "@/pages/Error";
 import NostrFeed from "@/components/nostr/Feed";
 
 type FeedType = "global" | "following" | "nostr";
 function Loader() {
-  // const { api } = useLocalState();
   const params = useParams();
   console.log({ params });
-  // const [loc, navigate] = useLocation();
-  // console.log({ loc });
-  // const our = api!.airlock.ship;
+  if (!params.taip) return <FeedPage t="nostr" />;
   if (params.taip === "global") return <FeedPage t={"global"} />;
+  if (params.taip === "following") return <FeedPage t={"following"} />;
   if (params.taip === "nostr") return <FeedPage t={"nostr"} />;
   // else if (param === FeedType.Rumors) return <Rumors />;
   // else if (param === FeedType.Home) return <UserFeed p={our} />;
-  else if (params.taip) return <UserLoader userString={params.taip!} />;
   else return <ErrorPage msg="No such page" />;
 }
 function FeedPage({ t }: { t: FeedType }) {
   const [active, setActive] = useState<FeedType>(t);
   return (
-    <main>
+    <>
       <div id="top-tabs">
         <div
           className={active === "global" ? "active" : ""}
@@ -60,7 +55,7 @@ function FeedPage({ t }: { t: FeedType }) {
           <NostrFeed />
         ) : null}
       </div>
-    </main>
+    </>
   );
 }
 //   {active === "global" ? (

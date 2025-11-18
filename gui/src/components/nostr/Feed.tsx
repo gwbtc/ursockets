@@ -14,6 +14,7 @@ export default function Nostr() {
   }));
   console.log({ relays });
   const [isSyncing, setIsSyncing] = useState(false);
+  console.log({ nostrFeed });
   const feed = eventsToFc(nostrFeed);
   console.log({ feed });
   const refetch = () => feed;
