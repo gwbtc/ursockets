@@ -193,6 +193,9 @@
       %del
         =.  profiles  (~(del by profiles) [%urbit our.bowl])
         `this
+      %fetch
+        ::  TODO
+        `this
     ==
   ++  handle-rela  |=  poke=relay-poke:ui:sur
     ::  TODO fix this somehow
@@ -401,6 +404,8 @@
 ++  on-leave
   |~  =(pole knot)
   ^-  (quip card:agent:gall agent:gall)
+  ~&  >>>  on-leave=pole
+  ::  TODO fix the relays when we doing this
   `this
 ::
 ++  on-peek

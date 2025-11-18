@@ -82,6 +82,7 @@
     ?-  -.f
       %nostr   (en-nostr +.f)
       %post    (postfact +.f)
+      %prof    (en-profiles +.f)
       %enga    (enga +.f)
       %fols    (fols +.f)
       %hark    (hark +.f)
@@ -228,6 +229,7 @@
   %-  of  :~
     add+ui-meta
     del+ul
+    fetch+(ar user)
   ==
 ++  ui-meta
   %-  ot  :~
@@ -255,25 +257,25 @@
 ++  reply
   %-  ot  :~
     content+so
-    host+(se:de:common %p)
-    id+de-atom-id
-    thread+de-atom-id
+    host+user
+    id+de-post-id
+    id+de-post-id
   ==
 ++  quote
   %-  ot  :~
     content+so
-    host+(se:de:common %p)
-    id+de-atom-id
+    host+user
+    id+de-post-id
   ==
 ++  pid
   %-  ot  :~
-    host+(se:de:common %p)
+    host+user
     id+de-atom-id
   ==
 ++  reaction
   %-  ot  :~
-    host+(se:de:common %p)
-    id+de-atom-id
+    host+user
+    id+de-post-id
     reaction+so
   ==
 ++  rt
@@ -287,6 +289,7 @@
     add+so
     del+de-atom-id
     sync+ul
+    prof+ul
     user+hex:de:common
     thread+hex:de:common
     send+de-relay-send
@@ -296,6 +299,14 @@
     id+de-atom-id
     relays+(ar so)
   ==
+
+++  de-post-id
+  |=  jon=json  ^-  (unit @)
+  ?.  ?=([%s @t] jon)  ~
+  =/  tryatom  (rush p.jon dem)
+  ?^  tryatom  tryatom
+  ^-  (unit @)  (hex:de:common jon)
+
 ++  de-atom-id
   |=  jon=json  ^-  (unit @)
   ?.  ?=([%s @t] jon)  ~

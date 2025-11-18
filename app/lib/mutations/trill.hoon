@@ -7,7 +7,11 @@
     trill=trill-post,
     njs=json-nostr,
     postlib=trill-post,
-    sr=sortug
+    sr=sortug,
+    ::
+    mutations-nostr,
+    nostr-client,
+    evlib=nostr-events
 
 |_  [=state:sur =bowl:gall]
 +$  card  card:agent:gall
@@ -47,7 +51,8 @@
       %del  =.  feed.state  =<  +  (del:orm:feed feed.state id.poke)
             ::  TODO cascade children
             =/  p  *post:post
-            =/  p  p(id id.poke, host host.poke)
+            =/  host  (user-to-atom:lib host.poke)
+            =/  p  p(id id.poke, host host)
             =/  pw  [p (some pubkey) ~ ~ profile]
             =/  jfact=fact:ui:sur  [%post %del pw]
             =/  ui-card    (update-ui:cards:lib jfact)
@@ -76,8 +81,9 @@
               fact-card
           ==
       %quote
+        =/  host  (user-to-atom:lib host.poke)
         =/  sp     (build-sp:trill our.bowl our.bowl content.poke ~ ~)
-        =/  quote  [%ref %trill host.poke /(crip (scow:sr %ud id.poke))]
+        =/  quote  [%ref %trill host /(crip (scow:sr %ud id.poke))]
         =.  contents.sp  (snoc contents.sp quote)
         =/  p=post:post
           (build-post:trill now.bowl pubkey sp)
@@ -89,7 +95,7 @@
         =/  eng-card  (poke-host:crds host.p eng-poke)
 
         :_  state
-          ?:  .=(our.bowl host.poke)
+          ?:  .=(our.bowl host)
           =/  =fact:comms  [%post %add p]
           =/  fact-card  (update-followers:cards:lib fact)
           :~  ui-card
@@ -102,7 +108,23 @@
           ==
         
       %reply
-        =/  sp     (build-sp:trill host.poke our.bowl content.poke `id.poke `thread.poke)
+        ?:  ?=(%nostr -.host.poke)  
+          =/  mutan  ~(. mutations-nostr [state bowl])
+          =/  rl  get-relay:mutan
+          ?~  rl  ~&  >>>  "no-relay!"  `state
+          =/  wid=@  -.u.rl
+          =/  relay=relay-stats:nsur  +.u.rl
+          =/  nclient  ~(. nostr-client [state bowl wid relay])
+          =/  ev  (build-event:evlib i.keys.state eny.bowl now.bowl content.poke)
+          =/  parent-id  (crip (scow:parsing:sr %ux id.poke))
+          =/  reply-tag=(list @t)  ['e' parent-id url.relay 'reply' ~]
+          =.  tags.ev  ~[reply-tag]
+          :_  state
+          :~  (send:nclient url.relay [%event ev])
+          ==
+        ::
+        =/  host  (user-to-atom:lib host.poke)
+        =/  sp     (build-sp:trill host our.bowl content.poke `id.poke `thread.poke)
         =/  p=post:post
           (build-post:trill now.bowl pubkey sp)
         =.  state  (add-to-feed p)
@@ -113,7 +135,7 @@
         =/  eng-card  (poke-host:crds host.p eng-poke)
 
         :_  state
-          ?:  .=(our.bowl host.poke)
+          ?:  .=(our.bowl host)
           =/  =fact:comms  [%post %add p]
           =/  fact-card  (update-followers:cards:lib fact)
           :~  ui-card
@@ -125,8 +147,9 @@
               eng-card
           ==
       %rp
-        =/  quote  [%ref %trill host.poke /(crip (scow:sr %ud id.poke))]
-        =/  sp     (build-sp:trill host.poke our.bowl '' ~ ~)
+        =/  host  (user-to-atom:lib host.poke)
+        =/  quote  [%ref %trill host /(crip (scow:sr %ud id.poke))]
+        =/  sp     (build-sp:trill host our.bowl '' ~ ~)
         =.  contents.sp  ~[quote]
         =/  p=post:post
           (build-post:trill now.bowl pubkey sp)
@@ -138,7 +161,7 @@
         =/  eng-card  (poke-host:crds host.p eng-poke)
 
         :_  state
-          ?:  .=(our.bowl host.poke)
+          ?:  .=(our.bowl host)
           =/  =fact:comms  [%post %add p]
           =/  fact-card  (update-followers:cards:lib fact)
           :~  ui-card
@@ -150,7 +173,8 @@
               eng-card
           ==
       %reaction
-        ?:  .=(host.poke our.bowl)
+        =/  host  (user-to-atom:lib host.poke)
+        ?:  .=(host our.bowl)
           =/  p  (got:orm:feed feed.state id.poke)
           =.  reacts.engagement.p  %+  ~(put by reacts.engagement.p)
             our.bowl  [reaction.poke *signature:post]
@@ -159,7 +183,7 @@
           =/  jfact=fact:ui:sur  [%post %add pw]
           =/  ui-card    (update-ui:cards:lib jfact)
           =/  eng-poke  [%eng (headsup-poke poke p)]
-          =/  eng-card  (poke-host:crds host.poke eng-poke)
+          =/  eng-card  (poke-host:crds host eng-poke)
 
           :_  state
             =/  =fact:comms  [%post %add p]
@@ -172,7 +196,7 @@
           =/  up  (get:orm:feed following2.state id.poke)
           ?~  up
             =/  eng-poke  [%eng (headsup-poke poke *post:post)]
-            =/  eng-card  (poke-host:crds host.poke eng-poke)
+            =/  eng-card  (poke-host:crds host eng-poke)
             :_  state  :~(eng-card)
             ::
             =/  p  u.up 

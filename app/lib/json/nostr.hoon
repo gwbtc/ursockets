@@ -42,7 +42,7 @@
   |=  e=event:sur  ^-  json
     =/  pubkey  ?.  nostr
         (hex:en:common pubkey.e)
-      =/  pubkeyt  (scow:sr %ux pubkey.e)
+      =/  pubkeyt  (scow:parsing:sr %ux pubkey.e)
       ?~  pubkeyt  !!
       [%s (crip t.pubkeyt)]
     %:  pairs

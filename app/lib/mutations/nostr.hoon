@@ -126,7 +126,7 @@
     ::  increment event count in relay state
     ~&  >>  parsing-nostr-event=kind.event
     ~&  >>  sub-id=sub-id
-    ~&  >   relay-subs=~(key by reqs.relay)
+    :: ~&  >   relay-subs=~(key by reqs.relay)
     =/  req  (~(get by reqs.relay) sub-id)
     ?~  req  ~&  >>>  "sub id not found in relay state"  `state
     
@@ -244,20 +244,22 @@
       ::  if there's a queue we setup the next subscription
       =^  cards  relay
         ?:  (is-feed:evlib filters.u.creq)
+          ~&  >>  "eose on global feed request"
           =/  c  (update-ui:cardslib [%nostr %feed nostr-feed.state])
           =^  mc  relay  get-profiles:nclient
           [[c mc] relay]
         ::
         =/  users=(set @ux)  (user-req:evlib filters.u.creq)
         ?:  (gth ~(wyt in users) 0)
+          ~&  >>>  "eose on user feed request"
           =/  poasts  (tap:norm:sur nostr-feed.state)
           =/  subset  %+  skim  poasts  |=  [* ev=event:nsur]  (~(has in users) pubkey.ev)
           =/  f  (gas:norm:sur *nostr-feed:sur subset)
           =/  c  (update-ui:cardslib [%nostr %user f])
-          =^  mc  relay  get-profiles:nclient
-          [[c mc] relay]
+          [:~(c) relay]
         =/  thread-id  (thread-req:evlib filters.u.creq)
         ?^  thread-id
+          ~&  >>>  "eose on thread request"
           =/  poasts  (tap:norm:sur nostr-feed.state)
           =/  subset  %+  skim  poasts  |=  [* ev=event:nsur]
             ?|  .=(u.thread-id id.ev)
@@ -266,8 +268,11 @@
             ==
           =/  f  (gas:norm:sur *nostr-feed:sur subset)
           =/  c  (update-ui:cardslib [%nostr %thread f])
-          =^  mc  relay  get-profiles:nclient
-          [[c mc] relay]
+          [:~(c) relay]
+        ::
+        ?:  (profs-req:evlib filters.u.creq)
+        =/  c  (update-ui:cardslib [%prof profiles.state])
+        [:~(c) relay]
         ::
         [~ relay] 
         ::
@@ -320,6 +325,7 @@
           %sync    get-posts:nclient
           %user    (get-user-feed:nclient +.rh)
           %thread  (get-thread:nclient +.rh)
+          %prof    get-profiles:nclient
           ::
       ==
      =.  relays.state  (~(put by relays.state) -.u.rl relay)

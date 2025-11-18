@@ -14,13 +14,19 @@
             ==  .y
     $(fs t.fs)
 
+++  profs-req  |=  fs=(list filter:nsur)  ^-  ?
+  |-  ?~  fs  .n
+    =/  filter  i.fs
+    ?~  kinds.filter    .n
+    ?:  (~(has in u.kinds.filter) 0)  .y
+    $(fs t.fs)
+
 ++  user-req  |=  fs=(list filter:nsur)  ^-  (set @ux)
   =|  pubkeys=(set @ux)
   |-  ?~  fs  pubkeys
     =/  filter  i.fs
     ?~  kinds.filter    ~
     ?~  authors.filter  ~
-    ?:  (~(has in u.kinds.filter) 0)  ~
     =?  pubkeys
       ?&  (~(has in u.kinds.filter) 1)
           ?=(%~ ids.filter)
@@ -100,6 +106,23 @@
     =?  ids  ?=(^ ref)  (~(put in ids) u.ref)
     $(tags t.tags)
 
+++  build-event  |=  [=keys:nsur eny=@ time=@da content=@t]  ^-  event:nsur
+  =/  ts  (to-unix-secs:jikan:sr time)
+  =/  raw=raw-event:nsur  [pub.keys ts 1 ~ content]
+  =/  event-id  (hash-event:nostr-keys raw)
+  =/  signature  (sign-event:nostr-keys priv.keys event-id eny)
+  ~&  hash-and-signed=[event-id signature]
+  =/  =event:nsur  :*
+    event-id
+    pub.keys
+    created-at.raw
+    kind.raw
+    tags.raw
+    content.raw
+    signature
+    ==
+  event
+
 ++  post-to-event  |=  [=keys:nsur eny=@ p=post:post]  ^-  event:nsur
   =/  cl  (latest-post-content:trill contents.p)
   =/  string  (crip (content-list-to-md:trill cl))
@@ -122,11 +145,10 @@
 ++  event-to-post
   |=  [=event:nsur profile=(unit user-meta:nsur) relay=(unit @t)]
     ^-  post-wrapper:sur
-
+    ::  most people on nostr don't use markdown, they just spam links like retards
     =/  cl  (tokenize:trill content.event)
     =/  ts  (from-unix:jikan:sr created-at.event)
     =/  cm=content-map:post  (init-content-map:trill cl ts)
-
    :: TODO more about @ps and stuff
     =/  p=post:post  :*
       id=ts
@@ -139,7 +161,7 @@
       read=*lock:gate
       write=*lock:gate
       *engagement:post
-      0v0
+      `@`id.event
       *signature:post
       tags=~
     ==  

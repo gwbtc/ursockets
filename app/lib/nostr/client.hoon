@@ -47,9 +47,10 @@
 ++  get-user-feed
   |=  pubkey=@ux
   =/  kinds  (silt ~[1])
-  :: =/  since  (to-unix-secs:jikan:sr last-week)
+  :: =/  since  (sub now.bowl ~d30)
+  =/  since  (sub now.bowl ~d5)
   =/  pubkeys  (silt ~[pubkey])
-  =/  =filter:nsur  [~ `pubkeys `kinds ~ ~ ~ ~]
+  =/  =filter:nsur  [~ `pubkeys `kinds ~ `since ~ ~]
   (send-req ~[filter] `.n ~)
 
 ++  get-thread  |=  id=@ux
@@ -60,6 +61,7 @@
   =/  tag  ['e' ids]
   =/  tags=(map @t (list @t))  (malt :~(tag))
   =/  f2=filter:nsur  [~ ~ `kinds `tags ~ ~ ~]
+  ~&  >>>  getting-thread=[f1 f2]
   (send-req ~[f1 f2] `.n ~)
 
 ++  get-post  |=  id=@ux
@@ -139,7 +141,7 @@
 
 ++  send
   |=  [relay-url=@t req=client-msg:nsur]  ^-  card
-    ~&  >>>  sendws=relay-url
+    ~&  >>>  sendws=[relay-url req]
     =/  req-body=json  (req:en:js req)
     =/  octs  (json-to-octs:server req-body)
     =/  wmsg=websocket-message:eyre  [1 `octs]
