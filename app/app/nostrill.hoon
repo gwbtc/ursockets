@@ -76,7 +76,6 @@
     ^-  (quip card:agent:gall agent:gall)
     =/  msg  !<(ws-msg vase)
     =/  wid  -.msg
-    ~&  handle-relay-ws=wid
     =/  relay  (~(get by relays) wid)
     ?~  relay  ~&  >>>  "wid not found in relays state"  `this
     =/  m=websocket-message:eyre  +.msg
@@ -292,6 +291,8 @@
             $(reqs t.reqs)
           $(rls t.rls)
         ~&  >  "nostr feed"
+      `this
+      %nf
         =/  nf  (tap:norm:sur nostr-feed)
         =/  nff  |-  ?~  nf  ~
           =/  ev=event:nsur  +.i.nf
@@ -299,6 +300,17 @@
           ~&  >>  ev-txt=content.ev
           
           $(nf t.nf)
+        
+        `this
+      %profs
+        =/  pfs  ~(tap by profiles)
+        ~&  stored-profiles=(lent pfs)
+        =/  nff  |-  ?~  pfs  ~
+          =/  u=user:sur  -.i.pfs
+          =/  prof=user-meta:nsur  +.i.pfs
+          ~&  >>  user=u
+          ~&  >  profile=prof
+          $(pfs t.pfs)
         
         `this
       %wtf

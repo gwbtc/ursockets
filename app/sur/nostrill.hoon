@@ -5,6 +5,7 @@
   $:  %0
       :: nostr config
       relays=(map @ud relay-stats:nostr)  ::  key is the websocket id
+      :: ws-msg-queue=(list websocket-event:eyre)
       keys=(lest keys:nostr)  :: cycled, i.keys is current one
       ::  own feed
       feed=feed:trill

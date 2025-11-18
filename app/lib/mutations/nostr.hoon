@@ -5,6 +5,8 @@
     lib=nostrill,
     nreq=nostr-req,
     server,
+    evlib=nostr-events,
+    nostr-client,
     njs=json-nostr,
     postlib=trill-post,
     nostr-client,
@@ -12,6 +14,7 @@
     ws=websockets
 
 |_  [=state:sur =bowl:gall]
++*  nclient  ~(. nostr-client [state bowl])
 +$  card  card:agent:gall
 ::  relay state
 ++  set-relay  |=  wid=@ud
@@ -70,29 +73,19 @@
   |=  pubkeys=(set @ux)
   ^-  (quip card _state)
   =/  nclient  ~(. nostr-client [state bowl])
-  =^  cards  state  (get-profiles:nclient pubkeys)
+  =^  cards  state  get-profiles:nclient
   [cards state]
 
 
 ++  handle-ws  |=  [wid=@ud relay=relay-stats:nsur msg=relay-msg:nsur]
   |^
   =^  cards  state
-    ~&  >>>  "HANDLING-WS-FROM-SERVER"
     ~&  >  handle-ws=-.msg
-    ~&  >>>  "**************"
     ?-  -.msg
       ::  This gets returned when we post a message to a relay
       %ok     (handle-ok url.relay +.msg)
       %event  (handle-event sub-id.msg event.msg)
-      %eose
-               :: TODO do unsub for replaceable/addressable events
-               =/  creq  (~(get by reqs.relay) +.msg)
-               ?~  creq  `state
-               :: =.  reqs.u.rs  (~(del by reqs.u.rs) +.msg)
-               :: =.  relays.state  (~(put by relays.state) relay u.rs)
-               =/  cardslib  ~(. cards:lib bowl)
-               =/  c  (update-ui:cardslib [%nostr nostr-feed.state])
-               :_  state  :~(c)
+      %eose   (handle-eose +.msg)
       %closed  =.  reqs.relay  (~(del by reqs.relay) sub-id.msg)
                =.  relays.state  (~(put by relays.state) wid relay)
                `state
@@ -128,10 +121,13 @@
     |=  [sub-id=@t =event:nsur]
     ^-  (quip card _state)
     ~&  >  handle-event-sub=sub-id
+    ::  increment event count in relay state
     =/  req  (~(get by reqs.relay) sub-id)
     ?~  req  ~&  "sub id not found in relay state"  `state
     =.  received.u.req  +(received.u.req)
     =.  reqs.relay  (~(put by reqs.relay) sub-id u.req)
+    =.  relays.state  (~(put by relays.state) wid relay)
+    ::
     |^
     ~&  parsing-nostr-event=kind.event
   :: https://nostrdata.github.io/kinds/
@@ -223,6 +219,37 @@
       =.  relays.state  (~(put by relays.state) wid relay)
     `state
     --
+
+    ++  handle-eose  |=  sub-id=@t
+    ~&  >>>  "HANDLING-EOSE-FROM-SERVER"
+    ~&  sub-id
+      :: TODO better UI facts
+      =/  creq  (~(get by reqs.relay) sub-id)
+      ?~  creq  ~&  >>>  "sub id not found! on eose"  `state
+      ~&  >>  eose=u.creq
+    ~&  >>>  "**************"
+      ::  if there's a queue we setup the next subscription
+      =^  cards  state
+        =/  is-feed  (is-feed:evlib filters.u.creq)
+        ?.  is-feed  [~ state]
+          =/  cardslib  ~(. cards:lib bowl)
+          =/  c  (update-ui:cardslib [%nostr nostr-feed.state])
+          =^  mc  state  get-profiles:nclient
+          [[c mc] state]
+      =^  cards2  state
+        ?~  chunked.u.creq  [~ state]
+          =/  head  i.chunked.u.creq
+          =/  tail  t.chunked.u.creq
+          =/  ncreq=event-stats:nsur  [filters.u.creq received.u.creq ongoing.u.creq ~]
+          =.  reqs.relay  (~(put by reqs.relay) sub-id ncreq)
+          =.  relays.state  (~(put by relays.state) wid relay)
+         (send-req:nclient :~(head) ongoing.u.creq tail)
+       =^  cards3  state
+        ?:  ongoing.u.creq  [~ state]
+        (close-sub:nclient sub-id wid relay)
+     ::
+      :_  state  (weld (weld cards cards2) cards3)
+
   --
   ++  handle-prof-fact  |=  pf=prof-fact:comms
     ^-  (quip card _state)

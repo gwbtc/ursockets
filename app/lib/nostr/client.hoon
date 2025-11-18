@@ -1,5 +1,5 @@
 /-  sur=nostrill, nsur=nostr
-/+  js=json-nostr, sr=sortug, nostr-keys, constants, server, ws=websockets
+/+  js=json-nostr, sr=sortug, seq, nostr-keys, constants, server, ws=websockets
 /=  web  /web/router
 |_  [=state:sur =bowl:gall]
 
@@ -18,33 +18,35 @@
   ur
 :: __
 
-:: ++  get-req  |=  fs=(list filter:nsur)
-::     ^-  [bulk-req:shim:nsur _state]
-::     =/  rls  ~(tap by relays.state)
-::     =|  urls=(list @t)
-::     =/  sub-id  (gen-sub-id:nostr-keys eny.bowl)
-::     =/  req=client-msg:nsur  [%req sub-id fs]
-::     |-  ?~  rls  [[urls req] state]
-::       ::  build http card
-::       =/  [url=@t rs=relay-stats:nsur]  i.rls
-::       ::  mutate relays stats
-::       =/  nrs  rs(reqs nreqs)
-::       =.  relays.state  (~(put by relays.state) url nrs)
-::       $(urls [url urls], rls t.rls)
+++  get-relay
+  =/  rls  ~(tap by relays.state)  ^-  [@ud relay-stats:nsur]
+  ?~  rls  !!
+  :: TODO not how this should work
+  =/  wid  -.i.rls
+  =/  rs=relay-stats:nsur  +.i.rls
+  [wid rs]
 
-++  send-req  |=  fs=(list filter:nsur)
+++  close-sub  |=  [sub-id=@t wid=@ud relay=relay-stats:nsur]
+  ^-  (quip card _state)
+  =.  reqs.relay  (~(del by reqs.relay) sub-id)
+  =.  relays.state  (~(put by relays.state) wid relay)
+  =/  req=client-msg:nsur  [%close sub-id]
+  =/  rl  get-relay
+  =/  relay  +.rl
+  =/  url  url.relay
+  :-  :~  (send url req)  ==  state
+
+++  send-req  |=  [fs=(list filter:nsur) ongoing=? chunked=(list filter:nsur)]
     ^-  (quip card _state)
     =/  sub-id  (gen-sub-id:nostr-keys eny.bowl)
     =/  req=client-msg:nsur  [%req sub-id fs]
-    =/  rls  ~(tap by relays.state)
-    ?~  rls  !!
-    :: TODO not how this should work
-    =/  rs=relay-stats:nsur  +.i.rls
-    =/  wid  -.i.rls
-    =/  url  url.rs
-    =/  es=event-stats:nsur  [fs 0]  
-    =.  reqs.rs  (~(put by reqs.rs) sub-id es)
-    =.  relays.state  (~(put by relays.state) wid rs)
+    =/  es=event-stats:nsur  [fs 0 ongoing chunked]  
+    =/  rl  get-relay
+    =/  wid  -.rl
+    =/  relay  +.rl
+    =/  url  url.relay
+    =.  reqs.relay    (~(put by reqs.relay) sub-id es)
+    =.  relays.state  (~(put by relays.state) wid relay)
     ~&  >  sending-ws-req=sub-id
     :-  :~  (send url req)  ==  state
 
@@ -56,7 +58,7 @@
   =/  last-week  (sub now.bowl ~m2)
   :: =/  since  (to-unix-secs:jikan:sr last-week)
   =/  =filter:nsur  [~ ~ `kinds ~ `last-week ~ ~]
-  (send-req ~[filter])
+  (send-req ~[filter] .y ~)
 
 ++  get-user-feed
   |=  pubkey=@ux
@@ -65,14 +67,33 @@
   :: =/  since  (to-unix-secs:jikan:sr last-week)
   =/  pubkeys  (silt ~[pubkey])
   =/  =filter:nsur  [~ `pubkeys `kinds ~ ~ ~ ~]
-  (send-req ~[filter])
+  (send-req ~[filter] .y ~)
 
 ++  get-profiles
-  |=  pubkeys=(set @ux)
     ^-  (quip card _state)
+    =/  npoasts  (tap:norm:sur nostr-feed.state)
+    =|  missing-profs=(set @ux)
+    =/  pubkeys=(set @ux)
+      |-  ?~  npoasts  missing-profs
+        =/  poast=event:nsur  +.i.npoasts
+        =/  have  (~(has by profiles.state) [%nostr pubkey.poast])
+        =.  missing-profs  ?:  have  missing-profs  (~(put in missing-profs) pubkey.poast)
+      $(npoasts t.npoasts)
     =/  kinds  (silt ~[0])
-    =/  =filter:nsur  [~ `pubkeys `kinds ~ ~ ~ ~]
-  (send-req ~[filter])
+    ?.  (gth ~(wyt in pubkeys) 300)
+      =/  =filter:nsur  [~ `pubkeys `kinds ~ ~ ~ ~]
+      (send-req ~[filter] .n ~)
+      ::
+      =/  chunks=(list (list @ux))  (chunk-by-size:seq ~(tap in pubkeys) 300)
+      ?~  chunks  ~&  >>>  "error chunking pubkeys"  `state
+      =/  queue=(list filter:nsur)
+        %+  turn  t.chunks  |=  l=(list @ux)  ^-  filter:nsur
+        =/  pubkeys=(set @ux)  (silt l)
+        [~ `pubkeys `kinds ~ ~ ~ ~]
+      =/  pubkeys=(set @ux)  (silt i.chunks)
+      =/  =filter:nsur  [~ `pubkeys `kinds ~ ~ ~ ~]
+      (send-req ~[filter] .n queue)
+
 
 ++  get-engagement
   |=  post-ids=(set @ux)
@@ -82,7 +103,7 @@
       =/  kinds  (silt ~[6 7])
       =/  tags  (malt :~([%e post-strings]))
       [~ ~ `kinds `tags ~ ~ ~]
-  (send-req ~[filter])
+  (send-req ~[filter] .y ~)
 
 ++  get-quotes
   |=  post-id=@ux
@@ -91,7 +112,7 @@
     =/  kinds  (silt ~[1])
     =/  tags  (malt :~([%q (silt ~[post-string])]))
     =/  =filter:nsur  [~ ~ `kinds `tags ~ ~ ~]
-  (send-req ~[filter])
+  (send-req ~[filter] .y ~)
 
 ::
 ++  test-connection
@@ -104,7 +125,7 @@
   :-  :~  (send relay-url req)  ==  state
 
 ++  send
-  |=  [relay-url=@t req=client-msg:nsur]  ^-  card:agent:gall
+  |=  [relay-url=@t req=client-msg:nsur]  ^-  card
     ~&  >>>  sendws=relay-url
     =/  req-body=json  (req:en:js req)
     =/  octs  (json-to-octs:server req-body)
@@ -118,4 +139,5 @@
     :: [%pass /ws-req/nostrill %arvo %i task]
     ::
     (give-ws-payload-client:ws wid.u.conn wmsg)
+
 --

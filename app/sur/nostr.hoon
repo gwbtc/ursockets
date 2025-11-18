@@ -33,7 +33,9 @@ $:  start=@da
     reqs=(map sub-id event-stats)
 ==
 +$  event-stats
-  [filters=(list filter) received=event-count]
+  ::  if not ongoing we kill the subscription on %eose
+  ::  if chunked we trigger a new subscription on %eose
+  [filters=(list filter) received=event-count ongoing=? chunked=(list filter)]
 +$  sub-id  @t
 +$  event-count  @ud
 

@@ -121,7 +121,6 @@
     =/  second  i.t.p.jon
     ?.  ?=(%s -.head)  ~
     :: TODO make sure they're always caps
-    ~&  dejson=[p.head subid=second]
     ?+  p.head  ~
       %'EVENT'
         =/  d  (so second)  ?~  d  ~
