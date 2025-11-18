@@ -6,7 +6,6 @@ import type {
   Media as MediaType,
   ExternalContent,
 } from "@/types/trill";
-import Icon from "@/components/Icon";
 import type { PostProps } from "./Post";
 import Media from "./Media";
 import JSONContent, { YoutubeSnippet } from "./External";
@@ -15,6 +14,7 @@ import Quote from "./Quote";
 import PostData from "./Loader";
 import Card from "./Card.tsx";
 import type { Ship } from "@/types/urbit.ts";
+import { extractURLs } from "@/logic/nostrill.ts";
 
 function Body(props: PostProps) {
   const text = props.poast.contents.filter((c) => {
@@ -95,41 +95,63 @@ function TextBlock({ block }: { block: Block }) {
     )
   ) : null;
 }
+
 function Inlin({ i }: { i: Inline }) {
   const [_, navigate] = useLocation();
   function gotoShip(e: React.MouseEvent, ship: Ship) {
     e.stopPropagation();
     navigate(`/feed/${ship}`);
   }
-  return "text" in i ? (
-    <span>{i.text}</span>
-  ) : "italic" in i ? (
-    <i>{i.italic}</i>
-  ) : "bold" in i ? (
-    <strong>{i.bold}</strong>
-  ) : "strike" in i ? (
-    <span>{i.strike}</span>
-  ) : "underline" in i ? (
-    <span>{i.underline}</span>
-  ) : "sup" in i ? (
-    <sup>{i.sup}</sup>
-  ) : "sub" in i ? (
-    <sub>{i.sub}</sub>
-  ) : "ship" in i ? (
-    <span
-      className="mention"
-      role="link"
-      onMouseUp={(e) => gotoShip(e, i.ship)}
-    >
-      {i.ship}
-    </span>
-  ) : "codespan" in i ? (
-    <code>{i.codespan}</code>
-  ) : "link" in i ? (
-    <LinkParser {...i.link} />
-  ) : "break" in i ? (
-    <br />
-  ) : null;
+  if ("text" in i) {
+    const tokens = extractURLs(i.text);
+    return (
+      <>
+        {tokens.text.map((t, i) =>
+          "text" in t ? (
+            <span key={t.text + i}>{t.text}</span>
+          ) : (
+            <a key={t.link.href + i} href={t.link.href}>
+              {t.link.show}
+            </a>
+          ),
+        )}
+        {tokens.pics.map((p, i) => (
+          <img key={p + i} src={p} />
+        ))}
+        {tokens.vids.map((p, i) => (
+          <video key={p + i} src={p} controls />
+        ))}
+      </>
+    );
+  } else {
+    return "italic" in i ? (
+      <i>{i.italic}</i>
+    ) : "bold" in i ? (
+      <strong>{i.bold}</strong>
+    ) : "strike" in i ? (
+      <span>{i.strike}</span>
+    ) : "underline" in i ? (
+      <span>{i.underline}</span>
+    ) : "sup" in i ? (
+      <sup>{i.sup}</sup>
+    ) : "sub" in i ? (
+      <sub>{i.sub}</sub>
+    ) : "ship" in i ? (
+      <span
+        className="mention"
+        role="link"
+        onMouseUp={(e) => gotoShip(e, i.ship)}
+      >
+        {i.ship}
+      </span>
+    ) : "codespan" in i ? (
+      <code>{i.codespan}</code>
+    ) : "link" in i ? (
+      <LinkParser {...i.link} />
+    ) : "break" in i ? (
+      <br />
+    ) : null;
+  }
 }
 
 function LinkParser({ href, show }: { href: string; show: string }) {

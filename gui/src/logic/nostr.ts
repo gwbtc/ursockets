@@ -21,26 +21,32 @@ export function generateNprofile(pubkey: string) {
   const nprofile = nip19.nprofileEncode(prof);
   return nprofile;
 }
-export function isValidNostrKey(key: string): boolean {
+export function decodeNostrKey(key: string): string | null {
   try {
-    nip19.decode(key);
-    return true;
+    const { type, data } = nip19.decode(key);
+    if (type === "nevent") return data.id;
+    else if (type === "nprofile") return data.pubkey;
+    else if (type === "naddr") return data.pubkey;
+    else if (type === "npub") return data;
+    else if (type === "nsec") return uint8ArrayToHexString(data);
+    else if (type === "note") return data;
+    else return null;
   } catch (e) {
     try {
+      // TODO do we want this for something
       nip19.npubEncode(key);
-      return true;
+      return key;
     } catch (e2) {
       console.error(e2, "not valid nostr key");
-      return false;
+      return null;
     }
   }
 }
-
-// let sk = generateSecretKey()
-// let nsec = nip19.nsecEncode(sk)
-// let { type, data } = nip19.decode(nsec)
-// assert(type === 'nsec')
-// assert(data === sk)
+function uint8ArrayToHexString(uint8Array: Uint8Array) {
+  return Array.from(uint8Array)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
 
 // let pk = getPublicKey(generateSecretKey())
 // let npub = nip19.npubEncode(pk)
@@ -55,3 +61,5 @@ export function isValidNostrKey(key: string): boolean {
 // assert(type === 'nprofile')
 // assert(data.pubkey === pk)
 // assert(data.relays.length === 2)
+//
+// nevent1qqsp3faj5jy9fpc6779rcs9kdccc0mxwlv2pnhymwqtjmletn72u5echttguv;

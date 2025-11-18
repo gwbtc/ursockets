@@ -3,7 +3,7 @@ import { start } from "@/logic/api";
 import IO from "@/logic/requests/nostrill";
 import type { ComposerData } from "@/types/ui";
 import { create } from "zustand";
-import type { UserProfile } from "@/types/nostrill";
+import type { Fact, Relays, UserProfile } from "@/types/nostrill";
 import type { Event } from "@/types/nostr";
 import type { FC, Poast } from "@/types/trill";
 import type { Notification } from "@/types/notifications";
@@ -22,7 +22,7 @@ export type LocalState = {
   setComposerData: (c: ComposerData | null) => void;
   pubkey: string;
   nostrFeed: Event[];
-  relays: Record<string, Event[]>;
+  relays: Relays;
   profiles: Map<string, UserProfile>; // pubkey key
   addProfile: (key: string, u: UserProfile) => void;
   following: Map<string, FC>;
@@ -37,7 +37,7 @@ export type LocalState = {
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   clearNotifications: () => void;
-  lastFact: any;
+  lastFact: Fact | null;
 };
 
 const creator = create<LocalState>();
@@ -49,8 +49,8 @@ export const useStore = creator((set, get) => ({
     const api = new IO(airlock);
     console.log({ api });
     await api.subscribeStore((data) => {
-      console.log("store sub", data);
       if ("state" in data) {
+        console.log("state", data.state);
         const { feed, nostr, following, following2, relays, profiles, pubkey } =
           data.state;
         const flwing = new Map(Object.entries(following as Record<string, FC>));
@@ -64,23 +64,24 @@ export const useStore = creator((set, get) => ({
           pubkey,
         });
       } else if ("fact" in data) {
-        set({ lastFact: data.fact });
-        if ("fols" in data.fact) {
+        const fact: Fact = data.fact;
+        set({ lastFact: fact });
+        if ("fols" in fact) {
           const { following, profiles } = get();
-          if ("new" in data.fact.fols) {
-            const { user, feed, profile } = data.fact.fols.new;
+          if ("new" in fact.fols) {
+            const { user, feed, profile } = fact.fols.new;
             following.set(user, feed);
             if (profile) profiles.set(user, profile);
             set({ following, profiles });
           }
-          if ("quit" in data.fact.fols) {
-            following.delete(data.fact.fols.quit);
+          if ("quit" in fact.fols) {
+            following.delete(fact.fols.quit);
             set({ following });
           }
         }
-        if ("post" in data.fact) {
-          if ("add" in data.fact.post) {
-            const post: Poast = data.fact.post.add.post;
+        if ("post" in fact) {
+          if ("add" in fact.post) {
+            const post: Poast = fact.post.add.post;
             const following = get().following;
             const curr = following.get(post.author);
             const fc = curr ? curr : { feed: {}, start: null, end: null };
@@ -90,11 +91,26 @@ export const useStore = creator((set, get) => ({
             set({ following });
           }
         }
-        if ("nostr" in data.fact) {
-          if ("feed" in data.fact.nostr)
-            set({ nostrFeed: data.fact.nostr.feed });
-          if ("relays" in data.fact.nostr)
-            set({ relays: data.fact.nostr.relays });
+        if ("nostr" in fact) {
+          console.log("nostr fact", fact);
+          if ("feed" in fact.nostr) set({ nostrFeed: fact.nostr.feed });
+          if ("relays" in fact.nostr) set({ relays: fact.nostr.relays });
+          if ("event" in fact.nostr) {
+            // console.log("san event", fact.nostr.event);
+            const event: Event = fact.nostr.event;
+            if (event.kind === 1) {
+              const nostrFeed = get().nostrFeed;
+              set({ nostrFeed: [...nostrFeed, event] });
+            }
+            if (event.kind === 0) {
+              const profiles = get().profiles;
+              const data = JSON.parse(event.content);
+              const { name, picture, about, ...other } = data;
+              const prof = { name, picture, about, other };
+              const np = profiles.set(event.pubkey, prof);
+              set({ profiles: np });
+            }
+          }
           // if ("user" in data.fact.nostr)
           // if ("thread" in data.fact.nostr)
         }

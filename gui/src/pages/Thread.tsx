@@ -1,167 +1,52 @@
 import { useParams } from "wouter";
-import { useQuery } from "@tanstack/react-query";
 import useLocalState from "@/state/state";
-import Icon from "@/components/Icon";
-import spinner from "@/assets/triangles.svg";
 import { ErrorPage } from "@/pages/Error";
 import "@/styles/trill.css";
 import "@/styles/feed.css";
-import Post from "@/components/post/Post";
-import { extractThread, toFlat } from "@/logic/trill/helpers";
-import type { FullNode } from "@/types/trill";
-import Composer from "@/components/composer/Composer";
+import { stringToUser } from "@/logic/nostrill";
+import TrillThread from "@/components/trill/Thread";
+import NostrThread from "@/components/nostr/Thread";
+import { decodeNostrKey } from "@/logic/nostr";
 
-export default function Thread() {
+export default function ThreadLoader() {
+  const { profiles, following } = useLocalState((s) => ({
+    profiles: s.profiles,
+    following: s.following,
+  }));
+
   const params = useParams<{ host: string; id: string }>();
   const { host, id } = params;
-  const { api } = useLocalState((s) => ({ api: s.api }));
 
-  async function fetchThread() {
-    return await api!.scryThread(host, id);
-  }
-  const { isPending, data, error } = useQuery({
-    queryKey: ["thread", params.host, params.id],
-    queryFn: fetchThread,
-    enabled: !!api && !!params.host && !!params.id,
-  });
-
-  console.log({ data });
-  if (!params.host || !params.id) {
-    return <ErrorPage msg="Invalid thread URL" />;
-  }
-
-  if (isPending) {
+  const uuser = stringToUser(host);
+  if ("error" in uuser) return <ErrorPage msg={uuser.error} />;
+  const feed = following.get(host);
+  const profile = profiles.get(host);
+  if ("urbit" in uuser.ok)
     return (
-      <main>
-        <div className="thread-header">
-          <h2>Loading Thread...</h2>
-        </div>
-        <div className="loading-container">
-          <img className="x-center" src={spinner} alt="Loading" />
-        </div>
-      </main>
+      <TrillThread
+        feed={feed}
+        profile={profile}
+        host={uuser.ok.urbit}
+        id={id}
+      />
     );
-  }
-
-  if (error) {
+  if ("nostr" in uuser.ok)
     return (
-      <main>
-        <div className="thread-header">
-          <h2>Error Loading Thread</h2>
-        </div>
-        <ErrorPage msg={error.message || "Failed to load thread"} />
-      </main>
+      <NostrThread
+        feed={feed}
+        profile={profile}
+        host={uuser.ok.nostr}
+        id={id}
+      />
     );
-  }
-
-  if (!data || "error" in data) {
-    return (
-      <main>
-        <div className="thread-header">
-          <h2>Thread Not Found</h2>
-        </div>
-        <ErrorPage
-          msg={data?.error || "This thread doesn't exist or isn't accessible"}
-        />
-      </main>
-    );
-  }
-  console.log({ data });
-  // TODO make Composer a modal when in Thread mode
-  return (
-    <main>
-      <div className="thread-header">
-        <div className="thread-nav">
-          <button
-            className="back-btn"
-            onClick={() => window.history.back()}
-            title="Go back"
-          >
-            <Icon name="reply" size={16} />
-            <span>Back to Feed</span>
-          </button>
-        </div>
-        <h2>Thread</h2>
-        <div className="thread-info">
-          <span className="thread-host">~{params.host}</span>
-          <span className="thread-separator">•</span>
-          <span className="thread-id">#{params.id}</span>
-        </div>
-      </div>
-
-      <div id="feed-proper">
-        <Composer />
-        <div id="thread-head">
-          <Post poast={toFlat(data.ok)} />
-        </div>
-        <div id="thread-children">
-          <ChildTree node={data.ok} />
-        </div>
-      </div>
-    </main>
-  );
+  else return <ErrorPage msg="weird" />;
 }
 
-function ChildTree({ node }: { node: FullNode }) {
-  const { threadChildren, replies } = extractThread(node);
-  return (
-    <>
-      <div id="tail">
-        {threadChildren.map((n) => {
-          return <Post key={n.id} poast={toFlat(n)} />;
-        })}
-      </div>
-      <div id="replies">
-        {replies.map((n) => (
-          <ReplyThread key={n.id} node={n} />
-        ))}
-      </div>
-    </>
-  );
+export function NostrThreadLoader() {
+  const params = useParams<{ id: string }>();
+  const { id } = params;
+  if (!id) return <ErrorPage msg="No thread id passed" />;
+  const dec = decodeNostrKey(id);
+  if (!dec) return <ErrorPage msg="Unknown thread id format" />;
+  return <NostrThread id={dec} host="" />;
 }
-
-function ReplyThread({ node }: { node: FullNode }) {
-  // const { threadChildren, replies } = extractThread(node);
-  const { replies } = extractThread(node);
-  return (
-    <div className="trill-reply-thread">
-      <div className="head">
-        <Post poast={toFlat(node)} />
-      </div>
-      <div className="tail">
-        {replies.map((r) => (
-          <Post key={r.id} poast={toFlat(r)} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// function OwnData(props: Props) {
-//   const { api } = useLocalState((s) => ({
-//     api: s.api,
-//   }));
-//   const { host, id } = props;
-//   async function fetchThread() {
-//     return await api!.scryThread(host, id);
-//   }
-//   const { isLoading, isError, data, refetch } = useQuery({
-//     queryKey: ["trill-thread", host, id],
-//     queryFn: fetchThread,
-//   });
-//   return isLoading ? (
-//     <div className={props.className}>
-//       <div className="x-center not-found">
-//         <p className="x-center">Scrying Post, please wait...</p>
-//         <img src={spinner} className="x-center s-100" alt="" />
-//       </div>
-//     </div>
-//   ) : null;
-// }
-// function SomeoneElses(props: Props) {
-//   // const { api, following } = useLocalState((s) => ({
-//   //   api: s.api,
-//   //   following: s.following,
-//   // }));
-//   return <div>ho</div>;
-// }

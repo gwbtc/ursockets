@@ -22,10 +22,24 @@ export default class IO {
     });
   }
   private async poke(json: any) {
-    return this.airlock.poke({ app: "nostrill", mark: "json", json });
+    try {
+      const res = await this.airlock.poke({
+        app: "nostrill",
+        mark: "json",
+        json,
+      });
+      return { ok: res };
+    } catch (e) {
+      return { error: `${e}` };
+    }
   }
   private async scry(path: string) {
-    return this.airlock.scry({ app: "nostrill", path });
+    try {
+      const res = await this.airlock.scry({ app: "nostrill", path });
+      return { ok: res };
+    } catch (e) {
+      return { error: `${e}` };
+    }
   }
   private async sub(path: string, handler: Handler) {
     const has = this.subs.get(path);
@@ -83,11 +97,12 @@ export default class IO {
     // const path = `/j/thread/${host}/${id}/${start}/${end}/${FeedPostCount}/${order}`;
     const path = `/j/thread/${host}/${id}`;
     const res = await this.scry(path);
-    if (!("begs" in res)) return { error: "wrong result" };
-    if ("ng" in res.begs) return { error: res.begs.ng };
-    if ("ok" in res.begs) {
-      if (!("thread" in res.begs.ok)) return { error: "wrong result" };
-      else return { ok: res.begs.ok.thread };
+    if ("error" in res) return res;
+    if (!("begs" in res.ok)) return { error: "wrong result" };
+    if ("ng" in res.ok.begs) return { error: res.ok.begs.ng };
+    if ("ok" in res.ok.begs) {
+      if (!("thread" in res.ok.begs.ok)) return { error: "wrong result" };
+      else return { ok: res.ok.begs.ok.thread };
     } else return { error: "wrong result" };
   }
   // pokes
@@ -99,16 +114,16 @@ export default class IO {
     const json = { add: { content } };
     return this.poke({ post: json });
   }
-  async addReply(content: string, host: string, id: string, thread: string) {
+  async addReply(content: string, host: UserType, id: string, thread: string) {
     const json = { reply: { content, host, id, thread } };
     return this.poke({ post: json });
   }
-  async addQuote(content: string, pid: PID) {
-    const json = { quote: { content, host: pid.ship, id: pid.id } };
+  async addQuote(content: string, host: UserType, id: string) {
+    const json = { quote: { content, host, id } };
     return this.poke({ post: json });
   }
-  async addRP(pid: PID) {
-    const json = { rp: { host: pid.ship, id: pid.id } };
+  async addRP(host: UserType, id: string) {
+    const json = { rp: { host, id } };
     return this.poke({ post: json });
   }
 
@@ -122,7 +137,7 @@ export default class IO {
   //   return this.poke(json);
   // }
 
-  async deletePost(host: Ship, id: string) {
+  async deletePost(host: UserType, id: string) {
     const json = {
       del: {
         host,
@@ -132,12 +147,12 @@ export default class IO {
     return this.poke({ post: json });
   }
 
-  async addReact(ship: Ship, id: PostID, reaction: string) {
+  async addReact(host: UserType, id: PostID, reaction: string) {
     const json = {
       reaction: {
         reaction: reaction,
-        id: id,
-        host: ship,
+        id,
+        host,
       },
     };
 
@@ -180,6 +195,10 @@ export default class IO {
     const json = { sync: null };
     return await this.poke({ rela: json });
   }
+  async getProfiles(users: UserType[]) {
+    const json = { fetch: users };
+    return await this.poke({ prof: json });
+  }
   async relayPost(host: string, id: string, relays: string[]) {
     const json = { send: { host, id, relays } };
     return await this.poke({ rela: json });
@@ -213,6 +232,20 @@ export default class IO {
     } catch (e) {
       return { error: `${e}` };
     }
+  }
+  // nostr
+  //
+  async nostrFeed(pubkey: string): AsyncRes<number> {
+    const json = { rela: { user: pubkey } };
+    return await this.poke(json);
+  }
+  async nostrThread(id: string): AsyncRes<number> {
+    const json = { rela: { thread: id } };
+    return await this.poke(json);
+  }
+  async nostrProfiles() {
+    const json = { prof: null };
+    return await this.poke({ rela: json });
   }
 }
 

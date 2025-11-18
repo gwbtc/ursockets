@@ -3,7 +3,7 @@ import useLocalState from "@/state/state";
 import Feed from "@/pages/Feed";
 import User from "@/pages/User";
 import Settings from "@/pages/Settings";
-import Thread from "@/pages/Thread";
+import Thread, { NostrThreadLoader } from "@/pages/Thread";
 import { Switch, Router, Redirect, Route } from "wouter";
 import { P404 } from "./pages/Error";
 
@@ -14,12 +14,13 @@ export default function r() {
       <Router base="/apps/nostrill">
         <Sidebar />
         <main>
-          <Route path="/" component={toGlobal} />
+          <Route path="/" component={toMain} />
           <Route path="/sets" component={Settings} />
           <Route path="/f" component={Feed} />
           <Route path="/f/:taip" component={Feed} />
           <Route path="/u/:user" component={User} />
           <Route path="/t/:host/:id" component={Thread} />
+          <Route path="/t/:id" component={NostrThreadLoader} />
         </main>
         {modal && modal}
       </Router>
@@ -27,6 +28,6 @@ export default function r() {
     </Switch>
   );
 }
-function toGlobal() {
+function toMain() {
   return <Redirect to="/f" />;
 }

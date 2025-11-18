@@ -30,7 +30,7 @@ function SlidingMenu() {
         <h3> Nostrill </h3>
       </div>
       <h3>Feeds</h3>
-      <div className="opt" role="link" onClick={() => goto(`/f/global`)}>
+      <div className="opt" role="link" onClick={() => goto(`/f`)}>
         <Icon name="home" size={20} />
         <div>Home</div>
       </div>

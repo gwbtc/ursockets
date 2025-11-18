@@ -1,6 +1,6 @@
 import type { Ship } from "./urbit";
 
-export type NotificationType = 
+export type NotificationType =
   | "follow"
   | "unfollow"
   | "mention"
@@ -8,7 +8,9 @@ export type NotificationType =
   | "repost"
   | "react"
   | "access_request"
-  | "access_granted";
+  | "access_granted"
+  | "fetching_nostr"
+  | "nostr_fetch_success";
 
 export interface Notification {
   id: string;

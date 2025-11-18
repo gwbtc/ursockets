@@ -45,6 +45,7 @@ export type Poast = {
   contents: Content;
   id: string;
   time: number; // not in the backend
+  hash: string;
   children: ID[];
   engagement: Engagement;
   tlonRumor?: boolean;

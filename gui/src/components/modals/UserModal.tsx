@@ -6,13 +6,12 @@ import Icon from "@/components/Icon";
 import useLocalState from "@/state/state";
 import { useLocation } from "wouter";
 import toast from "react-hot-toast";
-import { isValidPatp } from "urbit-ob";
-import { isValidNostrPubkey } from "@/logic/nostrill";
 import { generateNprofile } from "@/logic/nostr";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { UserType } from "@/types/nostrill";
 
-export default function ({ userString }: { userString: string }) {
-  const { setModal, api, pubkey, profiles, following, followers } =
+export default function ({ user }: { user: UserType }) {
+  const { setModal, api, lastFact, pubkey, profiles, following, followers } =
     useLocalState((s) => ({
       setModal: s.setModal,
       api: s.api,
@@ -20,29 +19,13 @@ export default function ({ userString }: { userString: string }) {
       profiles: s.profiles,
       following: s.following,
       followers: s.followers,
+      lastFact: s.lastFact,
     }));
   const [_, navigate] = useLocation();
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setLoading] = useState(false);
 
   function close() {
     setModal(null);
-  }
-
-  const user = isValidPatp(userString)
-    ? { urbit: userString }
-    : isValidNostrPubkey(userString)
-      ? { nostr: userString }
-      : { error: "" };
-
-  if ("error" in user) {
-    return (
-      <Modal close={close}>
-        <div className="user-modal-error">
-          <Icon name="comet" size={48} />
-          <p>Invalid user identifier</p>
-        </div>
-      </Modal>
-    );
   }
 
   const itsMe =
@@ -52,6 +35,7 @@ export default function ({ userString }: { userString: string }) {
         ? user.nostr === pubkey
         : false;
 
+  const userString = "urbit" in user ? user.urbit : user.nostr;
   const profile = profiles.get(userString);
   const isFollowing = following.has(userString);
   const isFollower = followers.includes(userString);
@@ -59,6 +43,15 @@ export default function ({ userString }: { userString: string }) {
   // Get follower/following counts from the user's feed if available
   const userFeed = following.get(userString);
   const postCount = userFeed ? Object.keys(userFeed.feed).length : 0;
+
+  // useEffect(() => {
+  //   if (!lastFact) return;
+  //   if (!("fols" in lastFact)) return;
+  //   if (!("new" in lastFact.fols)) return;
+  //   if (lastFact.fols.new.user === userString) setLoading(false);
+  //   const name = profile?.name || userString;
+  //   toast.success(`Followed ${name}`);
+  // }, [lastFact]);
 
   async function copy(e: React.MouseEvent) {
     e.stopPropagation();
@@ -93,7 +86,7 @@ export default function ({ userString }: { userString: string }) {
     } catch (err) {
       toast.error("Action failed");
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   }
 
@@ -111,16 +104,6 @@ export default function ({ userString }: { userString: string }) {
     userString.length > 20
       ? `${userString.slice(0, 10)}...${userString.slice(-8)}`
       : userString;
-
-  // Check if a string is a URL
-  const isURL = (str: string): boolean => {
-    try {
-      new URL(str);
-      return true;
-    } catch {
-      return str.startsWith("http://") || str.startsWith("https://");
-    }
-  };
 
   // Get banner image from profile.other
   const bannerImage = profile?.other?.banner || profile?.other?.Banner;
@@ -210,29 +193,15 @@ export default function ({ userString }: { userString: string }) {
         {otherFields.length > 0 && (
           <div className="user-modal-custom-fields">
             <h4>Additional Info</h4>
-            {otherFields.map(([key, value]) => (
-              <div key={key} className="custom-field-item">
-                <span className="field-key">{key}:</span>
-                {isURL(value) ? (
-                  <a
-                    href={value}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="field-value field-link"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {value}
-                    <Icon
-                      name="nostr"
-                      size={12}
-                      className="external-link-icon"
-                    />
-                  </a>
-                ) : (
-                  <span className="field-value">{value}</span>
-                )}
-              </div>
-            ))}
+            {otherFields.map(([key, value]) => {
+              console.log({ key, value });
+              return (
+                <div key={key} className="custom-field-item">
+                  <span className="field-key">{key}:</span>
+                  <ProfValue value={value} />
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -242,10 +211,10 @@ export default function ({ userString }: { userString: string }) {
             <button
               className={`action-btn ${isFollowing ? "following" : "follow"}`}
               onClick={handleFollow}
-              disabled={loading}
+              disabled={isLoading}
             >
               <Icon name="pals" size={16} />
-              {loading ? "..." : isFollowing ? "Following" : "Follow"}
+              {isLoading ? "..." : isFollowing ? "Following" : "Follow"}
             </button>
           )}
           <>
@@ -274,4 +243,38 @@ export default function ({ userString }: { userString: string }) {
       </div>
     </Modal>
   );
+}
+
+// Check if a string is a URL
+const isURL = (str: string): boolean => {
+  if (!str) return false;
+  try {
+    new URL(str);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export function ProfValue({ value }: { value: any }) {
+  if (typeof value === "string")
+    return isURL(value) ? (
+      <a
+        href={value}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="field-value field-link"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {value}
+        <Icon name="nostr" size={12} className="external-link-icon" />
+      </a>
+    ) : (
+      <span className="field-value">{value}</span>
+    );
+  else if (typeof value === "number")
+    return <span className="field-value">{value}</span>;
+  else if (typeof value === "object")
+    return <span className="field-value">{JSON.stringify(value)}</span>;
+  else return <span className="field-value">{JSON.stringify(value)}</span>;
 }

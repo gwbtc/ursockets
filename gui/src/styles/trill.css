@@ -264,12 +264,26 @@
 }
 
 /* threads */
+#thread-head {
+  font-size: 1.3rem;
+}
+
 .trill-reply-thread {
   margin-top: 1rem;
 }
 
 #replies>.trill-post:first-child {
   border-top: 1px solid black;
+}
+
+.minithread {
+  margin-top: 1rem;
+
+  .tail {
+    .trill-post {
+      border: unset !important;
+    }
+  }
 }
 
 /* footer */

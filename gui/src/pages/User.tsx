@@ -1,18 +1,12 @@
-// import spinner from "@/assets/icons/spinner.svg";
-import Composer from "@/components/composer/Composer";
-import PostList from "@/components/feed/PostList";
 import Profile from "@/components/profile/Profile";
 import useLocalState, { useStore } from "@/state/state";
-import Icon from "@/components/Icon";
-import toast from "react-hot-toast";
-import { useEffect, useState } from "react";
-import type { FC } from "@/types/trill";
+import { useState } from "react";
 import type { UserType } from "@/types/nostrill";
 import { isValidPatp } from "urbit-ob";
 import { ErrorPage } from "@/pages/Error";
 import { useParams } from "wouter";
-import { isValidNostrKey } from "@/logic/nostr";
-import TrillFeed from "@/components/trill/User";
+import { decodeNostrKey } from "@/logic/nostr";
+import TrillFeed, { Inner } from "@/components/trill/User";
 import NostrFeed from "@/components/nostr/User";
 
 function UserLoader() {
@@ -22,9 +16,12 @@ function UserLoader() {
   if (!userString) return <ErrorPage msg="no such user" />;
   else if (isValidPatp(userString))
     return <UserFeed user={{ urbit: userString }} userString={userString} />;
-  else if (isValidNostrKey(userString))
-    return <UserFeed user={{ nostr: userString }} userString={userString} />;
-  else return <ErrorPage msg="no such user" />;
+  else {
+    const nostrKey = decodeNostrKey(userString);
+    if (nostrKey)
+      return <UserFeed user={{ nostr: nostrKey }} userString={userString} />;
+    else return <ErrorPage msg="no such user" />;
+  }
 }
 
 function UserFeed({
@@ -49,9 +46,8 @@ function UserFeed({
         : false;
   // auto updating on SSE doesn't work if we do shallow
   const { following } = useStore();
-  const feed = following.get(userString);
-  const hasFeed = !feed ? false : Object.entries(feed).length > 0;
-  const refetch = () => feed;
+  const userString2 = "urbit" in user ? user.urbit : user.nostr;
+  const feed = following.get(userString2);
 
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [isAccessLoading, setIsAccessLoading] = useState(false);
@@ -60,11 +56,10 @@ function UserFeed({
     <div id="user-page">
       <Profile user={user} userString={userString} isMe={isMe} />
       {isMe ? (
-        <MyFeed />
+        <MyFeed our={api!.airlock.our!} />
       ) : "urbit" in user ? (
         <TrillFeed
-          user={user}
-          userString={userString}
+          patp={user.urbit}
           feed={feed}
           isFollowLoading={isFollowLoading}
           setIsFollowLoading={setIsFollowLoading}
@@ -73,7 +68,7 @@ function UserFeed({
         />
       ) : "nostr" in user ? (
         <NostrFeed
-          user={user}
+          pubkey={user.nostr}
           userString={userString}
           feed={feed}
           isFollowLoading={isFollowLoading}
@@ -88,6 +83,9 @@ function UserFeed({
 
 export default UserLoader;
 
-function MyFeed() {
-  return <></>;
+function MyFeed({ our }: { our: string }) {
+  const following = useLocalState((s) => s.following);
+  const feed = following.get(our);
+  if (!feed) return <ErrorPage msg="Critical error" />;
+  return <Inner feed={feed} refetch={() => {}} />;
 }

@@ -7,7 +7,6 @@ import UserModal from "./modals/UserModal";
 
 export default function ({
   user,
-  userString,
   size,
   color,
   noClickOnName,
@@ -24,7 +23,6 @@ export default function ({
 }) {
   const { setModal } = useLocalState((s) => ({ setModal: s.setModal }));
   // TODO revisit this when %whom updates
-  console.log({ profile });
   const avatarInner = profile ? (
     <img src={profile.picture} width={size} height={size} />
   ) : "urbit" in user && isValidPatp(user.urbit) ? (
@@ -43,7 +41,7 @@ export default function ({
   function openModal(e: React.MouseEvent) {
     if (noClickOnName) return;
     e.stopPropagation();
-    setModal(<UserModal userString={userString} />);
+    setModal(<UserModal user={user} />);
   }
   const name = (
     <div className="name cp" role="link" onMouseUp={openModal}>

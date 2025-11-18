@@ -6,19 +6,17 @@ import Icon from "@/components/Icon";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import type { FC } from "@/types/trill";
-import type { UserType } from "@/types/nostrill";
+import type { Ship } from "@/types/urbit";
 
 function UserFeed({
-  user,
-  userString,
+  patp,
   feed,
   isFollowLoading,
   setIsFollowLoading,
   isAccessLoading,
   setIsAccessLoading,
 }: {
-  user: UserType;
-  userString: string;
+  patp: Ship;
   feed: FC | undefined;
   isFollowLoading: boolean;
   setIsFollowLoading: (b: boolean) => void;
@@ -40,27 +38,29 @@ function UserFeed({
     console.log("fact", lastFact);
     console.log(isFollowLoading);
     if (!isFollowLoading) return;
-    const follow = lastFact?.fols;
+    if (!lastFact) return;
+    if (!("fols" in lastFact)) return;
+    const follow = lastFact.fols;
     if (!follow) return;
     if ("new" in follow) {
-      if (userString !== follow.new.user) return;
-      toast.success(`Now following ${userString}`);
+      if (patp !== follow.new.user) return;
+      toast.success(`Now following ${patp}`);
       setIsFollowLoading(false);
       addNotification({
         type: "follow",
-        from: userString,
-        message: `You are now following ${userString}`,
+        from: patp,
+        message: `You are now following ${patp}`,
       });
     } else if ("quit" in follow) {
-      toast.success(`Unfollowed ${userString}`);
+      toast.success(`Unfollowed ${patp}`);
       setIsFollowLoading(false);
       addNotification({
         type: "unfollow",
-        from: userString,
-        message: `You unfollowed ${userString}`,
+        from: patp,
+        message: `You unfollowed ${patp}`,
       });
     }
-  }, [lastFact, userString, isFollowLoading]);
+  }, [lastFact, patp, isFollowLoading]);
 
   const handleFollow = async () => {
     if (!api) return;
@@ -68,13 +68,13 @@ function UserFeed({
     setIsFollowLoading(true);
     try {
       if (!!feed) {
-        await api.unfollow(user);
+        await api.unfollow({ urbit: patp });
       } else {
-        await api.follow(user);
-        toast.success(`Follow request sent to ${userString}`);
+        await api.follow({ urbit: patp });
+        toast.success(`Follow request sent to ${patp}`);
       }
     } catch (error) {
-      toast.error(`Failed to ${!!feed ? "unfollow" : "follow"} ${userString}`);
+      toast.error(`Failed to ${!!feed ? "unfollow" : "follow"} ${patp}`);
       setIsFollowLoading(false);
       console.error("Follow error:", error);
     }
@@ -82,31 +82,29 @@ function UserFeed({
 
   const handleRequestAccess = async () => {
     if (!api) return;
-    if (!("urbit" in user)) return;
-
     setIsAccessLoading(true);
     try {
-      const res = await api.peekFeed(user.urbit);
-      toast.success(`Access request sent to ${user.urbit}`);
+      const res = await api.peekFeed(patp);
+      toast.success(`Access request sent to ${patp}`);
       addNotification({
         type: "access_request",
-        from: userString,
-        message: `Access request sent to ${userString}`,
+        from: patp,
+        message: `Access request sent to ${patp}`,
       });
       if ("error" in res) toast.error(res.error);
       else {
         console.log("peeked", res.ok.feed);
         setFC(res.ok.feed);
-        if (res.ok.profile) addProfile(userString, res.ok.profile);
+        if (res.ok.profile) addProfile(patp, res.ok.profile);
       }
     } catch (error) {
-      toast.error(`Failed to request access from ${user.urbit}`);
+      toast.error(`Failed to request access from ${patp}`);
       console.error("Access request error:", error);
     } finally {
       setIsAccessLoading(false);
     }
   };
-  console.log({ user, userString, feed, fc });
+  console.log({ patp, feed, fc });
 
   return (
     <>
@@ -149,15 +147,9 @@ function UserFeed({
       </div>
 
       {feed && hasFeed ? (
-        <div id="feed-proper">
-          <Composer />
-          <PostList data={feed} refetch={refetch} />
-        </div>
+        <Inner feed={feed} refetch={refetch} />
       ) : fc ? (
-        <div id="feed-proper">
-          <Composer />
-          <PostList data={fc} refetch={refetch} />
-        </div>
+        <Inner feed={fc} refetch={refetch} />
       ) : null}
 
       {!feed && !fc && (
@@ -178,3 +170,12 @@ function UserFeed({
 }
 
 export default UserFeed;
+
+export function Inner({ feed, refetch }: { feed: FC; refetch: any }) {
+  return (
+    <div id="feed-proper">
+      <Composer />
+      <PostList data={feed} refetch={refetch} />
+    </div>
+  );
+}

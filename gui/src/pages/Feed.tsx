@@ -8,13 +8,13 @@ import { useState } from "react";
 import Composer from "@/components/composer/Composer";
 import { ErrorPage } from "@/pages/Error";
 import NostrFeed from "@/components/nostr/Feed";
+import { consolidateFeeds, disaggregate } from "@/logic/nostrill";
 
-type FeedType = "global" | "following" | "nostr";
+type FeedType = "urbit" | "following" | "nostr";
 function Loader() {
   const params = useParams();
-  console.log({ params });
   if (!params.taip) return <FeedPage t="nostr" />;
-  if (params.taip === "global") return <FeedPage t={"global"} />;
+  // if (params.taip === "urbit") return <FeedPage t={"urbit"} />;
   if (params.taip === "following") return <FeedPage t={"following"} />;
   if (params.taip === "nostr") return <FeedPage t={"nostr"} />;
   // else if (param === FeedType.Rumors) return <Rumors />;
@@ -27,10 +27,10 @@ function FeedPage({ t }: { t: FeedType }) {
     <>
       <div id="top-tabs">
         <div
-          className={active === "global" ? "active" : ""}
-          onClick={() => setActive("global")}
+          className={active === "urbit" ? "active" : ""}
+          onClick={() => setActive("urbit")}
         >
-          Global
+          Urbit
         </div>
         <div
           className={active === "following" ? "active" : ""}
@@ -47,8 +47,8 @@ function FeedPage({ t }: { t: FeedType }) {
       </div>
       <div id="feed-proper">
         <Composer />
-        {active === "global" ? (
-          <Global />
+        {active === "urbit" ? (
+          <Urbit />
         ) : active === "following" ? (
           <Following />
         ) : active === "nostr" ? (
@@ -58,40 +58,22 @@ function FeedPage({ t }: { t: FeedType }) {
     </>
   );
 }
-//   {active === "global" ? (
-//     <Global />
-//   ) : active === "following" ? (
-//     <Global />
-//   ) : (
-//     <Global />
-//   )}
 
-function Global() {
-  // const { api } = useLocalState();
-  // const { isPending, data, refetch } = useQuery({
-  //   queryKey: ["globalFeed"],
-  //   queryFn: () => {
-  //     return api!.scryFeed(null, null);
-  //   },
-  // });
-  // console.log(data, "scry feed data");
-  // if (isPending) return <img className="x-center" src={spinner} />;
-  // else if ("bucun" in data) return <p>Error</p>;
-  // else return <Inner data={data} refetch={refetch} />;
-  return <p>Error</p>;
-}
-function Following() {
-  const following = useLocalState((s) => s.following2);
-  console.log({ following });
-
-  // console.log(data, "scry feed data");
-  // if (isPending) return <img className="x-center" src={spinner} />;
-  // else if ("bucun" in data) return <p>Error</p>;
-  // else return <Inner data={data} refetch={refetch} />;
-
+function Urbit() {
+  const following = useLocalState((s) => s.following);
+  const feed = disaggregate(following, "urbit");
   return (
     <div>
-      <PostList data={following} refetch={() => {}} />
+      <PostList data={feed} refetch={() => {}} />
+    </div>
+  );
+}
+function Following() {
+  const following = useLocalState((s) => s.following);
+  const feed = consolidateFeeds(following);
+  return (
+    <div>
+      <PostList data={feed} refetch={() => {}} />
     </div>
   );
 }

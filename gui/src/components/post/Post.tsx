@@ -9,10 +9,11 @@ import RP from "./RP";
 import UserModal from "../modals/UserModal";
 import type { Ship } from "@/types/urbit";
 import Sigil from "../Sigil";
-import type { UserProfile } from "@/types/nostrill";
+import type { UserProfile, UserType } from "@/types/nostrill";
 
 export interface PostProps {
   poast: Poast;
+  user: UserType;
   fake?: boolean;
   rter?: Ship;
   rtat?: number;
@@ -52,12 +53,18 @@ function TrillPost(props: PostProps) {
   const [_, navigate] = useLocation();
   function openThread(_e: React.MouseEvent) {
     const sel = window.getSelection()?.toString();
-    if (!sel) navigate(`/feed/${poast.host}/${poast.id}`);
+    const id = "urbit" in props.user ? poast.id : poast.hash;
+    const path = `/t/${poast.host}/${id}`;
+    if (poast.hash.includes("000000")) {
+      console.log("bad hash", poast);
+      return;
+    }
+    if (!sel) navigate(path);
   }
 
   function openModal(e: React.MouseEvent) {
     e.stopPropagation();
-    setModal(<UserModal userString={poast.author} />);
+    setModal(<UserModal user={props.user} />);
   }
   const avatar = profile ? (
     <div className="avatar sigil cp" role="link" onMouseUp={openModal}>

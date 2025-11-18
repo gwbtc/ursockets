@@ -1,10 +1,13 @@
+import "@/styles/Composer.css";
 import useLocalState from "@/state/state";
+import spinner from "@/assets/triangles.svg";
 import Sigil from "@/components/Sigil";
 import { useState, useEffect, useRef, type FormEvent } from "react";
 import Snippets, { ReplySnippet } from "./Snippets";
 import toast from "react-hot-toast";
 import Icon from "@/components/Icon";
 import { wait } from "@/logic/utils";
+import type { UserType } from "@/types/nostrill";
 
 function Composer({ isAnon }: { isAnon?: boolean }) {
   const { api, composerData, addNotification, setComposerData } = useLocalState(
@@ -15,12 +18,12 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
       setComposerData: s.setComposerData,
     }),
   );
-  const our = api!.airlock.our!;
   const [input, setInput] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  console.log({ composerData });
   useEffect(() => {
     if (composerData) {
       setIsExpanded(true);
@@ -29,8 +32,6 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
         composerData.post &&
         "trill" in composerData.post
       ) {
-        const author = composerData.post.trill.author;
-        setInput(`${author} `);
       }
       // Auto-focus input when composer opens
       setTimeout(() => {
@@ -38,27 +39,46 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
       }, 100); // Small delay to ensure the composer is rendered
     }
   }, [composerData]);
-  async function poast(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    // TODO
-    setLoading(true);
+  async function addSimple() {
+    if (!api) return; // TODOhandle error
+    return await api.addPost(input);
+  }
+  async function addComplex() {
+    if (!api) return; // TODOhandle error
+    if (!composerData) return;
+    const host: UserType =
+      "trill" in composerData.post
+        ? { urbit: composerData.post.trill.author }
+        : "nostr" in composerData.post
+          ? { nostr: composerData.post.nostr.pubkey }
+          : { urbit: api.airlock.our! };
+    const id =
+      "trill" in composerData.post
+        ? composerData.post.trill.id
+        : "nostr" in composerData.post
+          ? composerData.post.nostr.eventId
+          : "";
+    const thread =
+      "trill" in composerData.post
+        ? composerData.post.trill.thread || composerData.post.trill.id
+        : "nostr" in composerData.post
+          ? composerData.post.nostr.eventId
+          : "";
 
     const res =
-      composerData?.type === "reply" && "trill" in composerData.post
-        ? api!.addReply(
-            input,
-            composerData.post.trill.host,
-            composerData.post.trill.id,
-            composerData.post.trill.thread || composerData.post.trill.id,
-          )
-        : composerData?.type === "quote" && "trill" in composerData.post
-          ? api!.addQuote(input, {
-              ship: composerData.post.trill.host,
-              id: composerData.post.trill.id,
-            })
-          : !composerData
-            ? api!.addPost(input)
-            : wait(500);
+      composerData.type === "reply"
+        ? api.addReply(input, host, id, thread)
+        : composerData?.type === "quote"
+          ? api.addQuote(input, host, id)
+          : wait(500);
+    return await res;
+  }
+  async function poast(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!api) return; // TODOhandle error
+    const our = api.airlock.our!;
+    setLoading(true);
+    const res = !composerData ? addSimple() : addComplex();
     const ares = await res;
     if (ares) {
       // // Check for mentions in the post (ship names starting with ~)
@@ -95,6 +115,7 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
       setInput("");
       setComposerData(null); // Clear composer data after successful post
       toast.success("post sent");
+      setLoading(false);
       setIsExpanded(false);
     }
   }
@@ -121,7 +142,7 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
       onSubmit={poast}
     >
       <div className="sigil avatar">
-        <Sigil patp={our} size={46} />
+        <Sigil patp={api?.airlock.our || ""} size={46} />
       </div>
 
       <div className="composer-content">
@@ -172,9 +193,15 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
             onFocus={() => setIsExpanded(true)}
             placeholder={placeHolder}
           />
-          <button type="submit" disabled={!input.trim()} className="post-btn">
-            Post
-          </button>
+          {isLoading ? (
+            <div className="loading-container">
+              <img src={spinner} />
+            </div>
+          ) : (
+            <button type="submit" disabled={!input.trim()} className="post-btn">
+              Post
+            </button>
+          )}
         </div>
 
         {/* Quote snippets appear below input */}

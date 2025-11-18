@@ -1,34 +1,52 @@
 import useLocalState from "@/state/state";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
 import toast from "react-hot-toast";
-import type { UserType } from "@/types/nostrill";
 import type { FC } from "@/types/trill";
 import Composer from "../composer/Composer";
 import PostList from "@/components/feed/PostList";
+import { addEventToFc, eventsToFc } from "@/logic/nostrill";
 
 export default function NostrUser({
-  user,
   userString,
+  pubkey,
   feed,
   isFollowLoading,
   setIsFollowLoading,
   isAccessLoading,
   setIsAccessLoading,
 }: {
-  user: UserType;
   userString: string;
+  pubkey: string;
   feed: FC | undefined;
   isFollowLoading: boolean;
   setIsFollowLoading: (b: boolean) => void;
   isAccessLoading: boolean;
   setIsAccessLoading: (b: boolean) => void;
 }) {
-  const { api } = useLocalState((s) => ({
+  const { api, addNotification, lastFact } = useLocalState((s) => ({
     api: s.api,
+    addNotification: s.addNotification,
+    lastFact: s.lastFact,
   }));
   const [fc, setFC] = useState<FC>();
 
+  useEffect(() => {
+    if (!lastFact) return;
+    if (!("nostr" in lastFact)) return;
+    if ("user" in lastFact.nostr) {
+      const feed = eventsToFc(lastFact.nostr.user);
+      setFC(feed);
+    } else if ("event" in lastFact.nostr) {
+      const ev = lastFact.nostr.event;
+      if (ev.kind === 1 && ev.pubkey === pubkey) {
+        const f = feed || fc;
+        if (!f) return;
+        const nf = addEventToFc(ev, f);
+        setFC(nf);
+      }
+    }
+  }, [lastFact]);
   // Show empty state with resync option when no feed data
 
   async function refetch() {
@@ -39,6 +57,7 @@ export default function NostrUser({
 
     setIsFollowLoading(true);
     try {
+      const user = { nostr: pubkey };
       if (feed) {
         await api.unfollow(user);
       } else {
@@ -55,26 +74,19 @@ export default function NostrUser({
     if (!api) return;
 
     setIsAccessLoading(true);
-    // try {
-    //   const res = await api.peekFeed(user.urbit);
-    //   toast.success(`Access request sent to ${user.urbit}`);
-    //   addNotification({
-    //     type: "access_request",
-    //     from: userString,
-    //     message: `Access request sent to ${userString}`,
-    //   });
-    //   if ("error" in res) toast.error(res.error);
-    //   else {
-    //     console.log("peeked", res.ok.feed);
-    //     setFC(res.ok.feed);
-    //     if (res.ok.profile) addProfile(userString, res.ok.profile);
-    //   }
-    // } catch (error) {
-    //   toast.error(`Failed to request access from ${user.urbit}`);
-    //   console.error("Access request error:", error);
-    // } finally {
-    //   setIsAccessLoading(false);
-    // }
+    try {
+      await api.nostrFeed(pubkey);
+      addNotification({
+        type: "fetching_nostr",
+        from: userString,
+        message: `Fetching nostr feed from ${userString}`,
+      });
+    } catch (error) {
+      toast.error(`Failed to request access from ${user.urbit}`);
+      console.error("Access request error:", error);
+    } finally {
+      setIsAccessLoading(false);
+    }
   }
   return (
     <>

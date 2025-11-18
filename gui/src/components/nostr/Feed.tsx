@@ -5,6 +5,7 @@ import { useState } from "react";
 import { eventsToFc } from "@/logic/nostrill";
 import Icon from "@/components/Icon";
 import toast from "react-hot-toast";
+import { Contact, RefreshCw } from "lucide-react";
 
 export default function Nostr() {
   const { nostrFeed, api, relays } = useLocalState((s) => ({
@@ -12,11 +13,8 @@ export default function Nostr() {
     api: s.api,
     relays: s.relays,
   }));
-  console.log({ relays });
   const [isSyncing, setIsSyncing] = useState(false);
-  console.log({ nostrFeed });
   const feed = eventsToFc(nostrFeed);
-  console.log({ feed });
   const refetch = () => feed;
 
   const handleResync = async () => {
@@ -33,6 +31,21 @@ export default function Nostr() {
       setIsSyncing(false);
     }
   };
+
+  async function fetchProfiles() {
+    if (!api) return;
+
+    setIsSyncing(true);
+    try {
+      await api.syncRelays();
+      toast.success("Nostr feed sync initiated");
+    } catch (error) {
+      toast.error("Failed to sync Nostr feed");
+      console.error("Sync error:", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  }
 
   if (Object.keys(relays).length === 0)
     return (
@@ -97,18 +110,28 @@ export default function Nostr() {
             {Object.keys(feed.feed).length} posts
           </span>
         </div>
-        <button
-          onClick={handleResync}
-          disabled={isSyncing}
-          className="resync-btn-small"
-          title="Sync with Nostr relays"
-        >
-          {isSyncing ? (
-            <img src={spinner} alt="Loading" className="btn-spinner-small" />
-          ) : (
-            <Icon name="settings" size={16} />
-          )}
-        </button>
+        <div className="flex gap-4">
+          <button
+            className="btn-small"
+            onClick={fetchProfiles}
+            title="Fetch user profiles"
+          >
+            <Contact />
+          </button>
+
+          <button
+            onClick={handleResync}
+            disabled={isSyncing}
+            className="btn-small"
+            title="Sync with Nostr relays"
+          >
+            {isSyncing ? (
+              <img src={spinner} alt="Loading" className="btn-spinner-small" />
+            ) : (
+              <RefreshCw />
+            )}
+          </button>
+        </div>
       </div>
       <PostList data={feed} refetch={refetch} />
     </div>

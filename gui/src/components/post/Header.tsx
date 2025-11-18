@@ -13,13 +13,16 @@ function Header(props: PostProps) {
   function openThread(e: React.MouseEvent) {
     e.stopPropagation();
     const sel = window.getSelection()?.toString();
-    if (!sel) navigate(`/t/${poast.host}/${poast.id}`);
+    const id = "urbit" in props.user ? poast.id : poast.hash;
+    if (!sel) navigate(`/t/${poast.host}/${id}`);
   }
   const { poast } = props;
   const name = profile ? (
     profile.name
+  ) : "urbit" in props.user ? (
+    <p className="p-only">{props.user.urbit}</p>
   ) : (
-    <p className="p-only">{poast.author}</p>
+    <p className="p-only">{props.user.nostr}</p>
   );
   return (
     <header>

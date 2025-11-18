@@ -3,6 +3,7 @@ import type { UserProfile, UserType } from "@/types/nostrill";
 import useLocalState from "@/state/state";
 import Avatar from "../Avatar";
 import ProfileEditor from "./Editor";
+import { ProfValue } from "../modals/UserModal";
 
 interface Props {
   user: UserType;
@@ -15,8 +16,9 @@ const Loader: React.FC<Props> = (props) => {
   const { profiles } = useLocalState((s) => ({
     profiles: s.profiles,
   }));
-  const profile = profiles.get(props.userString);
-  console.log({ profiles });
+  const { user } = props;
+  const userString2 = "urbit" in user ? user.urbit : user.nostr;
+  const profile = profiles.get(userString2);
 
   if (props.isMe) return <ProfileEditor {...props} profile={profile} />;
   else return <Profile profile={profile} {...props} />;
@@ -63,17 +65,10 @@ function Profile({
 
             {customFields.map(([key, value], index) => {
               if (key.toLocaleLowerCase() === "banner") return null;
-              const isURL = URL.parse(value);
               return (
                 <div key={index} className="custom-field-view">
                   <span className="field-key">{key}:</span>
-                  {isURL ? (
-                    <a className="field-value" href={value} target="_blank">
-                      {value}
-                    </a>
-                  ) : (
-                    <span className="field-value">{value}</span>
-                  )}
+                  <ProfValue value={value} />
                 </div>
               );
             })}

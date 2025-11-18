@@ -7,9 +7,10 @@ import { displayCount } from "@/logic/utils";
 import { TrillReactModal, stringToReact } from "./Reactions";
 import toast from "react-hot-toast";
 import NostrIcon from "./wrappers/NostrIcon";
+import type { SPID } from "@/types/ui";
 // TODO abstract this somehow
 
-function Footer({ poast, refetch }: PostProps) {
+function Footer({ user, poast, refetch }: PostProps) {
   const [_showMenu, setShowMenu] = useState(false);
   const [location, navigate] = useLocation();
   const [reposting, _setReposting] = useState(false);
@@ -22,11 +23,16 @@ function Footer({ poast, refetch }: PostProps) {
     }),
   );
   const our = api!.airlock.our!;
+  function getComposerData(): SPID {
+    return "urbit" in user
+      ? { trill: poast }
+      : { nostr: { post: poast, pubkey: user.nostr, eventId: poast.hash } };
+  }
   function doReply(e: React.MouseEvent) {
     console.log("do reply");
     e.stopPropagation();
     e.preventDefault();
-    setComposerData({ type: "reply", post: { trill: poast } });
+    setComposerData({ type: "reply", post: getComposerData() });
     // Scroll to top where composer is located
     window.scrollTo({ top: 0, behavior: "smooth" });
     // Focus will be handled by the composer component
@@ -36,7 +42,7 @@ function Footer({ poast, refetch }: PostProps) {
     e.preventDefault();
     setComposerData({
       type: "quote",
-      post: { trill: poast },
+      post: getComposerData(),
     });
     // Scroll to top where composer is located
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -50,7 +56,7 @@ function Footer({ poast, refetch }: PostProps) {
   async function cancelRP(e: React.MouseEvent) {
     e.stopPropagation();
     e.preventDefault();
-    const r = await api!.deletePost(poast.host, poast.id);
+    const r = await api!.deletePost(user, poast.id);
     if (r) toast.success("Repost deleted");
     // refetch();
     if (location.includes(poast.id)) navigate("/");
@@ -59,8 +65,8 @@ function Footer({ poast, refetch }: PostProps) {
     // TODO update backend because contents are only markdown now
     e.stopPropagation();
     e.preventDefault();
-    const pid = { ship: poast.host, id: poast.id };
-    const r = await api!.addRP(pid);
+    const id = "urbit" in user ? poast.id : poast.hash;
+    const r = await api!.addRP(user, id);
     if (r) {
       toast.success("Your repost was published");
     }
