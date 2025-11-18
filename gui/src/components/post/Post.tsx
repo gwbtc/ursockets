@@ -6,7 +6,7 @@ import Footer from "./Footer";
 import { useLocation } from "wouter";
 import useLocalState from "@/state/state";
 import RP from "./RP";
-import ShipModal from "../modals/ShipModal";
+import UserModal from "../modals/UserModal";
 import type { Ship } from "@/types/urbit";
 import Sigil from "../Sigil";
 import type { UserProfile } from "@/types/nostrill";
@@ -57,7 +57,7 @@ function TrillPost(props: PostProps) {
 
   function openModal(e: React.MouseEvent) {
     e.stopPropagation();
-    setModal(<ShipModal ship={poast.author} />);
+    setModal(<UserModal userString={poast.author} />);
   }
   const avatar = profile ? (
     <div className="avatar sigil cp" role="link" onMouseUp={openModal}>

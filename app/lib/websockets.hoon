@@ -4,6 +4,11 @@
     =/  =task:iris  [%websocket-connect dap.bowl endpoint]
     [%pass /ws-connect %arvo %i task]
 
+  ++  cancel-connect  |=  wid=@ud
+    ^-  card:agent:gall
+    =/  =task:iris  [%cancel-websocket wid]
+    [%pass /ws-connect %arvo %i task]
+
   ++  disconnect  |=  wid=@ud
     ^-  card:agent:gall
     =/  =path  /websocket-client/(scot %ud wid)

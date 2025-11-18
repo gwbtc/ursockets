@@ -234,6 +234,11 @@
         :_  this
         :~  (connect:ws endpoint bowl)
         ==
+      %wscancel
+        =/  wid  1
+        :_  this
+        :~  (cancel-connect:ws wid)
+        ==
       %wstest
         :: =/  url  'ws://localhost:8888'
         =/  url  'wss://nos.lol'
@@ -313,6 +318,13 @@
           $(pfs t.pfs)
         
         `this
+      [%prof @]
+        =/  pubkey=(unit @ux)  (slaw:sr %ux +.noun)
+        ~&  pubkey=pubkey
+        ?~  pubkey  ~&  "pubkey not valid hex. take out the 0x maybe"  !!
+        =^  cs  state  (get-profile:nclient u.pubkey)
+        [cs this]
+      
       %wtf
         =/  lol=(unit @)  ~
         =/  l  ~|  "wtf"  (need lol)

@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./UserModal.css";
 
 /* assets */
 /* fonts */
@@ -573,15 +574,16 @@ h6 {
         }
       }
 
-      post-body {
-        max-height: 300px;
-        overflow-y: auto;
-      }
 
       & .date {
         color: grey;
       }
 
+    }
+
+    .body {
+      max-height: 300px;
+      overflow-y: auto;
     }
 
     & footer {

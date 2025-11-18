@@ -276,8 +276,11 @@
         ?~  crd  $(fields t.fields)  $(fields t.fields, um um(name u.crd))
       %'about'
         =/  crd  (so jn)
-        ?~  crd  $(fields t.fields)  $(fields t.fields, um um(picture u.crd))
+        ?~  crd  $(fields t.fields)  $(fields t.fields, um um(about u.crd))
       %'picture'
+        =/  crd  (so jn)
+        ?~  crd  $(fields t.fields)  $(fields t.fields, um um(picture u.crd))
+      %'image'
         =/  crd  (so jn)
         ?~  crd  $(fields t.fields)  $(fields t.fields, um um(picture u.crd))
       ==

@@ -43,7 +43,7 @@ export default function ({
   function openModal(e: React.MouseEvent) {
     if (noClickOnName) return;
     e.stopPropagation();
-    setModal(<UserModal user={user} userString={userString} />);
+    setModal(<UserModal userString={userString} />);
   }
   const name = (
     <div className="name cp" role="link" onMouseUp={openModal}>
@@ -58,5 +58,10 @@ export default function ({
       )}
     </div>
   );
-  return <div className="ship-avatar">{name}</div>;
+  return (
+    <div className="ship-avatar">
+      {avatar}
+      {name}
+    </div>
+  );
 }

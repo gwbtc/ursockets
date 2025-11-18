@@ -12,6 +12,16 @@ export function generateNevent(event: Event) {
   return nev;
 }
 
+export function generateNpub(pubkey: string) {
+  const npub = nip19.npubEncode(pubkey);
+  return npub;
+}
+export function generateNprofile(pubkey: string) {
+  const prof = { pubkey };
+  const nprofile = nip19.nprofileEncode(prof);
+  return nprofile;
+}
+
 // let sk = generateSecretKey()
 // let nsec = nip19.nsecEncode(sk)
 // let { type, data } = nip19.decode(nsec)

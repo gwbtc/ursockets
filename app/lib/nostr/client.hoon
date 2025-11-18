@@ -69,6 +69,13 @@
   =/  =filter:nsur  [~ `pubkeys `kinds ~ ~ ~ ~]
   (send-req ~[filter] .y ~)
 
+++  get-profile  |=  pubkey=@ux
+  =/  kinds  (silt ~[0])
+  :: =/  since  (to-unix-secs:jikan:sr last-week)
+  =/  pubkeys  (silt ~[pubkey])
+  =/  =filter:nsur  [~ `pubkeys `kinds ~ ~ ~ ~]
+  (send-req ~[filter] .n ~)
+
 ++  get-profiles
     ^-  (quip card _state)
     =/  npoasts  (tap:norm:sur nostr-feed.state)
@@ -80,11 +87,12 @@
         =.  missing-profs  ?:  have  missing-profs  (~(put in missing-profs) pubkey.poast)
       $(npoasts t.npoasts)
     =/  kinds  (silt ~[0])
-    ?.  (gth ~(wyt in pubkeys) 300)
+    =/  chunk-size  300
+    ?.  (gth ~(wyt in pubkeys) chunk-size)
       =/  =filter:nsur  [~ `pubkeys `kinds ~ ~ ~ ~]
       (send-req ~[filter] .n ~)
       ::
-      =/  chunks=(list (list @ux))  (chunk-by-size:seq ~(tap in pubkeys) 300)
+      =/  chunks=(list (list @ux))  (chunk-by-size:seq ~(tap in pubkeys) chunk-size)
       ?~  chunks  ~&  >>>  "error chunking pubkeys"  `state
       =/  queue=(list filter:nsur)
         %+  turn  t.chunks  |=  l=(list @ux)  ^-  filter:nsur
