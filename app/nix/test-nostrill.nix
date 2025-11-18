@@ -42,55 +42,78 @@ let
       '';
     };
 
-  pokePost = app:
+  pokePost = content:
     pkgs.writeTextFile {
-      name = ":${app}-json-post.hoon";
+      name = ":$nostrill-json-post.hoon";
       text = ''
         ${poke}
         =/  m  (strand ,vase)
         =/  dat=json
           %-  pairs:enjs:format
-          :~  ['post' (frond:enjs:format 'add' (frond:enjs:format 'content' s+'Hello world'))]
+          :~  ['post' (frond:enjs:format 'add' (frond:enjs:format 'content' s+'${content}'))]
           ==
         ;<  [=ship =desk =case]  bind:m  get-beak
-        ;<  ok=?  bind:m  (poke [ship %${app}] %json !>(dat))
-        (pure:m !>(ok))
-      '';
-    };
-
-  pokeReply = ship:
-    pkgs.writeTextFile {
-      name = ":nostrill-json-reply.hoon";
-      text = ''
-        ${poke}
-        =/  m  (strand ,vase)
-        ;<  [=ship =desk =case]  bind:m  get-beak
-        ;<  now=@da  bind:m  get-time
-        =/  pax  /(scot %p ship)/nostrill/(scot %da now)/feed/(scot %p ~${ship})/noun
-        =/  id=@t  
-          %-  crip
-          %-  a-co:co
-          %-  rear
-          ;;  (list @da)  .^(noun %gx pax)
-        =/  dat=json
-          %-  pairs:enjs:format
-          :~  :-  'post' 
-              %-  frond:enjs:format  :-  'reply' 
-              %-  pairs:enjs:format 
-                :~  ['content' s+'Reply']
-                    ['host' s+'~${ship}']
-                    ['id' s+id]
-                    ['thread' s+id]
-                ==
-          ==
         ;<  ok=?  bind:m  (poke [ship %nostrill] %json !>(dat))
         (pure:m !>(ok))
       '';
     };
 
-  pokeProfile = app:
+  pokePostAct = ship: action:
     pkgs.writeTextFile {
-      name = ":${app}-json-profile.hoon";
+      name = ":nostrill-json-${action}.hoon";
+      text = ''
+        ${poke}
+        =/  m  (strand ,vase)
+        ;<  [=ship =desk =case]  bind:m  get-beak
+        ;<  now=@da  bind:m  get-time
+        =/  pax  /(scot %p ship)/nostrill/(scot %da now)/feed-ids/(scot %p ~${ship})/noun
+        =/  action=@tas  %${action}
+        =/  id-t=@t  
+          %-  crip
+          %-  a-co:co
+          id
+        ~&  >>  [%got-action action]
+        =/  dat=json
+          ?:  =(action %reply)
+            %-  frond:enjs:format  :-  'reply'
+            %-  pairs:enjs:format
+            :~  ['content' s+'Reply']
+                ['host' s+'~${ship}']
+                ['id' s+id-t]
+                ['thread' s+id-t]
+            ==
+          ?:  =(action %quote)
+            %-  frond:enjs:format  :-  'quote'
+            %-  pairs:enjs:format
+            :~  ['content' s+'Quote']
+                ['host' s+'~${ship}']
+                ['id' s+id-t]
+            ==
+          ?:  =(action %rp)
+            %-  frond:enjs:format  :-  'rp' 
+            %-  pairs:enjs:format 
+            :~  ['host' s+'~${ship}']
+                ['id' s+id-t]
+            ==
+          %-  frond:enjs:format  :-  'reaction' 
+          %-  pairs:enjs:format 
+          :~  ['host' s+'~${ship}']
+              ['id' s+id-t]
+              ['reaction' s+'100!']
+          ==
+        =/  jon=json
+          %-  pairs:enjs:format
+          :~  :-  'post'  dat
+          ==
+        ~&  >>>  dat/jon
+        ;<  ok=?  bind:m  (poke [ship %nostrill] %json !>(jon))
+        (pure:m !>(ok))
+      '';
+    };
+  
+  pokeProfile = ship:
+    pkgs.writeTextFile {
+      name = ":nostrill-json-profile.hoon";
       text = ''
         ${poke}
         =/  m  (strand ,vase)
@@ -99,15 +122,15 @@ let
           :~  :-  'prof'
               %-  frond:enjs:format  :-  'add'
               %-  pairs:enjs:format
-              :~  ['name' s+'zod']
+              :~  ['name' s+'${ship}']
                   ['about' s+'about me']
                   ['picture' s+'pic']
                   ['other' (pairs:enjs:format ~[['location' s+'Urbit'] ['status' s+'testing']])]
               ==
           ==
         ;<  [=ship =desk =case]  bind:m  get-beak
-        ;<  ok=?  bind:m  (poke [ship %${app}] %json !>(dat))
-        (pure:m !>(ok))
+        ;<  ok=?  bind:m  (poke [ship %nostrill] %json !>(dat))
+          (pure:m !>(ok))
       '';
     };
 
@@ -129,43 +152,42 @@ let
       '';
     };
 
-  scryFeed = ship: res:
+  pokeUnfollow = ship:
     pkgs.writeTextFile {
-      name = "scry-${ship}-feed.hoon";
+      name = ":nostrill-json-unfollow-${ship}.hoon";
       text = ''
         ${poke}
         =/  m  (strand ,vase)
+        =/  dat=json
+          %-  pairs:enjs:format
+          :~
+            :-  'fols'
+            (frond:enjs:format 'del' (frond:enjs:format 'urbit' s+(scot %p ~${ship})))
+          ==
         ;<  [=ship =desk =case]  bind:m  get-beak
-        ;<  now=@da  bind:m  get-time
-        =/  pax  /(scot %p ship)/nostrill/(scot %da now)/feed/(scot %p ~${ship})/noun
-        =/  result  
-          %-  lent  
-          .^((list @da) %gx pax)
-        =/  got  =(result ${res})
-        (pure:m !>(got))
+        ;<  ok=?  bind:m  (poke [ship %nostrill] %json !>(dat))
+        (pure:m !>(ok))
       '';
     };
 
-  scryChildren = ship: ex:
+  scryFeedData = target-ship:
     pkgs.writeTextFile {
-      name = "scry-${ship}-children.hoon";
+      name = "scry-${target-ship}-feed-data.hoon";
       text = ''
         ${poke}
         =/  m  (strand ,vase)
         ;<  [=ship =desk =case]  bind:m  get-beak
         ;<  now=@da  bind:m  get-time
-        =/  pax-feed  /(scot %p ship)/nostrill/(scot %da now)/feed/(scot %p ~${ship})/noun
-        =/  feed-list=(list @da)  .^((list @da) %gx pax-feed)
-        ?~  feed-list
-          ~&  >>  'feed is empty!'
-          (pure:m !>(=(${ex} 0)))
-        =/  id=@t  (scot %da (rear feed-list))
-        =/  pax  /(scot %p ship)/nostrill/(scot %da now)/children/(scot %p ~${ship})/[id]/noun
-        =/  result  .^((list @da) %gx pax)
-        =/  got  =(${ex} (lent result))
-        (pure:m !>(got))
+        =/  pax  /(scot %p ship)/nostrill/(scot %da now)/feed/(scot %p ~${target-ship})/json
+        =/  result=json  .^(json %gx pax)
+        ~&  >>  (en:json:html result)
+        (pure:m !>((en:json:html result)))
       '';
     };
+
+  # Pre-generate scry scripts for both ships
+  scryBusFeed = scryFeedData "bus";
+  scryFunFeed = scryFeedData "fun";
 
 
 in pkgs.stdenvNoCC.mkDerivation {
@@ -173,7 +195,7 @@ in pkgs.stdenvNoCC.mkDerivation {
 
   phases = [ "buildPhase" "checkPhase" ];
 
-  nativeBuildInputs = [ pkgs.netcat ];
+  nativeBuildInputs = [ pkgs.netcat pkgs.jq ];
 
   buildPhase = ''
     set -x
@@ -218,15 +240,67 @@ in pkgs.stdenvNoCC.mkDerivation {
     # Extra buffer
     sleep 5
 
-    # Nostrill is already installed in the pill, ready to test
+    #Compare JSON data from two ships
+    # Usage: compare_feed_data <target-feed-ship> <test-name>
+    # This will scry the target-feed (e.g., ~bus) on both ~bus and ~fun, then compare the JSON
+    compare_feed_data() {
+      local target_feed=$1
+      local test_name=$2
+
+      echo ">>> TEST: $test_name - comparing $target_feed feed on ~bus vs ~fun" | tee -a test-output.log
+
+      # Select the appropriate scry script
+      local feed_scry
+      case $target_feed in
+        bus) feed_scry="${scryBusFeed}" ;;
+        fun) feed_scry="${scryFunFeed}" ;;
+        *) echo "Unknown feed: $target_feed"; return 1 ;;
+      esac
+
+      # Scry feed data on bus
+      ${click} -kp -i $feed_scry ./bus 2>&1 | tee bus_''${target_feed}_feed.log
+
+      # Scry feed data on fun
+      ${click} -kp -i $feed_scry ./fun 2>&1 | tee fun_''${target_feed}_feed.log
+
+      # Extract JSON from vase
+      sed -n "s/.*%noun '\(.*\)'\]$/\1/p" bus_''${target_feed}_feed.log > bus_''${target_feed}_feed.json || echo "{}" > bus_''${target_feed}_feed.json
+      sed -n "s/.*%noun '\(.*\)'\]$/\1/p" fun_''${target_feed}_feed.log > fun_''${target_feed}_feed.json || echo "{}" > fun_''${target_feed}_feed.json
+
+      # Compare JSON using jq (normalize then compare)
+      if jq -S . bus_''${target_feed}_feed.json > bus_normalized.json && \
+         jq -S . fun_''${target_feed}_feed.json > fun_normalized.json && \
+         diff -u bus_normalized.json fun_normalized.json > /dev/null; then
+        echo "  ✓ Feed data matches" | tee -a test-output.log
+        return 0
+      else
+        echo "  ✗ Feed data MISMATCH" | tee -a test-output.log
+        echo "  Diff:" | tee -a test-output.log
+        diff -u bus_normalized.json fun_normalized.json | tee -a test-output.log || true
+        return 1
+      fi
+    }
 
     # Poking ~bus with post and profile data
     echo ">>> TEST: bus-poke-nostrill-json-post" | tee -a test-output.log
-    ${click} -kp -i ${pokePost "nostrill"} ./bus 2>&1 | tee -a test-output.log
+    ${click} -kp -i ${pokePost "Hello world"} ./bus 2>&1 | tee -a test-output.log
     sleep 1
 
     echo ">>> TEST: bus-poke-nostrill-json-profile" | tee -a test-output.log
-    ${click} -kp -i ${pokeProfile "nostrill"} ./bus 2>&1 | tee -a test-output.log
+    ${click} -kp -i ${pokeProfile "bus"} ./bus 2>&1 | tee -a test-output.log
+    sleep 1
+
+    echo ">>> TEST: bus-poke-nostrill-json-post-2" | tee -a test-output.log
+    ${click} -kp -i ${pokePost "Post 2"} ./bus 2>&1 | tee -a test-output.log
+    sleep 1
+
+    # Poking ~fun with post and profile data
+    echo ">>> TEST: fun-poke-nostrill-json-post" | tee -a test-output.log
+    ${click} -kp -i ${pokePost "Post from ~fun"} ./fun 2>&1 | tee -a test-output.log
+    sleep 1
+
+    echo ">>> TEST: fun-poke-nostrill-json-profile" | tee -a test-output.log
+    ${click} -kp -i ${pokeProfile "fun"} ./fun 2>&1 | tee -a test-output.log
     sleep 1
 
     # Poking ~fun with subscription to ~bus feed
@@ -234,30 +308,95 @@ in pkgs.stdenvNoCC.mkDerivation {
     ${click} -kp -i ${pokeFollow "bus"} ./fun 2>&1 | tee -a test-output.log
     sleep 5
 
+    #  Compare full feed data: ~bus feed on bus should be exact to ~bus feed on ~fun
+    compare_feed_data bus "bus-feed-sync-check-1" || echo "WARNING: Feed comparison failed"
+    sleep 1
+
+    # Poking ~bus with subscription to ~fun feed
+    echo ">>> TEST: bus-poke-nostrill-json-follow-fun" | tee -a test-output.log
+    ${click} -kp -i ${pokeFollow "fun"} ./bus 2>&1 | tee -a test-output.log
+    sleep 5
+
+    #  Compare ~fun feed data
+    compare_feed_data fun "fun-feed-sync-check-1" || echo "WARNING: Feed comparison failed"
+    sleep 1
+
     # Poking ~bus with another post data
-    echo ">>> TEST: bus-poke-nostrill-json-post-2" | tee -a test-output.log
-    ${click} -kp -i ${pokePost "nostrill"} ./bus 2>&1 | tee -a test-output.log
+    echo ">>> TEST: bus-poke-nostrill-json-post-3" | tee -a test-output.log
+    ${click} -kp -i ${pokePost "Post 3"} ./bus 2>&1 | tee -a test-output.log
     sleep 1
 
-    #  Scrying ~bus feed on ~bus, should be equal to 2 posts 
-    echo ">>> TEST: bus-scry-nostrill-our-feed" | tee -a test-output.log
-    ${click} -kp -i ${scryFeed "bus" "2"} ./bus 2>&1 | tee -a test-output.log
+    #  Compare ~bus feed data 
+    compare_feed_data bus "bus-feed-sync-check-2" || echo "WARNING: Feed comparison failed"
     sleep 1
 
-    #  Scrying ~bus feed on ~fun, should be equal to 2 posts after update 
-    echo ">>> TEST: fun-scry-nostrill-bus-feed" | tee -a test-output.log
-    ${click} -kp -i ${scryFeed "bus" "2"} ./fun 2>&1 | tee -a test-output.log
-    sleep 1
-
-    #  Poking ~fun with reply post to ~bus
+    #  Poking ~fun with reply post to latest post from ~bus
     echo ">>> TEST: fun-poke-nostrill-json-reply" | tee -a test-output.log
-    ${click} -kp -i ${pokeReply "bus"} ./fun 2>&1 | tee -a test-output.log
+    ${click} -kp -i ${pokePostAct "bus" "reply"} ./fun 2>&1 | tee -a test-output.log
     sleep 2
 
-    #  Scrying children from latest post to see if we got reply from ~fun on ~bus
-    echo ">>> TEST: bus-scry-nostrill-json-reply" | tee -a test-output.log
-    ${click} -kp -i ${scryChildren "bus" "1"} ./bus 2>&1 | tee -a test-output.log
+    #  Compare data for ~fun and ~bus feed
+    compare_feed_data bus "bus-feed-sync-check-3" || echo "WARNING: Feed comparison failed"
+    compare_feed_data fun "fun-feed-sync-check-2" || echo "WARNING: Feed comparison failed"
     sleep 1
+
+    #  Poking ~bus with reply to latest post from ~bus
+    echo ">>> TEST: bus-poke-nostrill-json-reply" | tee -a test-output.log
+    ${click} -kp -i ${pokePostAct "bus" "reply"} ./bus 2>&1 | tee -a test-output.log
+    sleep 1
+
+    #  Poking ~bus with quote of latest post from ~fun
+    echo ">>> TEST: bus-poke-nostrill-json-quote" | tee -a test-output.log
+    ${click} -kp -i ${pokePostAct "fun" "quote"} ./bus 2>&1 | tee -a test-output.log
+    sleep 2
+
+    #  Compare data for ~bus and ~fun feed
+    compare_feed_data bus "bus-feed-sync-check-4" || echo "WARNING: Feed comparison failed"
+    compare_feed_data fun "fun-feed-sync-check-3" || echo "WARNING: Feed comparison failed"
+    sleep 1
+
+    #  Poking ~bus with repost of latest post from ~fun
+    echo ">>> TEST: bus-poke-nostrill-json-repost" | tee -a test-output.log
+    ${click} -kp -i ${pokePostAct "fun" "rp"} ./bus 2>&1 | tee -a test-output.log
+    sleep 2
+
+    #  Compare data for ~bus and ~fun feed
+    compare_feed_data bus "bus-feed-sync-check-5" || echo "WARNING: Feed comparison failed"
+    compare_feed_data fun "fun-feed-sync-check-4" || echo "WARNING: Feed comparison failed"
+    sleep 1
+
+    echo ">>> TEST: bus-poke-nostrill-json-react" | tee -a test-output.log
+    ${click} -kp -i ${pokePostAct "bus" "reaction"} ./bus 2>&1 | tee -a test-output.log
+    sleep 2
+
+    #  Compare data for ~bus
+    compare_feed_data bus "bus-feed-sync-check-6" || echo "WARNING: Feed comparison failed"
+    sleep 1
+
+    echo ">>> TEST: bus-poke-nostrill-json-reply" | tee -a test-output.log
+    ${click} -kp -i ${pokePostAct "fun" "reply"} ./bus 2>&1 | tee -a test-output.log
+    sleep 2
+
+    #  Compare data for ~bus and ~fun feed
+    compare_feed_data bus "bus-feed-sync-check-7" || echo "WARNING: Feed comparison failed"
+    compare_feed_data fun "fun-feed-sync-check-5" || echo "WARNING: Feed comparison failed"
+    sleep 1
+
+    echo ">>> TEST: bus-poke-nostrill-json-react" | tee -a test-output.log
+    ${click} -kp -i ${pokePostAct "fun" "reaction"} ./bus 2>&1 | tee -a test-output.log
+    sleep 2
+
+    #  Compare data for ~bus and ~fun feed
+    compare_feed_data bus "bus-feed-sync-check-8" || echo "WARNING: Feed comparison failed"
+    compare_feed_data fun "fun-feed-sync-check-6" || echo "WARNING: Feed comparison failed"
+    sleep 1
+
+    #  Poking ~bus with unsubscribe to ~fun feed
+    echo ">>> TEST: bus-poke-nostrill-json-unfollow-bus" | tee -a test-output.log
+    ${click} -kp -i ${pokeUnfollow "fun"} ./bus 2>&1 | tee -a test-output.log
+    sleep 1
+
+    #  TODO: some test to prove that ~bus unsubscribed and don't get updates from ~fun
 
 
     # Exit both ships

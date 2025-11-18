@@ -418,9 +418,9 @@
       [%x %j %thread host=@ id=@ *]  (thread:scry host.pole id.pole)
     ::  test scry
     ::
-      [%x %feed host=@ *]  (sfeedids:scry host.pole)
+      [%x %feed host=@ *]  (host-feed:scry host.pole)
     ::
-      [%x %children host=@ id=@ *]  (schildren:scry host.pole id.pole)
+      [%x %feed-ids host=@ *]  (feed-ids:scry host.pole)
   ==
   
 ::
