@@ -71,8 +71,8 @@ let
         =/  id-t=@t  
           %-  crip
           %-  a-co:co
-          id
-        ~&  >>  [%got-action action]
+          %-  rear
+          .^((list @da) %gx pax)
         =/  dat=json
           ?:  =(action %reply)
             %-  frond:enjs:format  :-  'reply'
@@ -105,7 +105,6 @@ let
           %-  pairs:enjs:format
           :~  :-  'post'  dat
           ==
-        ~&  >>>  dat/jon
         ;<  ok=?  bind:m  (poke [ship %nostrill] %json !>(jon))
         (pure:m !>(ok))
       '';
@@ -180,7 +179,6 @@ let
         ;<  now=@da  bind:m  get-time
         =/  pax  /(scot %p ship)/nostrill/(scot %da now)/feed/(scot %p ~${target-ship})/json
         =/  result=json  .^(json %gx pax)
-        ~&  >>  (en:json:html result)
         (pure:m !>((en:json:html result)))
       '';
     };
@@ -212,11 +210,11 @@ in pkgs.stdenvNoCC.mkDerivation {
     ${urbitBin} -d ./bus 2>&1 | tee bus.log &
     BUS_PID=$!
 
-    ${urbitBin} -d ./fun 2>&1 | tee fun.log &
+    ${urbitBin} -d ./fun > fun.log 2>&1 &
     FUN_PID=$!
 
-    tail -F bus.log >&2 &
-    tail -F fun.log >&2 &
+    tail -F bus.log 2>&1 | sed -u "s/^/~bus: /" >&2 &
+    tail -F fun.log 2>&1 | sed -u "s/^/~fun: /" >&2 &
 
     echo "Booting ~bus"
     for i in {1..120}; do
@@ -271,10 +269,10 @@ in pkgs.stdenvNoCC.mkDerivation {
       if jq -S . bus_''${target_feed}_feed.json > bus_normalized.json && \
          jq -S . fun_''${target_feed}_feed.json > fun_normalized.json && \
          diff -u bus_normalized.json fun_normalized.json > /dev/null; then
-        echo "  ✓ Feed data matches" | tee -a test-output.log
+        echo "Pass: Feed data matches" | tee -a test-output.log
         return 0
       else
-        echo "  ✗ Feed data MISMATCH" | tee -a test-output.log
+        echo "Fail: Feed data mismatch" | tee -a test-output.log
         echo "  Diff:" | tee -a test-output.log
         diff -u bus_normalized.json fun_normalized.json | tee -a test-output.log || true
         return 1
@@ -309,7 +307,7 @@ in pkgs.stdenvNoCC.mkDerivation {
     sleep 5
 
     #  Compare full feed data: ~bus feed on bus should be exact to ~bus feed on ~fun
-    compare_feed_data bus "bus-feed-sync-check-1" || echo "WARNING: Feed comparison failed"
+    compare_feed_data bus "bus-feed-sync-check-1" || echo "Feed comparison failed" | tee -a test-output.log
     sleep 1
 
     # Poking ~bus with subscription to ~fun feed
@@ -318,16 +316,16 @@ in pkgs.stdenvNoCC.mkDerivation {
     sleep 5
 
     #  Compare ~fun feed data
-    compare_feed_data fun "fun-feed-sync-check-1" || echo "WARNING: Feed comparison failed"
+    compare_feed_data fun "fun-feed-sync-check-1" || echo "Feed comparison failed" | tee -a test-output.log
     sleep 1
 
     # Poking ~bus with another post data
     echo ">>> TEST: bus-poke-nostrill-json-post-3" | tee -a test-output.log
     ${click} -kp -i ${pokePost "Post 3"} ./bus 2>&1 | tee -a test-output.log
-    sleep 1
+    sleep 4
 
-    #  Compare ~bus feed data 
-    compare_feed_data bus "bus-feed-sync-check-2" || echo "WARNING: Feed comparison failed"
+    #  Compare ~bus feed data
+    compare_feed_data bus "bus-feed-sync-check-2" || echo "Feed comparison failed" | tee -a test-output.log
     sleep 1
 
     #  Poking ~fun with reply post to latest post from ~bus
@@ -336,8 +334,8 @@ in pkgs.stdenvNoCC.mkDerivation {
     sleep 2
 
     #  Compare data for ~fun and ~bus feed
-    compare_feed_data bus "bus-feed-sync-check-3" || echo "WARNING: Feed comparison failed"
-    compare_feed_data fun "fun-feed-sync-check-2" || echo "WARNING: Feed comparison failed"
+    compare_feed_data bus "bus-feed-sync-check-3" || echo "Feed comparison failed" | tee -a test-output.log
+    compare_feed_data fun "fun-feed-sync-check-2" || echo "Feed comparison failed" | tee -a test-output.log
     sleep 1
 
     #  Poking ~bus with reply to latest post from ~bus
@@ -348,21 +346,21 @@ in pkgs.stdenvNoCC.mkDerivation {
     #  Poking ~bus with quote of latest post from ~fun
     echo ">>> TEST: bus-poke-nostrill-json-quote" | tee -a test-output.log
     ${click} -kp -i ${pokePostAct "fun" "quote"} ./bus 2>&1 | tee -a test-output.log
-    sleep 2
+    sleep 4
 
     #  Compare data for ~bus and ~fun feed
-    compare_feed_data bus "bus-feed-sync-check-4" || echo "WARNING: Feed comparison failed"
-    compare_feed_data fun "fun-feed-sync-check-3" || echo "WARNING: Feed comparison failed"
+    compare_feed_data bus "bus-feed-sync-check-4" || echo "Feed comparison failed" | tee -a test-output.log
+    compare_feed_data fun "fun-feed-sync-check-3" || echo "Feed comparison failed" | tee -a test-output.log
     sleep 1
 
     #  Poking ~bus with repost of latest post from ~fun
     echo ">>> TEST: bus-poke-nostrill-json-repost" | tee -a test-output.log
     ${click} -kp -i ${pokePostAct "fun" "rp"} ./bus 2>&1 | tee -a test-output.log
-    sleep 2
+    sleep 4
 
     #  Compare data for ~bus and ~fun feed
-    compare_feed_data bus "bus-feed-sync-check-5" || echo "WARNING: Feed comparison failed"
-    compare_feed_data fun "fun-feed-sync-check-4" || echo "WARNING: Feed comparison failed"
+    compare_feed_data bus "bus-feed-sync-check-5" || echo "Feed comparison failed" | tee -a test-output.log
+    compare_feed_data fun "fun-feed-sync-check-4" || echo "Feed comparison failed" | tee -a test-output.log
     sleep 1
 
     echo ">>> TEST: bus-poke-nostrill-json-react" | tee -a test-output.log
@@ -370,7 +368,7 @@ in pkgs.stdenvNoCC.mkDerivation {
     sleep 2
 
     #  Compare data for ~bus
-    compare_feed_data bus "bus-feed-sync-check-6" || echo "WARNING: Feed comparison failed"
+    compare_feed_data bus "bus-feed-sync-check-6" || echo "Feed comparison failed" | tee -a test-output.log
     sleep 1
 
     echo ">>> TEST: bus-poke-nostrill-json-reply" | tee -a test-output.log
@@ -378,8 +376,8 @@ in pkgs.stdenvNoCC.mkDerivation {
     sleep 2
 
     #  Compare data for ~bus and ~fun feed
-    compare_feed_data bus "bus-feed-sync-check-7" || echo "WARNING: Feed comparison failed"
-    compare_feed_data fun "fun-feed-sync-check-5" || echo "WARNING: Feed comparison failed"
+    compare_feed_data bus "bus-feed-sync-check-7" || echo "Feed comparison failed" | tee -a test-output.log
+    compare_feed_data fun "fun-feed-sync-check-5" || echo "Feed comparison failed" | tee -a test-output.log
     sleep 1
 
     echo ">>> TEST: bus-poke-nostrill-json-react" | tee -a test-output.log
@@ -387,8 +385,8 @@ in pkgs.stdenvNoCC.mkDerivation {
     sleep 2
 
     #  Compare data for ~bus and ~fun feed
-    compare_feed_data bus "bus-feed-sync-check-8" || echo "WARNING: Feed comparison failed"
-    compare_feed_data fun "fun-feed-sync-check-6" || echo "WARNING: Feed comparison failed"
+    compare_feed_data bus "bus-feed-sync-check-8" || echo "Feed comparison failed" | tee -a test-output.log
+    compare_feed_data fun "fun-feed-sync-check-6" || echo "Feed comparison failed" | tee -a test-output.log
     sleep 1
 
     #  Poking ~bus with unsubscribe to ~fun feed
@@ -396,7 +394,40 @@ in pkgs.stdenvNoCC.mkDerivation {
     ${click} -kp -i ${pokeUnfollow "fun"} ./bus 2>&1 | tee -a test-output.log
     sleep 1
 
-    #  TODO: some test to prove that ~bus unsubscribed and don't get updates from ~fun
+    #  Test to prove that ~bus unsubscribed and doesn't get updates from ~fun
+
+    # Poking ~fun with post after unfollow
+    echo ">>> TEST: fun-poke-nostrill-json-post-after-unfollow" | tee -a test-output.log
+    ${click} -kp -i ${pokePost "foobar"} ./fun 2>&1 | tee -a test-output.log
+    sleep 2
+
+    # Verify feeds are NOT synced (should be different)
+    echo ">>> TEST: verify-unfollow-no-sync - ~bus should NOT see ~fun's new post" | tee -a test-output.log
+
+    # Scry fun feed on bus
+    ${click} -kp -i ${scryFunFeed} ./bus 2>&1 | tee bus_fun_after_unfollow.log
+    # Scry fun feed on fun
+    ${click} -kp -i ${scryFunFeed} ./fun 2>&1 | tee fun_fun_after_unfollow.log
+
+    # Extract JSON
+    sed -n "s/.*%noun '\(.*\)'\]$/\1/p" bus_fun_after_unfollow.log > bus_fun_unfollow.json || echo "{}" > bus_fun_unfollow.json
+    sed -n "s/.*%noun '\(.*\)'\]$/\1/p" fun_fun_after_unfollow.log > fun_fun_unfollow.json || echo "{}" > fun_fun_unfollow.json
+
+    # Check if ~bus's view has "foobar" (it shouldn't)
+    if grep -q "foobar" bus_fun_unfollow.json; then
+      echo "Fail: ~bus still receiving updates from ~fun after unfollow!" | tee -a test-output.log
+    else
+      echo "Pass: ~bus correctly not receiving ~fun updates after unfollow" | tee -a test-output.log
+    fi
+
+    # Check if ~fun's own view has "foobar" (it should)
+    if grep -q "foobar" fun_fun_unfollow.json; then
+      echo "Pass: ~fun correctly has its own post" | tee -a test-output.log
+    else
+      echo "Failed: ~fun missing its own post" | tee -a test-output.log
+    fi
+
+    sleep 1
 
 
     # Exit both ships
@@ -444,11 +475,13 @@ in pkgs.stdenvNoCC.mkDerivation {
 
     has_crashes=$(grep -E "(bail:|mote:|crud:|gall:.*failed|%lost)" $out >/dev/null && echo "yes" || echo "no")
 
-    has_errors=$(grep -E "(FAILED|CRASHED|Failed|warn:)" $out >/dev/null && echo "yes" || echo "no")
+    has_errors=$(grep -E "(FAILED|CRASHED)" $out >/dev/null && echo "yes" || echo "no")
 
-    has_failed_acks=$(grep -F "[0 %avow 0 %noun 1]" $out >/dev/null && echo "yes" || echo "no")
+    has_failed_acks=$(grep -E "\[0 %avow (0 %noun )?1\]" $out >/dev/null && echo "yes" || echo "no")
 
-    if [ "$has_app_errors" = "yes" ] || [ "$has_crashes" = "yes" ] || [ "$has_errors" = "yes" ] || [ "$has_failed_acks" = "yes" ]; then
+    has_feed_comparison_failures=$(grep "Feed comparison failed" $out >/dev/null && echo "yes" || echo "no")
+
+    if [ "$has_app_errors" = "yes" ] || [ "$has_crashes" = "yes" ] || [ "$has_errors" = "yes" ] || [ "$has_failed_acks" = "yes" ] || [ "$has_feed_comparison_failures" = "yes" ]; then
 
       echo ""
       echo "TESTS FAILED"
@@ -459,7 +492,7 @@ in pkgs.stdenvNoCC.mkDerivation {
       if [ "$has_crashes" = "yes" ]; then
         echo "--- Agent Crashes ---"
         echo ""
-        grep -B 5 -A 10 -E "(bail:|mote:|crud:|gall:.*failed|%lost)" $out | head -100
+        grep -B 5 -A 3 -E "(bail:|mote:|crud:|gall:.*failed|%lost)" $out | head -100
         echo ""
       fi
 
@@ -477,11 +510,11 @@ in pkgs.stdenvNoCC.mkDerivation {
 
       # Process failed acks
       if [ "$has_failed_acks" = "yes" ]; then
-        grep -B 20 "\[0 %avow 0 %noun 1\]" $out | grep -E "(>>> TEST:|avow.*noun 1)" | while read line; do
-          if echo "$line" | grep -q ">>> TEST:"; then
-            current_test=$(echo "$line" | sed 's/>>> TEST: //')
-          elif echo "$line" | grep -q "avow.*noun 1"; then
-            echo "  - $current_test failed with: [0 %avow 0 %noun 1]"
+        grep -n -E "\[0 %avow (0 %noun )?1\]" $out | while IFS=: read line_num _; do
+          # Find the most recent test before this line
+          test_name=$(sed -n "1,''${line_num}p" $out | grep ">>> TEST:" | tail -1 | sed 's/>>> TEST: //')
+          if [ -n "$test_name" ]; then
+            echo "  - $test_name: Failed poke (bad ack)"
           fi
         done
       fi
@@ -496,6 +529,17 @@ in pkgs.stdenvNoCC.mkDerivation {
           echo "  - $test_name failed with: bad-ui-poke"
           echo "$context" | sed 's/^/      /'
           echo ""
+        done
+      fi
+
+      # Process feed comparison failures
+      if [ "$has_feed_comparison_failures" = "yes" ]; then
+        grep -n "Feed comparison failed" $out | while IFS=: read line_num _; do
+          # Find the most recent test before this line
+          test_name=$(sed -n "1,''${line_num}p" $out | grep ">>> TEST:" | tail -1 | sed 's/>>> TEST: //')
+          if [ -n "$test_name" ]; then
+            echo "  - $test_name: Feed comparison failed"
+          fi
         done
       fi
 

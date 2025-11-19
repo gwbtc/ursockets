@@ -42,8 +42,6 @@
         # Development shell with tools
         devShells.default = pkgs.mkShell {
           buildInputs = [
-            pkgs.urbit
-            pkgs.bash
             pkgs.netcat
             pkgs.jq
           ];
@@ -63,7 +61,6 @@
         };
 
         packages = {
-          fakePier = bootFakeShip { shipName = "bus"; };
           inherit bus fun;
           default = bootFakeShip { shipName = "bus"; };
         };
