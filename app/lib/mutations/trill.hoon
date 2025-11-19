@@ -59,6 +59,7 @@
                   fact-card
               ==
               ::
+              ::  XX: should send fact-card here if post is a quote or rp?
               :~  ui-card
               ==
       %add
@@ -87,20 +88,13 @@
         =/  ui-card    (update-ui:cards:lib jfact)
         =/  eng-poke  [%eng (headsup-poke poke p)]
         =/  eng-card  (poke-host:crds host.p eng-poke)
-
         :_  state
-          ?:  .=(our.bowl host.poke)
           =/  =fact:comms  [%post %add p]
           =/  fact-card  (update-followers:cards:lib fact)
           :~  ui-card
               fact-card
               eng-card
           ==
-          ::
-          :~  ui-card
-              eng-card
-          ==
-        
       %reply
         =/  sp     (build-sp:trill host.poke our.bowl content.poke `id.poke `thread.poke)
         =/  p=post:post
@@ -111,17 +105,11 @@
         =/  ui-card    (update-ui:cards:lib jfact)
         =/  eng-poke  [%eng (headsup-poke poke p)]
         =/  eng-card  (poke-host:crds host.p eng-poke)
-
         :_  state
-          ?:  .=(our.bowl host.poke)
           =/  =fact:comms  [%post %add p]
           =/  fact-card  (update-followers:cards:lib fact)
           :~  ui-card
               fact-card
-              eng-card
-          ==
-          ::
-          :~  ui-card
               eng-card
           ==
       %rp
@@ -136,17 +124,11 @@
         =/  ui-card    (update-ui:cards:lib jfact)
         =/  eng-poke  [%eng (headsup-poke poke p)]
         =/  eng-card  (poke-host:crds host.p eng-poke)
-
         :_  state
-          ?:  .=(our.bowl host.poke)
           =/  =fact:comms  [%post %add p]
           =/  fact-card  (update-followers:cards:lib fact)
           :~  ui-card
               fact-card
-              eng-card
-          ==
-          ::
-          :~  ui-card
               eng-card
           ==
       %reaction
@@ -160,7 +142,6 @@
           =/  ui-card    (update-ui:cards:lib jfact)
           =/  eng-poke  [%eng (headsup-poke poke p)]
           =/  eng-card  (poke-host:crds host.poke eng-poke)
-
           :_  state
             =/  =fact:comms  [%post %add p]
             =/  fact-card  (update-followers:cards:lib fact)
@@ -184,10 +165,11 @@
             =/  ui-card    (update-ui:cards:lib jfact)
             =/  eng-poke  [%eng (headsup-poke poke p)]
             =/  eng-card  (poke-host:crds host.p eng-poke)
-
             :_  state
               =/  =fact:comms  [%post %add p]
+              =/  fact-card  (update-followers:cards:lib fact)
               :~  ui-card
+                  fact-card
                   eng-card
               ==
     ==
