@@ -138,7 +138,9 @@
       =/  poast  (get:orm:feed feed.state post.e)
       ?~  poast  `state
       :: TODO signatures et al.
-      =.  reacts.engagement.u.poast  (~(put by reacts.engagement.u.poast) src.bowl [reaction.e *signature:post])
+      =/  sign  *signature:post
+      =.  q.sign  src.bowl
+      =.  reacts.engagement.u.poast  (~(put by reacts.engagement.u.poast) src.bowl [reaction.e sign])
       =.  feed.state  (put:orm:feed feed.state post.e u.poast)
       =/  f=fact:comms  [%post %changes u.poast]
       :_  state
