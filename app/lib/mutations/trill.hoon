@@ -27,7 +27,7 @@
   |=  [poke=post-poke:ui:sur p=post:post]  ^-  engagement:comms
   ?-  -.poke
     %add  !!
-    %del  !!
+    %del       [%del-reply id.poke id.p]
     %quote     [%quote id.poke p]
     :: TODO del-reply
     %reply     [%reply id.poke p]
@@ -42,26 +42,55 @@
   =/  pubkey  pub.i.keys.state
   =/  crds  ~(. cards:lib bowl)
   ::  TODO UI notifications  [%hark ]
-  
     ?-  -.poke
-      %del  =.  feed.state  =<  +  (del:orm:feed feed.state id.poke)
-            ::  TODO cascade children
-            =/  p  *post:post
-            =/  p  p(id id.poke, host host.poke)
-            =/  pw  [p (some pubkey) ~ ~ profile]
-            =/  jfact=fact:ui:sur  [%post %del pw]
-            =/  ui-card    (update-ui:cards:lib jfact)
-            :_  state
-            ?:  .=(our.bowl host.p)
-              =/  =fact:comms  [%post %del id.poke]
-              =/  fact-card  (update-followers:cards:lib fact)
-              :~  ui-card
-                  fact-card
-              ==
-              ::
-              ::  XX: should send fact-card here if post is a quote or rp?
-              :~  ui-card
-              ==
+      %del  
+        =/  pos  (get:orm:feed feed.state id.poke)
+        ?~  pos  `state
+        =.  feed.state  =<  +  (del:orm:feed feed.state id.poke)
+        ::  TODO cascade children, from our state and propagate it down to repliers 
+        =/  p  u.pos
+        =/  pw  [p (some pubkey) ~ ~ profile]
+        =/  jfact=fact:ui:sur  [%post %del pw]
+        =/  ui-card    (update-ui:cards:lib jfact)
+        =/  =fact:comms  [%post %del id.poke]
+        =/  fact-card  (update-followers:cards:lib fact)
+        :_  state
+        ?:  .=(our.bowl host.p)
+          ?~  ~(tap in children.p)
+            :~  ui-card
+                fact-card
+            ==
+          =/  c  ~(tap in children.p)
+          =/  eng-cards=(list card)
+            |-  ^-  (list card)
+            ?~  c  ~
+            =/  child=(unit post:post)  (get:orm:feed feed.state i.c)
+            ?~  child  $(c t.c)
+            :_  $(c t.c)
+            ::  [%del-reply p.poke id.child]
+            =/  eng-poke  [%eng (headsup-poke poke u.child)]
+            ~&  send-heads-up-to/(headsup-poke poke u.child)
+            (poke-host:crds author.u.child eng-poke)
+          %+  welp  eng-cards
+          :~    ui-card
+                fact-card
+          ==
+        ::  poking host with %del post 
+        ::  [%del-reply parent.p p.poke]
+        ::  XX:
+        ::  we are poking: delete my post(~zod) with id=1 and host ~bus
+        ::  parent.post is empty so it's not a reply! 
+        ::  what kind of behaviour should be expected ?
+        ?~  parent.p
+          :~  ui-card
+          ==
+        =/  eng-poke  [%eng (headsup-poke [%del host.poke u.parent.p] p)]
+        =/  eng-card  (poke-host:crds host.poke eng-poke)
+        ::
+        :~  ui-card
+            fact-card
+            eng-card
+        ==
       %add
         =/  sp     (build-sp:trill our.bowl our.bowl content.poke ~ ~)
         =/  p=post:post

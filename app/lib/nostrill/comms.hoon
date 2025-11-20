@@ -103,10 +103,13 @@
       :~  (update-followers:cards:lib f)
           (update-followers:cards:lib f2)
       ==
-    %del-reply
+    %del-reply 
       =.  feed.state  =<  +  (del:orm:feed feed.state child.e)
       =/  poast  (get:orm:feed feed.state parent.e)
-      ?~  poast  `state
+      ?~  poast  
+        :_  state 
+        :~  (update-followers:cards:lib [%post %del child.e])
+        ==
       =.  children.u.poast  (~(del in children.u.poast) child.e)
       =.  feed.state  (put:orm:feed feed.state parent.e u.poast)
       :_  state
