@@ -79,7 +79,7 @@ let
             %-  frond:enjs:format  :-  'reply'
             %-  pairs:enjs:format
             :~  ['content' s+'Reply']
-                ['host' s+'~${ship}']
+                ['host' (frond:enjs:format 'urbit' s+(scot %p ~${ship}))]
                 ['id' s+id-t]
                 ['thread' s+id-t]
             ==
@@ -87,18 +87,18 @@ let
             %-  frond:enjs:format  :-  'quote'
             %-  pairs:enjs:format
             :~  ['content' s+'Quote']
-                ['host' s+'~${ship}']
+                ['host' (frond:enjs:format 'urbit' s+(scot %p ~${ship}))]
                 ['id' s+id-t]
             ==
           ?:  =(action %rp)
             %-  frond:enjs:format  :-  'rp' 
             %-  pairs:enjs:format 
-            :~  ['host' s+'~${ship}']
+            :~  ['host' (frond:enjs:format 'urbit' s+(scot %p ~${ship}))]
                 ['id' s+id-t]
             ==
           %-  frond:enjs:format  :-  'reaction' 
           %-  pairs:enjs:format 
-          :~  ['host' s+'~${ship}']
+          :~  ['host' (frond:enjs:format 'urbit' s+(scot %p ~${ship}))]
               ['id' s+id-t]
               ['reaction' s+'100!']
           ==
