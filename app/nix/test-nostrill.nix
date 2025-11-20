@@ -73,6 +73,7 @@ let
           %-  a-co:co
           %-  rear
           .^((list @da) %gx pax)
+        ::  ~&  act-to/id-t
         =/  dat=json
           ?:  =(action %reply)
             %-  frond:enjs:format  :-  'reply'
@@ -106,6 +107,40 @@ let
           :~  :-  'post'  dat
           ==
         ;<  ok=?  bind:m  (poke [ship %nostrill] %json !>(jon))
+        (pure:m !>(ok))
+      '';
+    };
+
+  pokePostDel = old:
+    pkgs.writeTextFile {
+      name = ":nostrill-json-post-del.hoon";
+      text = ''
+        ${poke}
+        =/  m  (strand ,vase)
+        ;<  [=ship =desk =case]  bind:m  get-beak
+        ;<  now=@da  bind:m  get-time
+        =/  ship-t  (scot %p ship)
+        =/  pax  /[ship-t]/nostrill/(scot %da now)/feed-ids/[ship-t]/noun
+        =/  ids  .^((list @da) %gx pax)
+        =/  id-t=@t  
+          %-  crip
+          %-  a-co:co
+          ?:  %.${old}  (rear ids)
+          -:ids
+        ::~&  %+  turn  ids
+        ::    |=  id=@da
+        ::    %-  a-co:co  id
+        ::~&  del/id-t
+        =/  dat=json
+          %-  pairs:enjs:format
+          :~  :-  'post'
+              %-  frond:enjs:format  :-  'del'
+              %-  pairs:enjs:format
+              :~  ['host' s+ship-t]
+                  ['id' s+id-t]
+              ==
+          ==
+        ;<  ok=?  bind:m  (poke [ship %nostrill] %json !>(dat))
         (pure:m !>(ok))
       '';
     };
@@ -343,10 +378,20 @@ in pkgs.stdenvNoCC.mkDerivation {
     ${click} -kp -i ${pokePostAct "bus" "reply"} ./bus 2>&1 | tee -a test-output.log
     sleep 1
 
-    #  Poking ~bus with quote of latest post from ~fun
+    #  Poking ~fun with del latest reply post
+    echo ">>> TEST: fun-poke-nostrill-json-del-reply" | tee -a test-output.log
+    ${click} -kp -i ${pokePostDel "n"} ./fun 2>&1 | tee -a test-output.log
+    sleep 1
+
+    #  Compare data for ~fun feed
+    compare_feed_data fun "fun-feed-sync-check-3" || echo "Feed comparison failed" | tee -a test-output.log
+    sleep 1
+
+
+    #  Poking ~bus with quote post from ~fun
     echo ">>> TEST: bus-poke-nostrill-json-quote" | tee -a test-output.log
     ${click} -kp -i ${pokePostAct "fun" "quote"} ./bus 2>&1 | tee -a test-output.log
-    sleep 4
+    sleep 2
 
     #  Compare data for ~bus and ~fun feed
     compare_feed_data bus "bus-feed-sync-check-4" || echo "Feed comparison failed" | tee -a test-output.log
@@ -356,7 +401,7 @@ in pkgs.stdenvNoCC.mkDerivation {
     #  Poking ~bus with repost of latest post from ~fun
     echo ">>> TEST: bus-poke-nostrill-json-repost" | tee -a test-output.log
     ${click} -kp -i ${pokePostAct "fun" "rp"} ./bus 2>&1 | tee -a test-output.log
-    sleep 4
+    sleep 2
 
     #  Compare data for ~bus and ~fun feed
     compare_feed_data bus "bus-feed-sync-check-5" || echo "Feed comparison failed" | tee -a test-output.log
@@ -382,6 +427,16 @@ in pkgs.stdenvNoCC.mkDerivation {
 
     echo ">>> TEST: bus-poke-nostrill-json-react" | tee -a test-output.log
     ${click} -kp -i ${pokePostAct "fun" "reaction"} ./bus 2>&1 | tee -a test-output.log
+    sleep 2
+
+    #  Compare data for ~bus and ~fun feed
+    compare_feed_data bus "bus-feed-sync-check-8" || echo "Feed comparison failed" | tee -a test-output.log
+    compare_feed_data fun "fun-feed-sync-check-6" || echo "Feed comparison failed" | tee -a test-output.log
+    sleep 1
+
+    #  Poking ~bus with del first post
+    echo ">>> TEST: bus-poke-nostrill-json-del-reply" | tee -a test-output.log
+    ${click} -kp -i ${pokePostDel "y"} ./bus 2>&1 | tee -a test-output.log
     sleep 2
 
     #  Compare data for ~bus and ~fun feed
