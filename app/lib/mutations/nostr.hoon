@@ -5,15 +5,24 @@
     lib=nostrill,
     nreq=nostr-req,
     server,
+    evlib=nostr-events,
+    nostr-client,
     njs=json-nostr,
     postlib=trill-post,
     nostr-client,
     sr=sortug,
+    scri,
     ws=websockets
 
 |_  [=state:sur =bowl:gall]
++*  cardslib  ~(. cards:lib bowl)
 +$  card  card:agent:gall
 ::  relay state
+++  get-relay  ^-  (unit [wid=@ud relay=relay-stats:nsur])
+  =/  rls  ~(tap by relays.state)
+  ?~  rls  ~
+  `i.rls
+
 ++  set-relay  |=  wid=@ud
   ^-  (quip card _state)
   =/  socket  (get-url:ws wid bowl)
@@ -21,13 +30,17 @@
   ?.  ?=(%accepted status.u.socket)  ~&  "socket status in iris unsync"  !!
   =/  relay=relay-stats:nsur  [now.bowl url.u.socket ~]
   =.  relays.state  (~(put by relays.state) wid relay)
-  `state
+  :_  state
+  =/  ui-card  (update-ui:cardslib [%nostr %relays relays.state])
+  :~(ui-card)
 
 ++  unset-relay  |=  wid=@ud
   ^-  (quip card _state)
   =.  relays.state  (~(del by relays.state) wid)
+  =/  ui-card  (update-ui:cardslib [%nostr %relays relays.state])
   :_  state
   :~  (disconnect:ws wid)
+      ui-card
   ==
   
 
@@ -66,33 +79,16 @@
 ::     $(evs t.evs)
 ::   [cards state]
 
-++  populate-profiles
-  |=  pubkeys=(set @ux)
-  ^-  (quip card _state)
-  =/  nclient  ~(. nostr-client [state bowl])
-  =^  cards  state  (get-profiles:nclient pubkeys)
-  [cards state]
-
-
 ++  handle-ws  |=  [wid=@ud relay=relay-stats:nsur msg=relay-msg:nsur]
+  =/  nclient  ~(. nostr-client [state bowl wid relay])
   |^
   =^  cards  state
-    ~&  >>>  "HANDLING-WS-FROM-SERVER"
     ~&  >  handle-ws=-.msg
-    ~&  >>>  "**************"
     ?-  -.msg
       ::  This gets returned when we post a message to a relay
       %ok     (handle-ok url.relay +.msg)
       %event  (handle-event sub-id.msg event.msg)
-      %eose
-               :: TODO do unsub for replaceable/addressable events
-               =/  creq  (~(get by reqs.relay) +.msg)
-               ?~  creq  `state
-               :: =.  reqs.u.rs  (~(del by reqs.u.rs) +.msg)
-               :: =.  relays.state  (~(put by relays.state) relay u.rs)
-               =/  cardslib  ~(. cards:lib bowl)
-               =/  c  (update-ui:cardslib [%nostr nostr-feed.state])
-               :_  state  :~(c)
+      %eose   (handle-eose +.msg)
       %closed  =.  reqs.relay  (~(del by reqs.relay) sub-id.msg)
                =.  relays.state  (~(put by relays.state) wid relay)
                `state
@@ -127,29 +123,39 @@
   ++  handle-event
     |=  [sub-id=@t =event:nsur]
     ^-  (quip card _state)
-    ~&  >  handle-event-sub=sub-id
+    ::  increment event count in relay state
+    ~&  >>  parsing-nostr-event=kind.event
+    ~&  >>  sub-id=sub-id
+    :: ~&  >   relay-subs=~(key by reqs.relay)
     =/  req  (~(get by reqs.relay) sub-id)
-    ?~  req  ~&  "sub id not found in relay state"  `state
+    ?~  req  ~&  >>>  "sub id not found in relay state"  `state
+    
     =.  received.u.req  +(received.u.req)
     =.  reqs.relay  (~(put by reqs.relay) sub-id u.req)
+    =.  relays.state  (~(put by relays.state) wid relay)
+    ::
     |^
-    ~&  parsing-nostr-event=kind.event
   :: https://nostrdata.github.io/kinds/
-    ?:  .=(kind.event 666)  :: one_off subs eose  cf. 999
-      parse-relay-oneose
-    ?:  .=(kind.event 0)  ::  user metadata
-      parse-metadata
-    ?:  .=(kind.event 1)  ::  apparently a poast
-      parse-poast
-    ?:  .=(kind.event 3)  ::  follow list
-      parse-follow
-    :: ?:  .=(kind.event 5)  ::  delete
-    ?:  .=(kind.event 6)  ::  RT
-      parse-follow
-    ?:  .=(kind.event 7)  ::  Reaction
-      parse-follow
-
+    =/  cs1=(list card)
+      ?~  ongoing.u.req    ~
+      ?.  u.ongoing.u.req  ~
+      ::  If it's an ongoing request and %eose has been reached we pass the individual event to the UI as is
+      =/  c  (update-ui:cardslib [%nostr %event event])
+      :~(c)
+    =^  cs  state
+      ?:  .=(kind.event 0)  ::  user metadata
+        parse-metadata
+      ?:  .=(kind.event 1)  ::  apparently a poast
+        parse-poast
+      ?:  .=(kind.event 3)  ::  follow list
+        parse-follow
+      :: ?:  .=(kind.event 5)  ::  delete
+      ?:  .=(kind.event 6)  ::  RT
+        parse-follow
+      ?:  .=(kind.event 7)  ::  Reaction
+        parse-follow
       `state
+    [(weld cs1 cs) state]
 
     ++  parse-metadata
     ^-  (quip card _state)
@@ -165,6 +171,14 @@
     ++  parse-poast
     ^-  (quip card _state)
       =.  nostr-feed.state  (put:norm:sur nostr-feed.state created-at.event event)
+      =/  user-feed  (~(get by following.state) [%nostr pubkey.event])
+      =?  following.state  ?=(^ user-feed)
+        =/  pw  (event-to-post:evlib event ~ ~)
+        =/  poast=post:post  -.pw
+        =/  nf  (put:orm:feed u.user-feed id.poast poast)
+        (~(put by following.state) [%nostr pubkey.event] nf)
+      :_  state
+      ~
       :: =/  uprof  (~(get by profiles.state) pubkey.event)
       :: ?~  uprof
       ::   =/  shimm  ~(. shim [state bowl])
@@ -198,7 +212,6 @@
       :: ==  
       :: =/  nfid  (put:orm:feed u.fid ts p)
       :: =.  following.state  (~(put by following.state) pubkey.event nfid)
-    `state
     ++  parse-follow
     ^-  (quip card _state)
       =/  following  (~(get by follow-graph.state) [%nostr pubkey.event])
@@ -217,12 +230,71 @@
         :: =.  follow-graph.state  (~(put by follow-graph.state) pubkey.event follow-set)
         $(tags.event t.tags.event)
     ::
-    ++  parse-relay-oneose
-    ^-  (quip card _state)
-      =.  reqs.relay  (~(del by reqs.relay) sub-id)
-      =.  relays.state  (~(put by relays.state) wid relay)
-    `state
     --
+
+    ++  handle-eose  |=  sub-id=@t
+    ~&  >>>  "HANDLING-EOSE-FROM-SERVER"
+    ~&  sub-id
+      :: TODO better UI facts
+      =/  creq  (~(get by reqs.relay) sub-id)
+      ?~  creq  ~&  >>>  "sub id not found! on eose"  `state
+      ~&  >>  eose=u.creq
+    ~&  >>>  "**************"
+      :: 
+      ::  if there's a queue we setup the next subscription
+      =^  cards  relay
+        ?:  (is-feed:evlib filters.u.creq)
+          ~&  >>  "eose on global feed request"
+          =/  c  (update-ui:cardslib [%nostr %feed nostr-feed.state])
+          =^  mc  relay  get-profiles:nclient
+          [[c mc] relay]
+        ::
+        =/  users=(set @ux)  (user-req:evlib filters.u.creq)
+        ?:  (gth ~(wyt in users) 0)
+          ~&  >>>  "eose on user feed request"
+          =/  poasts  (tap:norm:sur nostr-feed.state)
+          =/  subset  %+  skim  poasts  |=  [* ev=event:nsur]  (~(has in users) pubkey.ev)
+          =/  f  (gas:norm:sur *nostr-feed:sur subset)
+          =/  c  (update-ui:cardslib [%nostr %user f])
+          [:~(c) relay]
+        =/  thread-id  (thread-req:evlib filters.u.creq)
+        ?^  thread-id
+          ~&  >>>  "eose on thread request"
+          =/  poasts  (tap:norm:sur nostr-feed.state)
+          =/  subset  %+  skim  poasts  |=  [* ev=event:nsur]
+            ?|  .=(u.thread-id id.ev)
+                =/  refs  (get-references:evlib ev)
+                (~(has in refs) u.thread-id)
+            ==
+          =/  f  (gas:norm:sur *nostr-feed:sur subset)
+          =/  c  (update-ui:cardslib [%nostr %thread f])
+          [:~(c) relay]
+        ::
+        ?:  (profs-req:evlib filters.u.creq)
+        =/  c  (update-ui:cardslib [%prof profiles.state])
+        [:~(c) relay]
+        ::
+        [~ relay] 
+        ::
+      =^  cards2  relay
+        ?~  chunked.u.creq  [~ relay]
+          =/  head  i.chunked.u.creq
+          =/  tail  t.chunked.u.creq
+          =/  ncreq=event-stats:nsur  [filters.u.creq received.u.creq ongoing.u.creq ~]
+          =.  reqs.relay  (~(put by reqs.relay) sub-id ncreq)
+         (send-req:nclient :~(head) ongoing.u.creq tail)
+      ::
+      =^  cards3  relay
+        ?~  ongoing.u.creq
+          ~&  >>>  closing-relay-sub=[sub-id filters.u.creq]
+          (close-sub:nclient sub-id wid relay)
+        =/  ncreq=event-stats:nsur  [filters.u.creq received.u.creq `.y ~]
+        =.  reqs.relay  (~(put by reqs.relay) sub-id ncreq)
+        [~ relay]
+      ::
+      =.  relays.state  (~(put by relays.state) wid relay)
+      :_  state  (weld (weld cards cards2) cards3)
+
   --
   ++  handle-prof-fact  |=  pf=prof-fact:comms
     ^-  (quip card _state)
@@ -234,4 +306,28 @@
       %keys  `state
       :: TODO really need a way to keep track of everyone's pubkeys
     ==
+  ++  handle-rela  |=  rh=relay-handling:ui:sur
+    ^-  (quip card _state)
+    =/  rl  get-relay
+    ?~  rl  ~&  >>>  "no relay!!!!"  `state
+    =/  wid=@ud  -.u.rl
+    =/  relay=relay-stats:nsur  +.u.rl
+    =/  nclient  ~(. nostr-client [state bowl wid relay])
+    ?:  ?=(%send -.rh)
+      =/  scry   ~(. scri [state bowl])
+      =/  upoast  (get-poast:scry host.rh id.rh)
+      ?~  upoast  `state
+      =/  event  (post-to-event:evlib i.keys.state eny.bowl u.upoast)
+      =/  cs  :~((send:nclient url.relay [%event event]))
+      [cs state]
+    =^  cs  relay
+      ?-  -.rh
+          %sync    get-posts:nclient
+          %user    (get-user-feed:nclient +.rh)
+          %thread  (get-thread:nclient +.rh)
+          %prof    get-profiles:nclient
+          ::
+      ==
+     =.  relays.state  (~(put by relays.state) -.u.rl relay)
+    [cs state]
 --

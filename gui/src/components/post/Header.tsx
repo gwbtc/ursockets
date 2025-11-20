@@ -1,33 +1,32 @@
 import { date_diff } from "@/logic/utils";
 import type { PostProps } from "./Post";
 import { useLocation } from "wouter";
-import useLocalState from "@/state/state";
 function Header(props: PostProps) {
   const [_, navigate] = useLocation();
-  const profiles = useLocalState((s) => s.profiles);
-  const profile = profiles.get(props.poast.author);
+  const { profile } = props;
   // console.log("profile", profile);
   // console.log(props.poast.author.length, "length");
   function go(e: React.MouseEvent) {
     e.stopPropagation();
-    navigate(`/feed/${poast.host}`);
+    navigate(`/u/${poast.host}`);
   }
   function openThread(e: React.MouseEvent) {
     e.stopPropagation();
     const sel = window.getSelection()?.toString();
-    if (!sel) navigate(`/feed/${poast.host}/${poast.id}`);
+    const id = "urbit" in props.user ? poast.id : poast.hash;
+    if (!sel) navigate(`/t/${poast.host}/${id}`);
   }
   const { poast } = props;
   const name = profile ? (
     profile.name
+  ) : "urbit" in props.user ? (
+    <p className="p-only">{props.user.urbit}</p>
   ) : (
-    <div className="name cp">
-      <p className="p-only">{poast.author}</p>
-    </div>
+    <p className="p-only">{props.user.nostr}</p>
   );
   return (
     <header>
-      <div className="author flex-align" role="link" onMouseUp={go}>
+      <div className="cp author flex-align name" role="link" onMouseUp={go}>
         {name}
       </div>
       <div role="link" onMouseUp={openThread} className="date">

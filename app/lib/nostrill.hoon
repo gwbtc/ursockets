@@ -32,6 +32,12 @@
   =/  res-event=websocket-event:eyre  [%message 1 `octs]
   :~  (give-ws-payload-server:ws wid res-event)
   ==
+
+++  user-to-atom  |=  u=user:sur  ^-  @
+  ?-  -.u
+    %urbit  +.u
+    %nostr  +.u
+  ==
   
 ::
 

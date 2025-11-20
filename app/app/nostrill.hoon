@@ -27,7 +27,6 @@
     scry   ~(. scri [state bowl])
     coms   ~(. commlib [state bowl])
     fols   ~(. followlib [state bowl])
-    nclient  ~(. nostr-client [state bowl])
 ++  on-init
   ^-  (quip card:agent:gall agent:gall)
   =/  default  (default-state:lib bowl)
@@ -76,13 +75,12 @@
     ^-  (quip card:agent:gall agent:gall)
     =/  msg  !<(ws-msg vase)
     =/  wid  -.msg
-    ~&  handle-relay-ws=wid
     =/  relay  (~(get by relays) wid)
     ?~  relay  ~&  >>>  "wid not found in relays state"  `this
     =/  m=websocket-message:eyre  +.msg
     ?~  message.m  ~&  "empty message"  `this
     =/  =octs  u.message.m
-    =/  urelay-msg  (parse-body:nclient q.octs)
+    =/  urelay-msg  (parse-body:nostr-client q.octs)
     ?~  urelay-msg  ~&  "msg parse error"  `this
     =^  cards  state  (handle-ws:mutan wid u.relay u.urelay-msg)
     [cards this]
@@ -195,35 +193,27 @@
       %del
         =.  profiles  (~(del by profiles) [%urbit our.bowl])
         `this
+      %fetch
+        ::  TODO
+        `this
     ==
   ++  handle-rela  |=  poke=relay-poke:ui:sur
-    ?-  -.poke
-      %add
-            :_  this
-            ::  TODO good UI for this
+    ::  TODO fix this somehow
+    =^  cs  state
+    ?+  -.poke  (handle-rela:mutan poke)
+      %add  :_  state
             :~  (connect:ws +.poke bowl)
             ==
-      %del
-            =^  cs  state  (unset-relay:mutan +.poke)
-            [cs this]
-      ::
-      %sync  =^  cs  state  get-posts:nclient
-             [cs this]
-      ::
-      %send
-          =/  upoast  (get-poast:scry host.poke id.poke)
-          ?~  upoast  `this
-          =/  event  (post-to-event:evlib i.keys eny.bowl u.upoast)
-          :: TODO URGENT
-          :: =/  req=bulk-req:shim:nsur  [relays.poke %event event]
-          :: =/  cards  :~((send:nclient req))
-          :: [cards this]
-          `this
+      %del  (unset-relay:mutan +.poke)
     ==
-
-    
+    [cs this]
   ::
   ++  debug  |=  noun=*
+    =/  rl  get-relay:mutan
+    ?~  rl  ~&  >>>  "no relay!!!!"  `this
+    =/  wid  -.u.rl
+    =/  relay  +.u.rl
+    =/  nclient  ~(. nostr-client [state bowl wid relay])
     ?+  noun  `this
       %iris
         =/  endpoint  'ws://localhost:8888'
@@ -237,8 +227,9 @@
         ==
       %wstest
         :: =/  url  'ws://localhost:8888'
-        =/  url  'wss://nos.lol'
-        =^  cs  state  (test-connection:nclient url)
+        :: =/  url  'wss://nos.lol'
+        =^  cs  relay  test-connection:nclient
+        =.  relays  (~(put by relays) wid relay)
         [cs this]
       %wsl
         =/  l  (list-connected:ws bowl)
@@ -246,16 +237,24 @@
         `this
       %wsc
         =.  relays  ~
-        `this
-      %ws-close
+        =.  nostr-feed  ~
         =/  sockets  .^((map @ud websocket-connection:iris) %ix /(scot %p our.bowl)/ws/(scot %da now.bowl))
         ~&  iris-sockets=sockets
+        =/  wids  ~(key by sockets)
+        =/  ws-paths  %+  turn  ~(tap in wids)  |=  wid=@  ^-  path  /websocket-client/(scot %ud wid)
+        ~&  ws-paths=ws-paths
+        :_  this
+        ?~  ws-paths  ~
+        :~  [%give %fact ws-paths %disconnect !>(~)]
+        ==
+      %ws-close
         :_  this
         =/  inc-subs  ~(tap by sup.bowl)
         =/  ws-paths  %+  roll  inc-subs  |=  [i=[=duct =ship =path] acc=(list path)]
           ?.  ?=([%websocket-client *] path.i)  acc
           ~&  bitt=i
           [path.i acc]
+        ?~  ws-paths  ~
         :~  [%give %fact ws-paths %disconnect !>(~)]
         ==
       %irisf
@@ -288,10 +287,12 @@
           =/  reqs  ~(tap by reqs.stats)
           =/  mm  |-  ?~  reqs  ~
             =/  sub  -.i.reqs
-            ~&  event-stats=+.i.reqs
+            ~&  event-stats=[sub-id=sub +.i.reqs]
             $(reqs t.reqs)
           $(rls t.rls)
         ~&  >  "nostr feed"
+      `this
+      %nf
         =/  nf  (tap:norm:sur nostr-feed)
         =/  nff  |-  ?~  nf  ~
           =/  ev=event:nsur  +.i.nf
@@ -299,6 +300,17 @@
           ~&  >>  ev-txt=content.ev
           
           $(nf t.nf)
+        
+        `this
+      %profs
+        =/  pfs  ~(tap by profiles)
+        ~&  stored-profiles=(lent pfs)
+        =/  nff  |-  ?~  pfs  ~
+          =/  u=user:sur  -.i.pfs
+          =/  prof=user-meta:nsur  +.i.pfs
+          ~&  >>  user=u
+          ~&  >  profile=prof
+          $(pfs t.pfs)
         
         `this
       %wtf
@@ -335,59 +347,13 @@
       %http
       `this
       %rt  ::  relay test
-        =^  cards  state  get-posts:nclient
+        =^  cards  relay  get-posts:nclient
+        =.  relays  (~(put by relays) wid relay)
         [cards this]
       %rt0
-        =/  ids
-          %+  roll  (tap:norm:sur nostr-feed)  |=  [[@ ev=event:nsur] acc=[(set @ux) (set @ux)]]
-            ?.  .=(kind.ev 1)  acc
-            %=  acc
-              -  (~(put in -.acc) id.ev)
-              +  (~(put in +.acc) pubkey.ev)
-            ==
-          =^  cards  state  (populate-profiles:mutan -.ids)
-          :: (get-profiles:shimm +.ids)
-          :: (get-engagement:shimm -.ids)
+          =^  cards  relay  get-profiles:nclient
+          =.  relays  (~(put by relays) wid relay)
         [cards this]
-      :: %rt1
-      ::     =|  cards=(list card:agent:gall)
-      ::     |-
-      ::     ?~  l
-      ::         ~&  cards=(lent cards)  [cards this]
-      ::       =/  [sub-id=@t pf=filter:nsur done=filter:nsur]  i.l
-      ::       =/  diff  (diff-filters:nlib pf done)
-      ::       :: ~&  >  diff=diff
-      ::       ?~  authors.pf  $(l t.l)
-      ::       =^  cs  state  (populate-profiles:mutat u.authors.pf)
-            
-      ::       $(l t.l, cards (weld cards cs))
-    %rt2
-
-      =/  poasts  (tap:norm:sur nostr-feed)
-      =/  pcount  (lent poasts)
-      =|  invalid=(list @t)
-      |-  ?~  poasts
-        ~&  >>>  invalid=invalid
-        `this
-        =/  p=event:nsur  +.i.poasts
-        =/  valid  (validate-pubkey:nostr-keys pubkey.p)
-        ?.  valid
-          =/  ids  (crip (scow:sr %ux id.p))
-          ~&  ids
-          ~&  content.p
-          $(invalid [ids invalid], poasts t.poasts)
-        $(poasts t.poasts)
-    %rt3
-      =/  poasts  (tap:norm:sur nostr-feed)
-      =|  pubkeys=(set @ux)
-      =/  pks=(set @ux)
-        |-  ?~  poasts  pubkeys
-          =/  p=event:nsur  +.i.poasts
-          =/  npks  (~(put in pubkeys) pubkey.p)
-          $(poasts t.poasts, pubkeys npks)
-      ::
-      =^  cards  state  (populate-profiles:mutan pks)
-      [cards this]
     %ui
       =/  =fact:ui:sur  [%post %add *post-wrapper:sur]
       =/  card     (update-ui:cards fact)
@@ -438,6 +404,8 @@
 ++  on-leave
   |~  =(pole knot)
   ^-  (quip card:agent:gall agent:gall)
+  ~&  >>>  on-leave=pole
+  ::  TODO fix the relays when we doing this
   `this
 ::
 ++  on-peek

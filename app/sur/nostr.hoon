@@ -33,7 +33,13 @@ $:  start=@da
     reqs=(map sub-id event-stats)
 ==
 +$  event-stats
-  [filters=(list filter) received=event-count]
+$:  filters=(list filter)
+    received=event-count
+  ::  if not ongoing we kill the subscription on %eose. If ongoing we turn to .y after %eose
+    ongoing=(unit ?)
+  ::  if chunked we trigger a new subscription on %eose
+    chunked=(list filter)
+==
 +$  sub-id  @t
 +$  event-count  @ud
 
@@ -46,7 +52,7 @@ $:  sub-id=@t
 $:  ids=(unit (set @ux))
     authors=(unit (set @ux))
     kinds=(unit (set @ud))
-    tags=(unit (map @t (set @t)))
+    tags=(unit (map @t (list @t)))
     since=(unit @da)
     until=(unit @da)
     limit=(unit @ud)
