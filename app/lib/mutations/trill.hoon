@@ -29,12 +29,23 @@
     %add  !!
     %del       [%del-reply id.poke id.p]
     %quote     [%quote id.poke p]
-    :: TODO del-reply
     %reply     [%reply id.poke p]
     %rp        [%rp id.poke id.p]
     %reaction  [%reaction id.poke reaction.poke]
   ==
-  
+::
+++  make-eng-cards
+  |=  [poke=post-poke:ui:sur c=(list id:post)]
+  =/  crds  ~(. cards:lib bowl)
+  |-  ^-  (list card)
+  ?~  c  ~
+  =/  child=(unit post:post)  (get:orm:feed feed.state i.c)
+  ?~  child  $(c t.c)
+  :_  $(c t.c)
+  =/  eng-poke  [%eng (headsup-poke poke u.child)]
+  ~&  send-heads-up-to/(headsup-poke poke u.child)
+  (poke-host:crds author.u.child eng-poke)
+::
 ++  handle-post  |=  poke=post-poke:ui:sur
   ^-  (quip card _state)
   ~&  handle-post-ui=poke
@@ -54,23 +65,13 @@
         =/  ui-card    (update-ui:cards:lib jfact)
         =/  =fact:comms  [%post %del id.poke]
         =/  fact-card  (update-followers:cards:lib fact)
-        :_  state
+                :_  state
         ?:  .=(our.bowl host.p)
           ?~  ~(tap in children.p)
             :~  ui-card
                 fact-card
             ==
-          =/  c  ~(tap in children.p)
-          =/  eng-cards=(list card)
-            |-  ^-  (list card)
-            ?~  c  ~
-            =/  child=(unit post:post)  (get:orm:feed feed.state i.c)
-            ?~  child  $(c t.c)
-            :_  $(c t.c)
-            ::  [%del-reply p.poke id.child]
-            =/  eng-poke  [%eng (headsup-poke poke u.child)]
-            ~&  send-heads-up-to/(headsup-poke poke u.child)
-            (poke-host:crds author.u.child eng-poke)
+          =/  eng-cards=(list card)  (make-eng-cards poke ~(tap in children.p))
           %+  welp  eng-cards
           :~    ui-card
                 fact-card
@@ -83,14 +84,18 @@
             |=  [t=time cl=content-list:post]
             %+  skim  cl
             |=(b=block:post =(%ref -.b)) 
-          ?.  ?=([%ref @ @ path=*] ref)  ~
+          ?.  ?=([%ref @ ship=@ path=*] ref)  ~
           =/  ref-id=(unit @da)  (slaw:sr %ud (head path.ref))
           ?~  ref-id  ~
           =/  eng-poke  [%eng (headsup-poke [%rp host.poke u.ref-id] p)]
-          =/  eng-card  (poke-host:crds host.poke eng-poke)
+          =/  eng-card  :~((poke-host:crds `@p`ship.ref eng-poke))
+          =/  eng-cards
+            ?~  ~(tap in children.p)  eng-card
+            %+  welp  eng-card
+            (make-eng-cards poke ~(tap in children.p))
+          %+  welp  eng-cards
           :~  ui-card
               fact-card
-              eng-card
           ==
         =/  eng-poke  [%eng (headsup-poke [%del host.poke u.parent.p] p)]
         =/  eng-card  (poke-host:crds host.poke eng-poke)
