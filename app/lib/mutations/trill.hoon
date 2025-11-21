@@ -28,7 +28,10 @@
   ?-  -.poke
     %add  !!
     %del       [%del-reply id.poke id.p]
-    %quote     [%quote id.poke p]
+    %quote     
+      ?:  =(`id.p (slaw:sr %ud content.poke))
+        [%del-quote id.poke id.p]
+      [%quote id.poke p]
     %reply     [%reply id.poke p]
     %rp        [%rp id.poke id.p]
     %reaction  [%reaction id.poke reaction.poke]
@@ -72,10 +75,26 @@
                 fact-card
             ==
           =/  eng-cards=(list card)  (make-eng-cards poke ~(tap in children.p))
-          %+  welp  eng-cards
-          :~    ui-card
-                fact-card
-          ==
+          =/  cards  
+            %+  welp  eng-cards
+            :~    ui-card
+                  fact-card
+            ==
+          ::  handle %quote case 
+          =/  ref=block:post  
+            %-  head  %-  zing
+            %+  turn  (tap:corm:post contents.p)
+            |=  [t=time cl=content-list:post]
+            %+  skim  cl
+            |=(b=block:post =(%ref -.b)) 
+          ?.  ?=([%ref @ ship=@ path=*] ref)  cards
+          =/  ref-id=(unit @da)  (slaw:sr %ud (head path.ref))
+          ?~  ref-id  cards
+          =/  eng-poke  
+            :-  %eng 
+            (headsup-poke [%quote (crip (scow:sr %ud id.p)) `@p`ship.ref u.ref-id] p)
+          %+  welp  cards
+          :~((poke-host:crds `@p`ship.ref eng-poke))
         ::  %rp case
         ?~  parent.p
           =/  ref=block:post  

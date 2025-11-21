@@ -127,6 +127,16 @@
       :_  state
       :~  (update-followers:cards:lib f)
       ==
+    %del-quote
+      =/  poast  (get:orm:feed feed.state src.e)
+      ?~  poast  `state
+      =/  spid  [*signature:post src.bowl quote.e]
+      =.  quoted.engagement.u.poast  (~(del in quoted.engagement.u.poast) spid)
+      =.  feed.state  (put:orm:feed feed.state src.e u.poast)
+      =/  f=fact:comms  [%post %changes u.poast]
+      :_  state
+      :~  (update-followers:cards:lib f)
+      ==
     %rp
       =/  poast  (get:orm:feed feed.state src.e)
       ?~  poast  `state
