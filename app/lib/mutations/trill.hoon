@@ -75,14 +75,22 @@
           :~    ui-card
                 fact-card
           ==
-        ::  poking host with %del post 
-        ::  [%del-reply parent.p p.poke]
-        ::  XX:
-        ::  we are poking: delete my post(~zod) with id=1 and host ~bus
-        ::  parent.post is empty so it's not a reply! 
-        ::  what kind of behaviour should be expected ?
+        ::  %rp case
         ?~  parent.p
+          =/  ref=block:post  
+            %-  head  %-  zing
+            %+  turn  (tap:corm:post contents.p)
+            |=  [t=time cl=content-list:post]
+            %+  skim  cl
+            |=(b=block:post =(%ref -.b)) 
+          ?.  ?=([%ref @ @ path=*] ref)  ~
+          =/  ref-id=(unit @da)  (slaw:sr %ud (head path.ref))
+          ?~  ref-id  ~
+          =/  eng-poke  [%eng (headsup-poke [%rp host.poke u.ref-id] p)]
+          =/  eng-card  (poke-host:crds host.poke eng-poke)
           :~  ui-card
+              fact-card
+              eng-card
           ==
         =/  eng-poke  [%eng (headsup-poke [%del host.poke u.parent.p] p)]
         =/  eng-card  (poke-host:crds host.poke eng-poke)

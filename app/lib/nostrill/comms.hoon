@@ -131,7 +131,10 @@
       =/  poast  (get:orm:feed feed.state src.e)
       ?~  poast  `state
       =/  spid  [*signature:post src.bowl rt.e]
-      =.  shared.engagement.u.poast  (~(put in shared.engagement.u.poast) spid)
+      =.  shared.engagement.u.poast  
+        ?:  (~(has in shared.engagement.u.poast) spid)
+          (~(del in shared.engagement.u.poast) spid)
+        (~(put in shared.engagement.u.poast) spid)
       =.  feed.state  (put:orm:feed feed.state src.e u.poast)
       =/  f=fact:comms  [%post %changes u.poast]
       :_  state
