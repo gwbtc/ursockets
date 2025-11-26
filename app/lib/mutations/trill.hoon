@@ -32,10 +32,7 @@
   ?-  -.poke
     %add  !!
     %del       [%del-reply id.poke id.p]
-    %quote     
-      ?:  =(`id.p (slaw:sr %ud content.poke))
-        [%del-quote id.poke id.p]
-      [%quote id.poke p]
+    %quote     [%quote id.poke p]
     %reply     [%reply id.poke p]
     %rp        [%rp id.poke id.p]
     %reaction  [%reaction id.poke reaction.poke]
@@ -97,11 +94,11 @@
               (update-followers:cards:lib [%post %changes u.poast])
             ==
           =/  ref  u.is-ref
-          =/  eng-poke  (headsup-poke [%quote (crip (scow:sr %ud id.p)) `@p`-.ref +.ref] p)
+          =/  eng-poke  [%eng [%del-quote +.ref id.p]]
           ::  case: delete quote
           :_  state
           %+  snoc  cards
-          (poke-host:crds `@p`-.ref [%eng eng-poke])
+          (poke-host:crds `@p`-.ref eng-poke)
         ?~  parent.p
           ?~  is-ref
             ~&  'unexpected post structure'
