@@ -1,10 +1,14 @@
 import TrillPost from "@/components/post/Post";
 import type { FC } from "@/types/trill";
+import useLocalState from "@/state/state";
+import type { UserType } from "@/types/nostrill";
+import { isValidPatp } from "urbit-ob";
 // import { useEffect } from "react";
 // import { useQueryClient } from "@tanstack/react-query";
 // import { toFull } from "../thread/helpers";
 
 function TrillFeed({ data, refetch }: { data: FC; refetch: Function }) {
+  const { profiles } = useLocalState((s) => ({ profiles: s.profiles }));
   // const qc = useQueryClient();
   // useEffect(() => {
   //   Object.values(data.feed).forEach((poast) => {
@@ -24,10 +28,26 @@ function TrillFeed({ data, refetch }: { data: FC; refetch: Function }) {
         .filter((i) => !data.feed[i].parent)
         .sort()
         .reverse()
-        .slice(0, 50)
-        .map((i) => (
-          <TrillPost key={i} poast={data.feed[i]} refetch={refetch} />
-        ))}
+        // .slice(0, 50)
+        .map((i) => {
+          const poast = data.feed[i];
+          const user: UserType = poast.event
+            ? { nostr: poast.event.pubkey }
+            : isValidPatp(poast.author)
+              ? { urbit: poast.author }
+              : { nostr: poast.author };
+          const userString = "urbit" in user ? user.urbit : user.nostr;
+          const profile = profiles.get(userString);
+          return (
+            <TrillPost
+              key={i}
+              poast={poast}
+              user={user}
+              profile={profile}
+              refetch={refetch}
+            />
+          );
+        })}
     </>
   );
 }

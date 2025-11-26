@@ -5,6 +5,7 @@
   $:  %0
       :: nostr config
       relays=(map @ud relay-stats:nostr)  ::  key is the websocket id
+      :: ws-msg-queue=(list websocket-event:eyre)
       keys=(lest keys:nostr)  :: cycled, i.keys is current one
       ::  own feed
       feed=feed:trill
@@ -68,12 +69,12 @@ $%   [%reply p=post:tp]
   ==
   +$  post-poke
   $%  [%add content=@t]
-      [%reply content=@t host=@p id=@da thread=@da]
-      [%quote content=@t host=@p id=@da]
-      [%rp host=@p id=@da]  :: NIP-18
-      [%reaction host=@p id=@da reaction=@t]
+      [%reply content=@t host=user id=@da thread=@da]
+      [%quote content=@t host=user id=@da]
+      [%rp host=user id=@da]  :: NIP-18
+      [%reaction host=user id=@da reaction=@t]
       :: [%rt id=@ux pubkey=@ux relay=@t]  :: NIP-18
-      [%del host=@p id=@da]
+      [%del host=user id=@da]
   ==
   +$  fols-poke
   $%  [%add =user]
@@ -82,22 +83,37 @@ $%   [%reply p=post:tp]
   +$  prof-poke
   $%  [%add meta=user-meta:nostr]
       [%del ~]
+      [%fetch p=(list user)]
   ==
   +$  relay-poke
   $%  [%add p=@t]
       [%del p=@ud]
       ::
-      [%sync ~]
+      relay-handling
+  ==
+  +$  relay-handling
+  $%  [%sync ~]
+      [%prof ~]
+      [%user pubkey=@ux]
+      [%thread id=@ux]
       ::  send event for... relaying
       [%send host=@p id=@ relays=(list @t)]
   ==
   :: facts
   +$  fact
-  $%  [%nostr feed=nostr-feed]
+  $%  [%nostr nostr-fact]
       [%post post-fact]
+      [%prof (map user user-meta:nostr)]
       [%enga p=post-wrapper reaction=*]
       [%fols fols-fact]
       [%hark =notif]
+  ==
+  +$  nostr-fact
+  $%  [%feed feed=nostr-feed]
+      [%user feed=nostr-feed]
+      [%thread feed=nostr-feed]
+      [%event event:nostr]
+      [%relays (map @ relay-stats:nostr)]
   ==
   +$  post-fact
   $%  [%add post-wrapper]

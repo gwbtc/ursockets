@@ -6,13 +6,14 @@ import Footer from "./Footer";
 import { useLocation } from "wouter";
 import useLocalState from "@/state/state";
 import RP from "./RP";
-import ShipModal from "../modals/ShipModal";
+import UserModal from "../modals/UserModal";
 import type { Ship } from "@/types/urbit";
 import Sigil from "../Sigil";
-import type { UserProfile } from "@/types/nostrill";
+import type { UserProfile, UserType } from "@/types/nostrill";
 
 export interface PostProps {
   poast: Poast;
+  user: UserType;
   fake?: boolean;
   rter?: Ship;
   rtat?: number;
@@ -22,7 +23,7 @@ export interface PostProps {
   profile?: UserProfile;
 }
 function Post(props: PostProps) {
-  console.log("post", props);
+  // console.log("post", props);
   const { poast } = props;
   if (!poast || poast.contents === null) {
     return null;
@@ -52,15 +53,21 @@ function TrillPost(props: PostProps) {
   const [_, navigate] = useLocation();
   function openThread(_e: React.MouseEvent) {
     const sel = window.getSelection()?.toString();
-    if (!sel) navigate(`/feed/${poast.host}/${poast.id}`);
+    const id = "urbit" in props.user ? poast.id : poast.hash;
+    const path = `/t/${poast.host}/${id}`;
+    if (poast.hash.includes("000000")) {
+      console.log("bad hash", poast);
+      return;
+    }
+    if (!sel) navigate(path);
   }
 
   function openModal(e: React.MouseEvent) {
     e.stopPropagation();
-    setModal(<ShipModal ship={poast.author} />);
+    setModal(<UserModal user={props.user} />);
   }
   const avatar = profile ? (
-    <div className="avatar cp" role="link" onMouseUp={openModal}>
+    <div className="avatar sigil cp" role="link" onMouseUp={openModal}>
       <img src={profile.picture} />
     </div>
   ) : (
