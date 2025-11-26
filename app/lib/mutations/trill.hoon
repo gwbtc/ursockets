@@ -69,51 +69,57 @@
             ==
           ==
         =/  is-ref=(unit [ship @da])  (get-ref p)
-        ?:  .=(our.bowl host.p)  
-          ?~  is-ref  
-            ?~  parent.p  
-              ::  case: delete our post
-              [cards state]
-            =/  poast  (get:orm:feed feed.state u.parent.p)
-            ?~  poast  
-              ::  case:  handle %del-parent
-              [cards state]
-            =.  children.u.poast  (~(del in children.u.poast) id.p)
-            =.  feed.state  (put:orm:feed feed.state u.parent.p u.poast)
+        ?-  -.host.poke  
+            %nostr  `state
+            ::
+            %urbit
+          =/  host=@p  +.host.poke
+          ?:  .=(our.bowl host)  
+            ?~  is-ref  
+              ?~  parent.p  
+                ::  case: delete our post
+                [cards state]
+              =/  poast  (get:orm:feed feed.state u.parent.p)
+              ?~  poast  
+                ::  case:  handle %del-parent
+                [cards state]
+              =.  children.u.poast  (~(del in children.u.poast) id.p)
+              =.  feed.state  (put:orm:feed feed.state u.parent.p u.poast)
+              :_  state
+              ?:  .=(our.bowl author.p)
+                ::  case: delete our reply to our post
+                %+  snoc  cards
+                (update-followers:cards:lib [%post %changes u.poast])
+              ::  case:  delete reply to our post
+              ::  send %del-parent to deleted reply 
+              =/  eng-poke=engagement:comms  [%del-parent u.parent.p id.p]
+              %+  welp  cards
+              :~
+                (poke-host:crds author.p [%eng eng-poke])
+                (update-followers:cards:lib [%post %changes u.poast])
+              ==
+            =/  ref  u.is-ref
+            =/  eng-poke  [%eng [%del-quote +.ref id.p]]
+            ::  case: delete quote
             :_  state
-            ?:  .=(our.bowl author.p)
-              ::  case: delete our reply to our post
-              %+  snoc  cards
-              (update-followers:cards:lib [%post %changes u.poast])
-            ::  case:  delete reply to our post
-            ::  send %del-parent to deleted reply 
-            =/  eng-poke=engagement:comms  [%del-parent u.parent.p id.p]
-            %+  welp  cards
-            :~
-              (poke-host:crds author.p [%eng eng-poke])
-              (update-followers:cards:lib [%post %changes u.poast])
-            ==
-          =/  ref  u.is-ref
-          =/  eng-poke  [%eng [%del-quote +.ref id.p]]
-          ::  case: delete quote
-          :_  state
-          %+  snoc  cards
-          (poke-host:crds `@p`-.ref eng-poke)
-        ?~  parent.p
-          ?~  is-ref
-            ~&  'unexpected post structure'
-            !!
-          =/  ref=[ship @da]  u.is-ref
-          =/  eng-poke  (headsup-poke [%rp host.poke +.ref] p)
-          =/  eng-card  (poke-host:crds `@p`-.ref [%eng eng-poke])
-          ::  case: delete rp
+            %+  snoc  cards
+            (poke-host:crds `@p`-.ref eng-poke)
+          ?~  parent.p
+            ?~  is-ref
+              ~&  'unexpected post structure'
+              !!
+            =/  ref=[ship @da]  u.is-ref
+            =/  eng-poke  (headsup-poke [%rp host.poke +.ref] p)
+            =/  eng-card  (poke-host:crds `@p`-.ref [%eng eng-poke])
+            ::  case: delete rp
+            :_  state
+            (snoc cards eng-card)
+          =/  eng-poke  (headsup-poke [%del host.poke u.parent.p] p)
+          =/  eng-card  (poke-host:crds host [%eng eng-poke])
+          ::  case: delete our reply
           :_  state
           (snoc cards eng-card)
-        =/  eng-poke  (headsup-poke [%del host.poke u.parent.p] p)
-        =/  eng-card  (poke-host:crds host.poke [%eng eng-poke])
-        ::  case: delete our reply
-        :_  state
-        (snoc cards eng-card)
+        ==
       %add
         =/  sp     (build-sp:trill our.bowl our.bowl content.poke ~ ~)
         =/  p=post:post
@@ -225,7 +231,7 @@
         =/  up  (get:orm:feed following2.state id.poke)
         ?~  up
           =/  eng-poke  [%eng (headsup-poke poke *post:post)]
-          =/  eng-card  (poke-host:crds host.poke eng-poke)
+          =/  eng-card  (poke-host:crds host eng-poke)
           :_  state  :~(eng-card)
         ::
         =/  p  u.up 

@@ -108,7 +108,7 @@
       =.  host.u.p  our.bowl  ::  parent already deleted no need to send update to them, handle localy 
       =.  feed.state  (put:orm:feed feed.state child.e u.p)
       =/  mutat  ~(. mutations-trill state bowl)
-      (handle-post:mutat [%del our.bowl child.e])
+      (handle-post:mutat [%del urbit+our.bowl child.e])
     %del-reply 
       ?~  p=(get:orm:feed feed.state child.e)  `state
       =/  poast  (get:orm:feed feed.state parent.e)
