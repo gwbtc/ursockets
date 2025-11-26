@@ -98,4 +98,15 @@
 |=  [f=feed:feed p=post:post]  ^-  feed:feed
   =/  nid  (find-available-id f id.p)
   (put:orm:feed f nid p)
+
+++  delete-children
+  |=  [f=feed:feed p=post:post]  ^-  feed:feed
+  ?~   ~(tap in children.p)  f
+  =/  children  ~(tap in children.p)
+  |-  ^-  feed:feed
+  ?~  children  f
+  ?~  child=(get:orm:feed f i.children)
+    $(children t.children)
+  =/  nf  =<  +  (del:orm:feed f id.u.child)
+  $(children t.children, f nf)
 --

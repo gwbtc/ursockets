@@ -1,5 +1,5 @@
 /-  sur=nostrill, nsur=nostr, comms=nostrill-comms, feed=trill-feed, post=trill-post
-/+  js=json-nostr, sr=sortug,constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill, lib=nostrill
+/+  js=json-nostr, sr=sortug,constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill, lib=nostrill, mutations-trill
 |_  [=state:sur =bowl:gall]
 ++  cast-poke
   |=  raw=*  ^-  poke:comms
@@ -103,18 +103,23 @@
       :~  (update-followers:cards:lib f)
           (update-followers:cards:lib f2)
       ==
+    %del-parent
+      ?~  p=(get:orm:feed feed.state child.e)  `state
+      =.  host.u.p  our.bowl  ::  parent already deleted no need to send update to them, handle localy 
+      =.  feed.state  (put:orm:feed feed.state child.e u.p)
+      =/  mutat  ~(. mutations-trill state bowl)
+      (handle-post:mutat [%del our.bowl child.e])
     %del-reply 
-      =.  feed.state  =<  +  (del:orm:feed feed.state child.e)
+      ?~  p=(get:orm:feed feed.state child.e)  `state
       =/  poast  (get:orm:feed feed.state parent.e)
-      ?~  poast  
-        :_  state 
-        :~  (update-followers:cards:lib [%post %del child.e])
-        ==
+      ?~  poast  `state
+      =.  feed.state  =<  +  (del:orm:feed feed.state child.e)
       =.  children.u.poast  (~(del in children.u.poast) child.e)
       =.  feed.state  (put:orm:feed feed.state parent.e u.poast)
       :_  state
       :~  (update-followers:cards:lib [%post %changes u.poast])
           (update-followers:cards:lib [%post %del child.e])
+          ::  XX: update-ui:cards:lib
       ==
     :: TODO ideally we want the full quote to display it within the post engagement. So do we change quoted.engagement.post? What if the quoter edits the quote down the line, etc.
     %quote
@@ -136,6 +141,7 @@
       =/  f=fact:comms  [%post %changes u.poast]
       :_  state
       :~  (update-followers:cards:lib f)
+      ::  TODO: update %ui card
       ==
     %rp
       =/  poast  (get:orm:feed feed.state src.e)
@@ -149,6 +155,7 @@
       =/  f=fact:comms  [%post %changes u.poast]
       :_  state
       :~  (update-followers:cards:lib f)
+      ::  TODO: update %ui card
       ==
     %reaction
       =/  poast  (get:orm:feed feed.state post.e)
@@ -161,6 +168,7 @@
       =/  f=fact:comms  [%post %changes u.poast]
       :_  state
       :~  (update-followers:cards:lib f)
+      ::  TODO: update %ui card
       ==
   ==
 

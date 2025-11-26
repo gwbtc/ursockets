@@ -37,20 +37,9 @@
     %reaction  [%reaction id.poke reaction.poke]
   ==
 ::
-++  make-eng-cards
-  |=  [poke=post-poke:ui:sur c=(list id:post)]
-  =/  crds  ~(. cards:lib bowl)
-  |-  ^-  (list card)
-  ?~  c  ~
-  =/  child=(unit post:post)  (get:orm:feed feed.state i.c)
-  ?~  child  $(c t.c)
-  :_  $(c t.c)
-  =/  eng-poke  [%eng (headsup-poke poke u.child)]
-  ~&  send-heads-up-to/(headsup-poke poke u.child)
-  (poke-host:crds author.u.child eng-poke)
-::
 ++  handle-post  |=  poke=post-poke:ui:sur
   ^-  (quip card _state)
+  |^
   ~&  handle-post-ui=poke
   =/  profile  (~(get by profiles.state) [%urbit our.bowl])
   =/  pubkey  pub.i.keys.state
@@ -58,71 +47,72 @@
   ::  TODO UI notifications  [%hark ]
     ?-  -.poke
       %del  
-        =/  pos  (get:orm:feed feed.state id.poke)
-        ?~  pos  `state
-        =.  feed.state  =<  +  (del:orm:feed feed.state id.poke)
-        ::  TODO cascade children, from our state and propagate it down to repliers 
+        ?~  pos=(get:orm:feed feed.state id.poke)  `state
         =/  p  u.pos
+        =.  feed.state  =<  +  (del:orm:feed feed.state id.poke)
+        =.  feed.state  (delete-children:trill-feed feed.state p)
         =/  pw  [p (some pubkey) ~ ~ profile]
+        =/  eng-cards=(list card)  
+          (del-parent-cards children.p id.p)
         =/  jfact=fact:ui:sur  [%post %del pw]
-        =/  ui-card    (update-ui:cards:lib jfact)
         =/  =fact:comms  [%post %del id.poke]
-        =/  fact-card  (update-followers:cards:lib fact)
-                :_  state
-        ?:  .=(our.bowl host.p)
-          ?~  ~(tap in children.p)
-            :~  ui-card
-                fact-card
+        =/  upd-fol-cards
+          %+  turn  ~(tap in children.p)
+          |=(c=id:post (update-followers:cards:lib [%post %del c]))
+        =/  cards=(list card)
+          ;:  welp
+            eng-cards
+            upd-fol-cards
+            :~  (update-ui:cards:lib jfact)
+                (update-followers:cards:lib [%post %del id.poke])
             ==
-          =/  eng-cards=(list card)  (make-eng-cards poke ~(tap in children.p))
-          =/  cards  
-            %+  welp  eng-cards
-            :~    ui-card
-                  fact-card
-            ==
-          ::  handle %quote case 
-          =/  ref=block:post  
-            %-  head  %-  zing
-            %+  turn  (tap:corm:post contents.p)
-            |=  [t=time cl=content-list:post]
-            %+  skim  cl
-            |=(b=block:post =(%ref -.b)) 
-          ?.  ?=([%ref @ ship=@ path=*] ref)  cards
-          =/  ref-id=(unit @da)  (slaw:sr %ud (head path.ref))
-          ?~  ref-id  cards
-          =/  eng-poke  
-            :-  %eng 
-            (headsup-poke [%quote (crip (scow:sr %ud id.p)) `@p`ship.ref u.ref-id] p)
-          %+  welp  cards
-          :~((poke-host:crds `@p`ship.ref eng-poke))
-        ::  %rp case
-        ?~  parent.p
-          =/  ref=block:post  
-            %-  head  %-  zing
-            %+  turn  (tap:corm:post contents.p)
-            |=  [t=time cl=content-list:post]
-            %+  skim  cl
-            |=(b=block:post =(%ref -.b)) 
-          ?.  ?=([%ref @ ship=@ path=*] ref)  ~
-          =/  ref-id=(unit @da)  (slaw:sr %ud (head path.ref))
-          ?~  ref-id  ~
-          =/  eng-poke  [%eng (headsup-poke [%rp host.poke u.ref-id] p)]
-          =/  eng-card  :~((poke-host:crds `@p`ship.ref eng-poke))
-          =/  eng-cards
-            ?~  ~(tap in children.p)  eng-card
-            %+  welp  eng-card
-            (make-eng-cards poke ~(tap in children.p))
-          %+  welp  eng-cards
-          :~  ui-card
-              fact-card
           ==
-        =/  eng-poke  [%eng (headsup-poke [%del host.poke u.parent.p] p)]
-        =/  eng-card  (poke-host:crds host.poke eng-poke)
-        ::
-        :~  ui-card
-            fact-card
-            eng-card
-        ==
+        =/  is-ref=(unit [ship @da])  (get-ref p)
+        ?:  .=(our.bowl host.p)  
+          ?~  is-ref  
+            ?~  parent.p  
+              ::  case: delete our post
+              [cards state]
+            =/  poast  (get:orm:feed feed.state u.parent.p)
+            ?~  poast  
+              ::  case:  handle %del-parent
+              [cards state]
+            =.  children.u.poast  (~(del in children.u.poast) id.p)
+            =.  feed.state  (put:orm:feed feed.state u.parent.p u.poast)
+            :_  state
+            ?:  .=(our.bowl author.p)
+              ::  case: delete our reply to our post
+              %+  snoc  cards
+              (update-followers:cards:lib [%post %changes u.poast])
+            ::  case:  delete reply to our post
+            ::  send %del-parent to deleted reply 
+            =/  eng-poke=engagement:comms  [%del-parent u.parent.p id.p]
+            %+  welp  cards
+            :~
+              (poke-host:crds author.p [%eng eng-poke])
+              (update-followers:cards:lib [%post %changes u.poast])
+            ==
+          =/  ref  u.is-ref
+          =/  eng-poke  (headsup-poke [%quote (crip (scow:sr %ud id.p)) `@p`-.ref +.ref] p)
+          ::  case: delete quote
+          :_  state
+          %+  snoc  cards
+          (poke-host:crds `@p`-.ref [%eng eng-poke])
+        ?~  parent.p
+          ?~  is-ref
+            ~&  'unexpected post structure'
+            !!
+          =/  ref=[ship @da]  u.is-ref
+          =/  eng-poke  (headsup-poke [%rp host.poke +.ref] p)
+          =/  eng-card  (poke-host:crds `@p`-.ref [%eng eng-poke])
+          ::  case: delete rp
+          :_  state
+          (snoc cards eng-card)
+        =/  eng-poke  (headsup-poke [%del host.poke u.parent.p] p)
+        =/  eng-card  (poke-host:crds host.poke [%eng eng-poke])
+        ::  case: delete our reply
+        :_  state
+        (snoc cards eng-card)
       %add
         =/  sp     (build-sp:trill our.bowl our.bowl content.poke ~ ~)
         =/  p=post:post
@@ -211,30 +201,59 @@
                 eng-card
             ==
             ::
-          =/  up  (get:orm:feed following2.state id.poke)
-          ?~  up
-            =/  eng-poke  [%eng (headsup-poke poke *post:post)]
-            =/  eng-card  (poke-host:crds host.poke eng-poke)
-            :_  state  :~(eng-card)
-            ::
-            =/  p  u.up 
-            =.  reacts.engagement.p  %+  ~(put by reacts.engagement.p)
-              our.bowl  [reaction.poke *signature:post]
-            =.  state  (add-to-feed p)
-            =/  pw  [p (some pubkey) ~ ~ profile]
-            =/  jfact=fact:ui:sur  [%post %add pw]
-            =/  ui-card    (update-ui:cards:lib jfact)
-            =/  eng-poke  [%eng (headsup-poke poke p)]
-            =/  eng-card  (poke-host:crds host.p eng-poke)
-            :_  state
-              =/  =fact:comms  [%post %add p]
-              =/  fact-card  (update-followers:cards:lib fact)
-              :~  ui-card
-                  fact-card
-                  eng-card
-              ==
+        =/  up  (get:orm:feed following2.state id.poke)
+        ?~  up
+          =/  eng-poke  [%eng (headsup-poke poke *post:post)]
+          =/  eng-card  (poke-host:crds host.poke eng-poke)
+          :_  state  :~(eng-card)
+        ::
+        =/  p  u.up 
+        =.  reacts.engagement.p  %+  ~(put by reacts.engagement.p)
+          our.bowl  [reaction.poke *signature:post]
+        :: XX: maybe just add reaction to following2.state instead of our state
+        =.  state  (add-to-feed p)
+        =/  pw  [p (some pubkey) ~ ~ profile]
+        =/  jfact=fact:ui:sur  [%post %add pw]
+        =/  ui-card    (update-ui:cards:lib jfact)
+        =/  eng-poke  [%eng (headsup-poke poke p)]
+        =/  eng-card  (poke-host:crds host.p eng-poke)
+        :_  state
+        =/  =fact:comms  [%post %add p]
+        =/  fact-card  (update-followers:cards:lib fact)
+        :~  ui-card
+            fact-card
+            eng-card
+        ==
     ==
-
+  ::
+  ++  get-ref
+    |=  p=post:post
+    ^-  (unit [ship @da])
+    =/  refs=(list block:post)
+      %-  zing
+      %+  turn  (tap:corm:post contents.p)
+      |=  [t=time cl=content-list:post]
+      %+  skim  cl
+      |=(b=block:post =(%ref -.b)) 
+    ?~  refs  ~
+    =/  ref  (head refs)
+    ?.  ?=([%ref @ ship=@ path=*] ref)  ~
+    ?~  ref-id=(slaw:sr %ud (head path.ref))  ~
+    `[ship.ref u.ref-id]
+  ::
+  ++  del-parent-cards
+    |=  [children=(set id:post) parent=@da]
+    =/  c  ~(tap in children)
+    =/  crds  ~(. cards:lib bowl)
+    |-  ^-  (list card)
+    ?~  c  ~
+    =/  child=(unit post:post)  (get:orm:feed feed.state i.c)
+    ?~  child  $(c t.c)
+    :_  $(c t.c)
+    =/  eng-poke=engagement:comms  [%del-parent parent id.u.child]
+    =/  host=@p  author.u.child
+    (poke-host:crds host [%eng eng-poke])
+  --
 ++  handle-post-fact  |=  pf=post-fact:comms
   ^-  (quip card _state)
   ~&  handle-post-fact=pf
