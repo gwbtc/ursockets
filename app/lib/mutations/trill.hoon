@@ -25,8 +25,41 @@
   
 :: state
 ++  add-to-feed  |=  p=post:post
-  =.  feed.state  (put:orm:feed feed.state id.p p)
-  state
+  ?:  .=(our.bowl host.p)
+    =.  feed.state  (put:orm:feed feed.state id.p p)
+    state
+    ::
+    =/  host  (atom-to-user:lib host.p)
+    =/  uf  (~(get by following.state) host)
+    ?~  uf  state
+    =/  nf  (put:orm:feed u.uf id.p p)
+    =.  following.state  (~(put by following.state) host nf)
+    =.  following2.state  (put:orm:feed following2.state id.p p)
+    state
+++  add-reply  |=  p=post:post  ^+  state
+    ?~  parent.p  ~&  ["not a reply!!" p]  !!
+    ?:  .=(our.bowl host.p)
+      =/  parent  (get:orm:feed feed.state u.parent.p)
+      ?~  parent  ~&  ["op not found!!" p]  !!
+      =.  children.u.parent  (~(put in children.u.parent) id.p)
+      =.  feed.state  (put:orm:feed feed.state id.u.parent u.parent)
+      =.  feed.state  (put:orm:feed feed.state id.p p)
+      state
+      ::
+      =/  host  (atom-to-user:lib host.p)
+      =/  uf  (~(get by following.state) host)
+      ?~  uf  state
+      =/  parent  (get:orm:feed u.uf u.parent.p)
+      ?~  parent  ~&  ["op not found!!" p]  !!
+      =.  children.u.parent  (~(put in children.u.parent) id.p)
+      =/  nf  (put:orm:feed u.uf id.u.parent u.parent)
+      =/  nf  (put:orm:feed nf id.p p)
+      =.  following.state  (~(put by following.state) host nf)
+      =.  following2.state  (put:orm:feed following2.state id.u.parent u.parent)
+      =.  following2.state  (put:orm:feed following2.state id.p p)
+      state
+    
+  
 ++  headsup-poke
   |=  [poke=post-poke:ui:sur p=post:post]  ^-  engagement:comms
   ?-  -.poke

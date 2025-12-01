@@ -38,7 +38,10 @@
     %urbit  +.u
     %nostr  +.u
   ==
-  
+++  atom-to-user  |=  p=@  ^-  u=user:sur
+  ?:  (validate-pubkey:nostr-keys p)
+    [%nostr p]  
+    [%urbit p]
 ::
 
 ++  cards
