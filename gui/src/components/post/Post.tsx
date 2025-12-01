@@ -14,6 +14,7 @@ import type { UserProfile, UserType } from "@/types/nostrill";
 export interface PostProps {
   poast: Poast;
   user: UserType;
+  thread?: boolean;
   fake?: boolean;
   rter?: Ship;
   rtat?: number;

@@ -91,7 +91,7 @@ export default class IO {
     // start: Cursor,
     // end: Cursor,
     // desc = true,
-  ): AsyncRes<FullNode> {
+  ): AsyncRes<{ node: FullNode; thread: FullNode[] }> {
     // const order = desc ? 1 : 0;
 
     // const path = `/j/thread/${host}/${id}/${start}/${end}/${FeedPostCount}/${order}`;

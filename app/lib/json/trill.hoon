@@ -195,6 +195,12 @@
       :~  ship+(patp:en:common ship.pid)
           id+(ud:en:common id.pid)
       ==
+    ++  thread
+    |=  [p=full-node:post q=(list full-node:post)]  ^-  json
+      %-  pairs
+      :~  :-  %node    (full-node p)
+          :+  %thread  %a  (turn q full-node)
+      ==
     ++  full-node
     |=  p=full-node:post  ^-  json
       %-  pairs

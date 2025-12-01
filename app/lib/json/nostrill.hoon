@@ -182,7 +182,7 @@
     ?-  -.rd
       %feed     (user-data +.rd)
       :: TODO wrap it for nostr shit
-      %thread   (frond -.rd (full-node:en:trill +.rd))
+      %thread   (frond -.rd (thread:en:trill +.rd))
     ==
   ++  user-data
     |=  ud=[=fc:feed profile=(unit user-meta:nsur)]

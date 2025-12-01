@@ -10,7 +10,7 @@ import NostrIcon from "./wrappers/NostrIcon";
 import type { SPID } from "@/types/ui";
 // TODO abstract this somehow
 
-function Footer({ user, poast, refetch }: PostProps) {
+function Footer({ user, poast, thread, refetch }: PostProps) {
   const [_showMenu, setShowMenu] = useState(false);
   const [location, navigate] = useLocation();
   const [reposting, _setReposting] = useState(false);
@@ -123,20 +123,26 @@ function Footer({ user, poast, refetch }: PostProps) {
   return (
     <div className="footer-wrapper post-footer">
       <footer>
-        <div className="icon">
-          <span role="link" onMouseUp={showReplyCount} className="reply-count">
-            {displayCount(childrenCount)}
-          </span>
-          <div className="icon-wrapper" role="link" onMouseUp={doReply}>
-            <Icon name="reply" size={20} />
+        {!thread && (
+          <div className="icon">
+            <span
+              role="link"
+              onMouseUp={showReplyCount}
+              className="reply-count"
+            >
+              {displayCount(childrenCount)}
+            </span>
+            <div className="icon-wrapper" role="link" onMouseUp={doReply}>
+              <Icon name="reply" />
+            </div>
           </div>
-        </div>
+        )}
         <div className="icon">
           <span role="link" onMouseUp={showQuoteCount} className="quote-count">
             {displayCount(poast.engagement.quoted.length)}
           </span>
           <div className="icon-wrapper" role="link" onMouseUp={doQuote}>
-            <Icon name="quote" size={20} />
+            <Icon name="quote" />
           </div>
         </div>
         <div className="icon">
@@ -151,16 +157,11 @@ function Footer({ user, poast, refetch }: PostProps) {
             <p>...</p>
           ) : myRP ? (
             <div className="icon-wrapper" role="link" onMouseUp={cancelRP}>
-              <Icon
-                name="repost"
-                size={20}
-                className="my-rp"
-                title="cancel repost"
-              />
+              <Icon name="repost" className="my-rp" title="cancel repost" />
             </div>
           ) : (
             <div className="icon-wrapper" role="link" onMouseUp={sendRP}>
-              <Icon name="repost" size={20} title="repost" />
+              <Icon name="repost" title="repost" />
             </div>
           )}
         </div>

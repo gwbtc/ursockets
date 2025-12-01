@@ -51,7 +51,7 @@ function SlidingMenu() {
       </div>
       <hr />
 
-      <div
+      {/*<div
         className="opt tbd"
         role="link"
         // onClick={() => setModal(<p>lmao</p>)}
@@ -59,6 +59,7 @@ function SlidingMenu() {
         <Icon name="messages" size={20} />
         <div>Messages</div>
       </div>
+    */}
       <div className="opt" role="link" onClick={() => goto("/pals")}>
         <Icon name="pals" size={20} />
         <div>Pals</div>

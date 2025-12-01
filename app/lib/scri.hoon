@@ -33,8 +33,9 @@
   =/  id  (slaw:sr %ud ids)  ?~  id  [%ng 'Post ID malformed']
   =/  node  (get:orm:feed u.fed u.id)
   ?~  node  [%ng 'Post not found in feed']
-  =/  fn  (node-to-full:feedlib u.node u.fed)
-  [%ok %thread fn]
+  =/  fn   (node-to-full:feedlib u.node u.fed)
+  =/  ted  (extract-thread:feedlib fn)
+  [%ok %thread fn ted]
 
 ++  sfeed  |=  [hs=@t s=@t e=@t c=@ n=@ r=@]
   ^-  (unit (unit cage))  :-  ~  :-  ~  :-  %json  !>

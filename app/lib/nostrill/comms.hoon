@@ -48,7 +48,7 @@
     (res-fact [%ng 'not allowed'] pat)
     ::
     =/  fn  (node-to-full:feedlib u.ted feed.state)
-    (res-fact [%ok %thread fn] pat)
+    (res-fact [%ok %thread fn ~] pat)
 ::
 ++  handle-thread  |=  id=@da
   =/  ted  (get:orm:feed feed.state id)
@@ -61,7 +61,7 @@
     :_  state  :~(crd)
     ::
     =/  fn  (node-to-full:feedlib u.ted feed.state)
-    =/  crd  (res-poke [%ok %thread fn])
+    =/  crd  (res-poke [%ok %thread fn ~])
     :_  state  :~(crd)
 :: res
 ++  handle-res  |=  =res:comms
