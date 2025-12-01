@@ -96,6 +96,21 @@
      =.  subcount  %-  callback(nested nested)  child
       $(child-list t.child-list)
 ::
+++  extract-thread
+  =|  l=(list full-node:post)
+  |=  n=full-node:post  ^-  (list full-node:post)
+  =.  l  [n l]
+  ?:  ?=(%empty -.children.n)  (flop l)
+  =/  child-list=(list [@ full-node:post])  %-  flop  (tap:form:post p.children.n)  ::  we want the oldest post, not newest
+  |-  ?~  child-list  (flop l)
+      =/  child=full-node:post  +.i.child-list
+      =/  parent-id  (need parent.child)
+      ?:  ?&  .=(author.n author.child)  .=(id.n parent-id)  ==
+      ^$(n child)
+      ::
+      $(child-list t.child-list)
+    
+::
 ++  add-new-feed
 |=  [global=feed:feed new=feed:feed]  ^-  feed:feed
   =/  poasts  (tap:orm:feed new)
