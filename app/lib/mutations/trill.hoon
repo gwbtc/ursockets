@@ -48,31 +48,31 @@
   ::  TODO UI notifications  [%hark ]
     ?-  -.poke
       %del  
-        ?~  pos=(get:orm:feed feed.state id.poke)  `state
-        =/  p  u.pos
-        =.  feed.state  =<  +  (del:orm:feed feed.state id.poke)
-        =.  feed.state  (delete-children:trill-feed feed.state p)
-        =/  pw  [p (some pubkey) ~ ~ profile]
-        =/  eng-cards=(list card)  
-          (del-parent-cards children.p id.p)
-        =/  jfact=fact:ui:sur  [%post %del pw]
-        =/  =fact:comms  [%post %del id.poke]
-        =/  upd-fol-cards
-          %+  turn  ~(tap in children.p)
-          |=(c=id:post (update-followers:cards:lib [%post %del c]))
-        =/  cards=(list card)
-          ;:  welp
-            eng-cards
-            upd-fol-cards
-            :~  (update-ui:cards:lib jfact)
-                (update-followers:cards:lib [%post %del id.poke])
-            ==
-          ==
-        =/  is-ref=(unit [ship @da])  (get-ref p)
         ?-  -.host.poke  
             %nostr  `state
             ::
             %urbit
+          ?~  pos=(get:orm:feed feed.state id.poke)  `state
+          =/  p  u.pos
+          =.  feed.state  =<  +  (del:orm:feed feed.state id.poke)
+          =.  feed.state  (delete-children:trill-feed feed.state p)
+          =/  pw  [p (some pubkey) ~ ~ profile]
+          =/  eng-cards=(list card)  
+            (del-parent-cards children.p id.p)
+          =/  jfact=fact:ui:sur  [%post %del pw]
+          =/  =fact:comms  [%post %del id.poke]
+          =/  upd-fol-cards
+            %+  turn  ~(tap in children.p)
+            |=(c=id:post (update-followers:cards:lib [%post %del c]))
+          =/  cards=(list card)
+            ;:  welp
+              eng-cards
+              upd-fol-cards
+              :~  (update-ui:cards:lib jfact)
+                  (update-followers:cards:lib [%post %del id.poke])
+              ==
+            ==
+          =/  is-ref=(unit [ship @da])  (get-ref p)
           =/  host=@p  +.host.poke
           ?:  .=(our.bowl host)  
             ?~  is-ref  
