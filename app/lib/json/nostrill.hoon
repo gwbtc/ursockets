@@ -287,7 +287,7 @@
 ++  ui-relay
   %-  of  :~
     add+so
-    del+de-atom-id
+    del+ni
     sync+ul
     prof+ul
     user+hex:de:common

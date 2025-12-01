@@ -5,6 +5,7 @@ import { ThemeSwitcher } from "@/styles/ThemeSwitcher";
 import Icon from "@/components/Icon";
 import "@/styles/Settings.css";
 import WebSocketWidget from "@/components/WsWidget";
+import type { RelayStats } from "@/types/nostrill";
 
 function Settings() {
   const { key, relays, api, addNotification } = useLocalState((s) => ({
@@ -17,9 +18,9 @@ function Settings() {
   const [isAddingRelay, setIsAddingRelay] = useState(false);
   const [isCyclingKey, setIsCyclingKey] = useState(false);
 
-  async function removeRelay(url: string) {
+  async function removeRelay(url: string, relay: RelayStats) {
     try {
-      await api?.deleteRelay(url);
+      await api?.deleteRelay(relay.wid);
       toast.success("Relay removed");
     } catch (error) {
       toast.error("Failed to remove relay");
@@ -197,14 +198,14 @@ function Settings() {
                       <p>No relays configured</p>
                     </div>
                   ) : (
-                    Object.keys(relays).map((url) => (
+                    Object.entries(relays).map(([url, relay]) => (
                       <div key={url} className="relay-item">
                         <div className="relay-info">
                           <span className="relay-url">{url}</span>
                           <span className="relay-status">Connected</span>
                         </div>
                         <button
-                          onClick={() => removeRelay(url)}
+                          onClick={() => removeRelay(url, relay)}
                           className="remove-relay-btn"
                           title="Remove relay"
                         >

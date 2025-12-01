@@ -186,8 +186,8 @@ export default class IO {
     const json = { add: url };
     return await this.poke({ rela: json });
   }
-  async deleteRelay(url: string) {
-    const json = { del: url };
+  async deleteRelay(wid: number) {
+    const json = { del: wid };
     return await this.poke({ rela: json });
   }
   async syncRelays() {
