@@ -157,7 +157,7 @@
       =/  jfact=fact:ui:sur  [%post %upd pw]
       :_  state
       :~  (update-followers:cards:lib f)
-      ::  TODO: send ui-upd card
+          (update-ui:cards:lib jfact)
       ==
     %rp
       =/  poast  (get:orm:feed feed.state src.e)
