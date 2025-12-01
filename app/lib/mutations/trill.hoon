@@ -25,8 +25,41 @@
   
 :: state
 ++  add-to-feed  |=  p=post:post
-  =.  feed.state  (put:orm:feed feed.state id.p p)
-  state
+  ?:  .=(our.bowl host.p)
+    =.  feed.state  (put:orm:feed feed.state id.p p)
+    state
+    ::
+    =/  host  (atom-to-user:lib host.p)
+    =/  uf  (~(get by following.state) host)
+    ?~  uf  state
+    =/  nf  (put:orm:feed u.uf id.p p)
+    =.  following.state  (~(put by following.state) host nf)
+    =.  following2.state  (put:orm:feed following2.state id.p p)
+    state
+++  add-reply  |=  p=post:post  ^+  state
+    ?~  parent.p  ~&  ["not a reply!!" p]  !!
+    ?:  .=(our.bowl host.p)
+      =/  parent  (get:orm:feed feed.state u.parent.p)
+      ?~  parent  ~&  ["op not found!!" p]  !!
+      =.  children.u.parent  (~(put in children.u.parent) id.p)
+      =.  feed.state  (put:orm:feed feed.state id.u.parent u.parent)
+      =.  feed.state  (put:orm:feed feed.state id.p p)
+      state
+      ::
+      =/  host  (atom-to-user:lib host.p)
+      =/  uf  (~(get by following.state) host)
+      ?~  uf  state
+      =/  parent  (get:orm:feed u.uf u.parent.p)
+      ?~  parent  ~&  ["op not found!!" p]  !!
+      =.  children.u.parent  (~(put in children.u.parent) id.p)
+      =/  nf  (put:orm:feed u.uf id.u.parent u.parent)
+      =/  nf  (put:orm:feed nf id.p p)
+      =.  following.state  (~(put by following.state) host nf)
+      =.  following2.state  (put:orm:feed following2.state id.u.parent u.parent)
+      =.  following2.state  (put:orm:feed following2.state id.p p)
+      state
+    
+  
 ++  headsup-poke
   |=  [poke=post-poke:ui:sur p=post:post]  ^-  engagement:comms
   ?-  -.poke
@@ -174,7 +207,7 @@
         =/  sp     (build-sp:trill host our.bowl content.poke `id.poke `thread.poke)
         =/  p=post:post
           (build-post:trill now.bowl pubkey sp)
-        =.  state  (add-to-feed p)
+        =.  state  (add-reply p)
         =/  pw  [p (some pubkey) ~ ~ profile]
         =/  jfact=fact:ui:sur  [%post %add pw]
         =/  ui-card    (update-ui:cards:lib jfact)
@@ -228,29 +261,27 @@
                 eng-card
             ==
             ::
-        =/  up  (get:orm:feed following2.state id.poke)
-        ?~  up
-          =/  eng-poke  [%eng (headsup-poke poke *post:post)]
-          =/  eng-card  (poke-host:crds host eng-poke)
-          :_  state  :~(eng-card)
-        ::
-        =/  p  u.up 
-        =.  reacts.engagement.p  %+  ~(put by reacts.engagement.p)
-          our.bowl  [reaction.poke *signature:post]
-        :: XX: maybe just add reaction to following2.state instead of our state
-        =.  state  (add-to-feed p)
-        =/  pw  [p (some pubkey) ~ ~ profile]
-        =/  jfact=fact:ui:sur  [%post %add pw]
-        =/  ui-card    (update-ui:cards:lib jfact)
-        =/  eng-poke  [%eng (headsup-poke poke p)]
-        =/  eng-card  (poke-host:crds host.p eng-poke)
-        :_  state
-        =/  =fact:comms  [%post %add p]
-        =/  fact-card  (update-followers:cards:lib fact)
-        :~  ui-card
-            fact-card
-            eng-card
-        ==
+            =/  default-eng  [%eng (headsup-poke poke *post:post)]
+            :: TODO we kinda should use following2 for this
+            :: If we have the relevant post in our state somewhere we want to update the UI too. Else we just send the headsup poke to the post host
+          :: =/  up  (get:orm:feed following2.state id.poke)
+            =/  uf  (~(get by following.state) host.poke)
+            ?~  uf  :_  state  :~((poke-host:crds host default-eng))
+            =/  up  (get:orm:feed u.uf id.poke)
+            ?~  up  :_  state  :~((poke-host:crds host default-eng))
+            =/  p  u.up 
+            =.  reacts.engagement.p  %+  ~(put by reacts.engagement.p)
+              our.bowl  [reaction.poke *signature:post]
+            =.  state  (add-to-feed p)
+            =/  pw  [p (some pubkey) ~ ~ profile]
+            =/  jfact=fact:ui:sur  [%post %add pw]
+            =/  ui-card    (update-ui:cards:lib jfact)
+            =/  eng-poke  [%eng (headsup-poke poke p)]
+            =/  eng-card  (poke-host:crds host.p eng-poke)
+            :_  state
+              :~  ui-card
+                  eng-card
+              ==
     ==
   ::
   ++  get-ref

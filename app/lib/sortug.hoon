@@ -9,6 +9,33 @@
   (unm:chrono:userlib da)
 ++  to-unix-secs  |=  da=@da  ^-  @ud
   (unt:chrono:userlib da)
+++  add-to-date  |=  [base=date diff=date]  ^-  date
+  =/  t=tarp        (add-to-tarp t.base t.diff)
+  =/  month-sum     (add m.base m.diff)
+  =/  month-years   (div month-sum 12)
+  =/  months-mod    (mod month-sum 12)
+  =.  y.diff        (add y.diff month-years)
+  =/  months        ?:  .=(months-mod 0)  m.base  months-mod
+  =/  baseyear      (new:si -.base)
+  =/  diffyear      (new:si -.diff)
+  =/  yearsi        (sum:si baseyear diffyear)
+  =/  year          (old:si yearsi)  
+  =/  d=date  [year months t]  
+   d
+++  add-to-tarp  |=  [base=tarp diff=tarp]  ^-  tarp
+  =/  days     (add d.base d.diff)
+  =/  hours    (add h.base h.diff)
+  =/  minutes  (add m.base m.diff)
+  =/  seconds  (add s.base s.diff)
+  =/  ms       (add-ms base diff)
+  =/  t=tarp  [days hours minutes seconds ~]
+  =/  t2  %-  yell  %+  add  (yule t)  ms
+  t2
+++  add-ms  |=  [a=tarp b=tarp]  ^-  @d
+  =/  t1  a(d 0, h 0, m 0, s 0)
+  =/  t2  b(d 0, h 0, m 0, s 0)
+  =/  sum  %+  add  (yule t1)  (yule t2)
+  sum
 --
 ++  b64  (bass 64 (plus siw:ab))
 ++  b16  (bass 16 (plus six:ab))

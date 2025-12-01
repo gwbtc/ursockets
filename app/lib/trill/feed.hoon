@@ -52,7 +52,7 @@
   ?:  .=((head result) (head threads))  ~  `id:(head result)
   ?:  .=((rear result) (rear threads))  ~  `id:(rear result)
   [(gas:orm:feed *feed:feed result) -.cursors +.cursors]
-::  posts
+::  full nodes  (posts with children as a tree of posts)
 ++  node-to-full
 |=  [p=post:post f=feed:feed]  ^-  full-node:post
   p(children (convert-children children.p f))
@@ -67,6 +67,34 @@
     (put:form:post acc id full-node)
   ?~  children  [%empty ~]
   :-  %full  g
+
+++  print-full-node
+  =|  nested=@
+  =|  child-count=@
+  |=  n=full-node:post  ^-  @  ::  the total descendant count
+  :: ~&  nested=nested
+  :: ~&  count=total-child-count
+  =/  ignore
+    ?~  parent.n
+    ~&  >  op=id.n  ~
+    =/  indentape  "{(scow %da id.n)}"
+    =/  indent  |-  ?:  .=(nested 0)  indentape
+                  $(nested (dec nested), indentape ['-' indentape])
+    ~&  >>  indent  ~
+  =/  child-list=(list [* full-node:post])
+    ?:  ?=(%empty -.children.n)
+    :: ~&  "/>"
+    ~
+    (tap:form:post p.children.n)
+    =.  nested  +(nested) 
+    =|  subcount=@
+  %+  add  child-count
+    |-  ?~  child-list  subcount
+     =/  child=full-node:post  +.i.child-list
+     :: ~&  child=[id=id.child par=parent.child ted=thread.child]
+     =/  callback  print-full-node
+     =.  subcount  %-  callback(nested nested)  child
+      $(child-list t.child-list)
 ::
 ++  add-new-feed
 |=  [global=feed:feed new=feed:feed]  ^-  feed:feed
