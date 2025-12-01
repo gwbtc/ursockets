@@ -1,5 +1,5 @@
 /-  sur=nostrill, nsur=nostr, comms=nostrill-comms, feed=trill-feed, post=trill-post
-/+  js=json-nostr, sr=sortug,constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill, lib=nostrill
+/+  js=json-nostr, sr=sortug,constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill, lib=nostrill, mutations-trill
 |_  [=state:sur =bowl:gall]
 ++  cast-poke
   |=  raw=*  ^-  poke:comms
@@ -103,15 +103,23 @@
       :~  (update-followers:cards:lib f)
           (update-followers:cards:lib f2)
       ==
-    %del-reply
-      =.  feed.state  =<  +  (del:orm:feed feed.state child.e)
+    %del-parent
+      ?~  p=(get:orm:feed feed.state child.e)  `state
+      =.  host.u.p  our.bowl  ::  parent already deleted no need to send update to them, handle localy 
+      =.  feed.state  (put:orm:feed feed.state child.e u.p)
+      =/  mutat  ~(. mutations-trill state bowl)
+      (handle-post:mutat [%del urbit+our.bowl child.e])
+    %del-reply 
+      ?~  p=(get:orm:feed feed.state child.e)  `state
       =/  poast  (get:orm:feed feed.state parent.e)
       ?~  poast  `state
+      =.  feed.state  =<  +  (del:orm:feed feed.state child.e)
       =.  children.u.poast  (~(del in children.u.poast) child.e)
       =.  feed.state  (put:orm:feed feed.state parent.e u.poast)
       :_  state
       :~  (update-followers:cards:lib [%post %changes u.poast])
           (update-followers:cards:lib [%post %del child.e])
+          ::  XX: update-ui:cards:lib
       ==
     :: TODO ideally we want the full quote to display it within the post engagement. So do we change quoted.engagement.post? What if the quoter edits the quote down the line, etc.
     %quote
@@ -124,25 +132,43 @@
       :_  state
       :~  (update-followers:cards:lib f)
       ==
-    %rp
+    %del-quote
       =/  poast  (get:orm:feed feed.state src.e)
       ?~  poast  `state
-      =/  spid  [*signature:post src.bowl rt.e]
-      =.  shared.engagement.u.poast  (~(put in shared.engagement.u.poast) spid)
+      =/  spid  [*signature:post src.bowl quote.e]
+      =.  quoted.engagement.u.poast  (~(del in quoted.engagement.u.poast) spid)
       =.  feed.state  (put:orm:feed feed.state src.e u.poast)
       =/  f=fact:comms  [%post %changes u.poast]
       :_  state
       :~  (update-followers:cards:lib f)
+      ::  TODO: update %ui card
+      ==
+    %rp
+      =/  poast  (get:orm:feed feed.state src.e)
+      ?~  poast  `state
+      =/  spid  [*signature:post src.bowl rt.e]
+      =.  shared.engagement.u.poast  
+        ?:  (~(has in shared.engagement.u.poast) spid)
+          (~(del in shared.engagement.u.poast) spid)
+        (~(put in shared.engagement.u.poast) spid)
+      =.  feed.state  (put:orm:feed feed.state src.e u.poast)
+      =/  f=fact:comms  [%post %changes u.poast]
+      :_  state
+      :~  (update-followers:cards:lib f)
+      ::  TODO: update %ui card
       ==
     %reaction
       =/  poast  (get:orm:feed feed.state post.e)
       ?~  poast  `state
       :: TODO signatures et al.
-      =.  reacts.engagement.u.poast  (~(put by reacts.engagement.u.poast) src.bowl [reaction.e *signature:post])
+      =/  sign  *signature:post
+      =.  q.sign  src.bowl
+      =.  reacts.engagement.u.poast  (~(put by reacts.engagement.u.poast) src.bowl [reaction.e sign])
       =.  feed.state  (put:orm:feed feed.state post.e u.poast)
       =/  f=fact:comms  [%post %changes u.poast]
       :_  state
       :~  (update-followers:cards:lib f)
+      ::  TODO: update %ui card
       ==
   ==
 
