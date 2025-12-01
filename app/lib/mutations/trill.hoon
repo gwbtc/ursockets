@@ -175,12 +175,14 @@
                 eng-card
             ==
             ::
-          =/  up  (get:orm:feed following2.state id.poke)
-          ?~  up
-            =/  eng-poke  [%eng (headsup-poke poke *post:post)]
-            =/  eng-card  (poke-host:crds host eng-poke)
-            :_  state  :~(eng-card)
-            ::
+            =/  default-eng  [%eng (headsup-poke poke *post:post)]
+            :: TODO we kinda should use following2 for this
+            :: If we have the relevant post in our state somewhere we want to update the UI too. Else we just send the headsup poke to the post host
+          :: =/  up  (get:orm:feed following2.state id.poke)
+            =/  uf  (~(get by following.state) host.poke)
+            ?~  uf  :_  state  :~((poke-host:crds host default-eng))
+            =/  up  (get:orm:feed u.uf id.poke)
+            ?~  up  :_  state  :~((poke-host:crds host default-eng))
             =/  p  u.up 
             =.  reacts.engagement.p  %+  ~(put by reacts.engagement.p)
               our.bowl  [reaction.poke *signature:post]
@@ -191,10 +193,7 @@
             =/  eng-poke  [%eng (headsup-poke poke p)]
             =/  eng-card  (poke-host:crds host.p eng-poke)
             :_  state
-              =/  =fact:comms  [%post %add p]
-              =/  fact-card  (update-followers:cards:lib fact)
               :~  ui-card
-                  fact-card
                   eng-card
               ==
     ==
