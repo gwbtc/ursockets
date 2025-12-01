@@ -257,10 +257,6 @@
                 =/  t=tarp  [days 0 0 0 ~]
                 =/  d=date  [[.y 0] months t]
                 =/  reply-id  %-  year  (add-to-date:jikan:sr opdate d)
-                ~&  opdate=`@`(year opdate)
-                ~&  diff=`@`(year d)
-                ~&  sr=`@`reply-id
-                ~&  add=(add (year opdate) (year d))
                 =/  reply=post:tp  (build-post:postlib reply-id pubkey sp)            
                 =.  new-parent  id.reply
                 =.  children.u.parent  (~(put in children.u.parent) id.reply)
