@@ -154,7 +154,7 @@
         =/  sp     (build-sp:trill host our.bowl content.poke `id.poke `thread.poke)
         =/  p=post:post
           (build-post:trill now.bowl pubkey sp)
-        =.  state  (add-to-feed p)
+        =.  state  (add-reply p)
         =/  pw  [p (some pubkey) ~ ~ profile]
         =/  jfact=fact:ui:sur  [%post %add pw]
         =/  ui-card    (update-ui:cards:lib jfact)
