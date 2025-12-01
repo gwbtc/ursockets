@@ -413,9 +413,14 @@
   ^-  (unit (unit cage))
   ~&  >  on-peek=pole
   ?+  pole  ~
-   [%x %j %feed host=@ start=@ end=@ count=@ newest=@ replies=@ *]
-     (sfeed:scry host.pole start.pole end.pole count.pole newest.pole replies.pole)
-   [%x %j %thread host=@ id=@ *]  (thread:scry host.pole id.pole)
+      [%x %j %feed host=@ start=@ end=@ count=@ newest=@ replies=@ *]
+    (sfeed:scry host.pole start.pole end.pole count.pole newest.pole replies.pole)
+      [%x %j %thread host=@ id=@ *]  (thread:scry host.pole id.pole)
+    ::  test scry
+    ::
+      [%x %feed host=@ *]  (host-feed:scry host.pole)
+    ::
+      [%x %feed-ids host=@ *]  (feed-ids:scry host.pole)
   ==
   
 ::

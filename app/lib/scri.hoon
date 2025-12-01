@@ -2,6 +2,7 @@
     post=trill-post, gate=trill-gate, feed=trill-feed
     
 /+  appjs=json-nostrill,
+    trilljs=json-trill,
     lib=nostrill,
     njs=json-nostr,
     feedlib=trill-feed,
@@ -75,4 +76,33 @@
   =/  =fc:feed  [nf ns ne]
   =/  profile  (~(get by profiles.state) user)
   [%ok %feed fc profile]
+::
+++  feed-ids
+  |=  hs=@ta
+  ^-  (unit (unit cage))
+  :^  ~  ~  %noun  
+  !>
+  =/  host=(unit @p)  (slaw %p hs)
+  ?~  host  ~
+  =/  fed=(unit feed:feed)
+    ?:  =(u.host our.bowl)  `feed.state  
+    (~(get by following.state) urbit+u.host)
+  ?~  fed  ~
+  %-  sort  :_  gth
+  %+  turn  (tap:orm:feed u.fed)
+  |=([key=@da val=*] key)
+::
+++  host-feed
+  |=  hs=@ta
+  ^-  (unit (unit cage))
+  :^  ~  ~  %json
+  !>
+  =/  host=(unit @p)  (slaw %p hs)
+  ?~  host  ~
+  =/  fed=(unit feed:feed)  
+    ?:  .=(u.host our.bowl)  `feed.state  
+    (~(get by following.state) urbit+u.host)
+  ?~  fed  *json
+  (feed:en:trilljs u.fed)
+::
 --
