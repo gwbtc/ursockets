@@ -1,11 +1,19 @@
-import type { Engagement, List, Lock } from "@/types/trill";
+import type { Engagement, List, Gate, Lock } from "@/types/trill";
 
 export const openLock: Lock = {
   rank: { caveats: [], locked: false, public: true },
   luk: { caveats: [], locked: false, public: true },
   ship: { caveats: [], locked: false, public: true },
   tags: { caveats: [], locked: false, public: true },
+  pass: null,
   custom: { fn: null, public: false },
+};
+export const defaultGate: Gate = {
+  lock: openLock,
+  manual: false,
+  mute: openLock,
+  begs: {},
+  backlog: 50,
 };
 
 export const engagementBunt: Engagement = {

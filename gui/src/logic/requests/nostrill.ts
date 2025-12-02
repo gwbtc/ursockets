@@ -1,5 +1,5 @@
 import type Urbit from "urbit-api";
-import type { Cursor, FC, FullNode, PostID } from "@/types/trill";
+import type { Cursor, FC, FullNode, PostID, Gate } from "@/types/trill";
 import type { Ship } from "@/types/urbit";
 import { FeedPostCount } from "../constants";
 import type { UserProfile, UserType } from "@/types/nostrill";
@@ -129,22 +129,41 @@ export default class IO {
     console.log("hark all latest", res4);
     return res;
   }
+  async scryContacts(): AsyncRes<any> {
+    const path = "/all";
+    const res = await this.scry(path, "contacts");
+    return res;
+  }
 
   // pokes
 
   async pokeAlive() {
     return await this.poke({ alive: true });
   }
-  async addPost(content: string) {
-    const json = { add: { content } };
+  async setFeedPerms(gate: Gate) {
+    return this.poke({ gate });
+  }
+  async addPost(content: string, perms?: { read: Gate; write: Gate }) {
+    const json = { add: { content, perms } };
     return this.poke({ post: json });
   }
-  async addReply(content: string, host: UserType, id: string, thread: string) {
-    const json = { reply: { content, host, id, thread } };
+  async addReply(
+    content: string,
+    host: UserType,
+    id: string,
+    thread: string,
+    perms?: { read: Gate; write: Gate },
+  ) {
+    const json = { reply: { content, host, id, thread, perms } };
     return this.poke({ post: json });
   }
-  async addQuote(content: string, host: UserType, id: string) {
-    const json = { quote: { content, host, id } };
+  async addQuote(
+    content: string,
+    host: UserType,
+    id: string,
+    perms?: { read: Gate; write: Gate },
+  ) {
+    const json = { quote: { content, host, id, perms } };
     return this.poke({ post: json });
   }
   async addRP(host: UserType, id: string) {

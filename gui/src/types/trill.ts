@@ -30,8 +30,7 @@ export interface SentPoast {
   thread: ID | null;
   parent: ID | null;
   contents: string;
-  read: Lock;
-  write: Lock;
+  perms: { read: Gate; write: Gate };
   tags: string[];
 }
 export type Poast = {
@@ -39,10 +38,9 @@ export type Poast = {
   author: Ship;
   thread: ID | null;
   parent: ID | null;
-  read: Lock;
-  write: Lock;
   tags: string[];
   contents: Content;
+  perms: { read: Gate; write: Gate };
   id: string;
   time: number; // not in the backend
   hash: string;
@@ -248,11 +246,19 @@ export type ListEntry = {
   username: string;
 };
 
+export type Gate = {
+  lock: Lock;
+  manual: boolean;
+  begs: Record<Ship, Array<{ time: number; msg: string }>>;
+  mute: Lock;
+  backlog: number;
+};
 export type Lock = {
   rank: { caveats: Rank[]; locked: boolean; public: boolean };
   luk: { caveats: Ship[]; locked: boolean; public: boolean };
   ship: { caveats: Ship[]; locked: boolean; public: boolean };
   tags: { caveats: string[]; locked: boolean; public: boolean };
+  pass: string | null;
   custom: { fn: null; public: boolean };
 };
 export type Rank = "czar" | "king" | "duke" | "earl" | "pawn";
