@@ -73,6 +73,19 @@ function Settings() {
     }
   };
 
+  async function testHark() {
+    // const types = ["follow", "reply", "react", "mention", "access_request"];
+    // const randomType = types[Math.floor(Math.random() * types.length)] as any;
+    // addNotification({
+    //   type: randomType,
+    //   from: "~sampel-palnet",
+    //   message: "This is a test notification",
+    //   reaction: randomType === "react" ? "👍" : undefined,
+    // });
+    // toast.success("Test notification sent!");
+    const res = await api?.scryHark();
+  }
+
   return (
     <div className="settings-page">
       <div className="settings-header">
@@ -95,28 +108,7 @@ function Settings() {
                 <p>Generate test notifications to see how they work</p>
               </div>
               <div className="setting-control">
-                <button
-                  className="test-notification-btn"
-                  onClick={() => {
-                    const types = [
-                      "follow",
-                      "reply",
-                      "react",
-                      "mention",
-                      "access_request",
-                    ];
-                    const randomType = types[
-                      Math.floor(Math.random() * types.length)
-                    ] as any;
-                    addNotification({
-                      type: randomType,
-                      from: "~sampel-palnet",
-                      message: "This is a test notification",
-                      reaction: randomType === "react" ? "👍" : undefined,
-                    });
-                    toast.success("Test notification sent!");
-                  }}
-                >
+                <button className="test-notification-btn" onClick={testHark}>
                   <Icon name="bell" size={16} />
                   Send Test Notification
                 </button>

@@ -14,7 +14,6 @@ export default function ({
   picOnly = false,
 }: {
   user: UserType;
-  userString: string;
   size: number;
   color?: string;
   noClickOnName?: boolean;
