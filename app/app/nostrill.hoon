@@ -1,4 +1,4 @@
-/-  sur=nostrill, nsur=nostr, tf=trill-feed, tp=trill-post, comms=nostrill-comms
+/-  sur=nostrill, nsur=nostr, tf=trill-feed, tp=trill-post, comms=nostrill-comms, hark
 /+  lib=nostrill, nostr-keys, sr=sortug, scri,
     ws=websockets,
     bip-b173,
@@ -12,6 +12,7 @@
     jsonlib=json-nostrill,
     feedlib=trill-feed, postlib=trill-post,
     seed,
+    harklib=hark,
     commlib=nostrill-comms, followlib=nostrill-follows
 /=  web  /web/router
 |%
@@ -213,6 +214,14 @@
   ::
   ++  debug  |=  noun=*
     ?+  noun  `this
+      %hark
+        =/  content=(list content:hark)
+          :~  'Lol hi'
+          ==
+        =/  n=notif:sur  [%fans [%urbit ~sorreg-namtyv] 'uhmmm uhhh basically... i followed you']
+        =/  =yarn:hark  (to-hark:harklib n bowl)
+        =/  c  (poke-hark:harklib yarn bowl)
+        :_  this  :~(c)
       %seed-threads
         ~&  >>  "seeding threads"
         =/  pubkey  pub.i.keys

@@ -38,11 +38,13 @@ $:  pub=(unit @ux)
 
 +$  follow  [pubkey=@ux name=@t relay=(unit @t)]
 +$  notif
-  $%  [%prof =user prof=user-meta:nostr]      :: profile change
-      [%fols =user accepted=? msg=@t]             :: follow response 
-      [%beg beg=begs-poke:ui accepted=? msg=@t]   :: feed/post data request response
-      [%fans p=user]                       :: someone folowed me
-      [%post =pid:tp =user action=post-notif]               :: someone replied, reacted etc.
+      ::  TODO where do we get profs?
+  $%  [%prof =user prof=user-meta:nostr]              :: profile change
+      [%fans =user msg=@t]                            :: someone folowed me
+      [%fols =user accepted=? msg=@t]                 :: follow response 
+      [%beg-req =user beg=begs-poke:ui msg=@t]        :: feed/post data request request
+      [%beg-res beg=begs-poke:ui accepted=? msg=@t]   :: feed/post data request response
+      [%post =pid:tp =user action=post-notif]         :: someone replied, reacted etc.
   ==
 +$  post-notif
 $%   [%reply p=post:tp]
