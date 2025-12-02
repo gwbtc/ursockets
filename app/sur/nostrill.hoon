@@ -1,4 +1,4 @@
-/-  nostr, trill=trill-feed, tp=trill-post, gate=trill-gate
+/-  nostr, tf=trill-feed, tp=trill-post, gate=trill-gate
 |%
 +$  state  state-0
 +$  state-0
@@ -8,24 +8,30 @@
       :: ws-msg-queue=(list websocket-event:eyre)
       keys=(lest keys:nostr)  :: cycled, i.keys is current one
       ::  own feed
-      feed=feed:trill
+      =feed:tf
       feed-perms=gate:gate
       ::  nostr feed from relays
       :: TODO deprecate and parse properly into a feed:trill
       =nostr-feed
       ::  profiles
       profiles=(map user user-meta:nostr)
-      following=(map user =feed:trill)
-      following2=feed:trill
+      following=(map user =feed:tf)
+      following2=global-feed
+      =global-feed
       follow-graph=(map user (set user))
     :: TODO global feed somehow?
     :: TODO use %hark agent instead?
-      :: notifications=((mop @da notif) gth)
+      =requests
+      =responses
 
   ==
++$  global-feed  ((mop upid post:tp) ugth)
+++  uorm         ((on upid post:tp) ugth)
++$  upid        [=user id=@da]
+++  ugth        |=  [a=[[* id=@] =time] b=[[* id=@] =time]]  ?:  .=(time.a time.b)  (gth id.a id.b)  (gth time.a time.b)
 +$  nostr-feed  ((mop @ud event:nostr) gth)
 ++  norm        ((on @ud event:nostr) gth)
-+$  nfc         [feed=nostr-feed start=cursor:trill end=cursor:trill]
++$  nfc         [feed=nostr-feed start=cursor:tf end=cursor:tf]
 
 +$  post-wrapper  [=post:tp nostr-meta=nostr-meta]
 +$  nostr-meta
@@ -37,23 +43,49 @@ $:  pub=(unit @ux)
 +$  user  $%([%urbit p=@p] [%nostr p=@ux])
 
 +$  follow  [pubkey=@ux name=@t relay=(unit @t)]
-+$  notif
-      ::  TODO where do we get profs?
-  $%  [%prof =user prof=user-meta:nostr]              :: profile change
-      [%fans =user msg=@t]                            :: someone folowed me
-      [%fols =user accepted=? msg=@t]                 :: follow response 
-      [%beg-req =user beg=begs-poke:ui msg=@t]        :: feed/post data request request
-      [%beg-res beg=begs-poke:ui accepted=? msg=@t]   :: feed/post data request response
-      [%post =pid:tp =user action=post-notif]         :: someone replied, reacted etc.
+
+
+
++$  requests    ((mop @da req) gth)
++$  responses   ((mop @da ruling) gth)
+++  orq         ((on @da req) gth)
+++  ors         ((on @da ruling) gth)
+
+++  enbowl
+  |$  t
+  $:  =user
+      ts=@da
+      t
   ==
-+$  post-notif
-$%   [%reply p=post:tp]
-     [%quote p=post:tp]
-     [%reaction reaction=@t]
-     :: [%rt id=@ux pubkey=@ux relay=@t]  :: NIP-18
-     [%rp ~]  :: NIP-18
-     [%del ~]
-==
+++  approval
+  |$  t
+  $^  [%ok data=t]
+       %ng
+
+::  Requests that a user can perhaps reject
+::  %beg are one-off data requests
+::  %fans is a follow, an ames subscription
++$  req
+  $:  msg=@t
+  $=  req
+  $^  [%beg p=beg-type]
+      %fans
+  ==
++$  beg-type
+  $^  [%thread @da]
+      %feed
+  :: $?  %feed
+  ::     %prof
++$  ruling  ::  my responses to received requests
+  $:  req=(enbowl req)
+      =gate:gate
+      =decision
+  ==
++$  decision  [time=@da approved=? manual=? msg=@t]
+::
+::
+::  Incoming responses to reqs that we've sent
+::
 ++  ui
   |%
   +$  poke
@@ -63,7 +95,7 @@ $%   [%reply p=post:tp]
       [%prof prof-poke]
       [%keys ~]  ::  cycle-keys
       [%rela relay-poke]
-      :: [%notif @da]  :: dismiss notification
+      [%reqs reqs-poke]
   ==
   +$  begs-poke
   $%  [%feed p=@p]
@@ -101,6 +133,10 @@ $%   [%reply p=post:tp]
       ::  send event for... relaying
       [%send host=@p id=@ relays=(list @t)]
   ==
+  +$  reqs-poke
+  $%  [%handle id=@da approve=? msg=@t]
+      [%del id=@da]
+  ==
   :: facts
   +$  fact
   $%  [%nostr nostr-fact]
@@ -108,7 +144,6 @@ $%   [%reply p=post:tp]
       [%prof (map user user-meta:nostr)]
       [%enga p=post-wrapper reaction=*]
       [%fols fols-fact]
-      [%hark =notif]
   ==
   +$  nostr-fact
   $%  [%feed feed=nostr-feed]
@@ -122,7 +157,7 @@ $%   [%reply p=post:tp]
       [%del post-wrapper]
   ==
   +$  fols-fact
-  $%  [%new =user =fc:trill meta=(unit user-meta:nostr)]
+  $%  [%new =user =fc:tf meta=(unit user-meta:nostr)]
       [%quit =user]
   ==
   --

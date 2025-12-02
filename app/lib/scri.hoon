@@ -22,30 +22,30 @@
 
 ++  thread  |=  [hs=@t ids=@t]
   ^-  (unit (unit cage))  :-  ~  :-  ~  :-  %json  !>
-  %-  beg-res:en:appjs
+  %-  res:en:appjs
   ^-  res:comms
   =/  host  (slaw %p hs)
-  ?~  host  [%ng [%thread `@da`0 ''] 'Host is not a @p']
+  ?~  host  ['Host is not a @p' %begs %thread `@da`0 %ng]
   :: TODO what about non urbit stuff
   =/  =user:sur  [%urbit u.host]
   =/  fed=(unit feed:feed)  ?:  .=(u.host our.bowl)  `feed.state  (~(get by following.state) user)
-  ?~  fed  [%ng [%thread `@da`0 ''] 'Feed not found']
-  =/  id  (slaw:sr %ud ids)  ?~  id  [%ng [%thread `@da`0 ''] 'Post ID malformed']
+  ?~  fed  ['Feed not found' %begs %thread `@da`0 %ng]
+  =/  id  (slaw:sr %ud ids)  ?~  id  ['Post ID malformed' %begs %thread `@da`0 %ng]
   =/  node  (get:orm:feed u.fed u.id)
-  ?~  node  [%ng [%thread u.id ''] 'Post not found in feed']
+  ?~  node  ['Post not found in feed' %begs %thread u.id %ng]
   =/  fn   (node-to-full:feedlib u.node u.fed)
   =/  ted  (extract-thread:feedlib fn)
-  [%ok [%thread fn ted] '']
+  ['' %begs %thread u.id %ok fn ted]
 
 ++  sfeed  |=  [hs=@t s=@t e=@t c=@ n=@ r=@]
   ^-  (unit (unit cage))  :-  ~  :-  ~  :-  %json  !>
-  %-  beg-res:en:appjs
+  %-  res:en:appjs
   ^-  res:comms
   =/  host  (slaw %p hs)
-  ?~  host  [%ng [%feed ''] 'Host is not a @p']
+  ?~  host  ['Host is not a @p' %begs %feed %ng]
   =/  =user:sur  [%urbit u.host]
   =/  fed=(unit feed:feed)  ?:  .=(u.host our.bowl)  `feed.state  (~(get by following.state) user)
-  ?~  fed  [%ng [%feed ''] 'Feed not found']
+  ?~  fed  ['Feed not found' %begs %feed %ng]
   =/  start=(unit @da)  (timestamp:sr s)  
   =/  end               (timestamp:sr e) 
   =/  cont  (slaw:sr %ud c)
@@ -75,5 +75,5 @@
   =/  ne=(unit @da)  ?~  tal  ~  (some key.u.tal)
   =/  =fc:feed  [nf ns ne]
   =/  profile  (~(get by profiles.state) user)
-  [%ok [%feed fc profile] '']
+  ['' %begs %feed %ok fc profile]
 --

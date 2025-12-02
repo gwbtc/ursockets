@@ -38,17 +38,21 @@
     :~(c1 c2)
 
 ++  handle-follow-res  |=  =res:comms
-  ?-  -.res
-    %ng   
-          :_  state
-          =/  =fact:ui:sur  [%hark %fols [%urbit src.bowl] .n msg.res]
-          =/  c  (update-ui:cards:lib fact)  :~(c)
-    %ok
-      ?-  -.p.res
-        %feed  (handle-follow-ok [%urbit src.bowl] fc.+.p.res profile.+.p.res)
-        %thread  `state
-      ==
-  ==
+  ::  TODO URGENT
+  :: ?-  -.res.res
+  ::   %fols   
+  ::         :_  state
+  ::         :: =/  =fact:ui:sur  [%hark %fols [%urbit src.bowl] .n msg.res]
+  ::         :: =/  c  (update-ui:cards:lib fact)  :~(c)
+  ::   %begs
+  ::     ?-  +<.res.res
+  ::       %feed
+  ::         :: (handle-follow-ok [%urbit src.bowl] fc.+.p.res profile.+.p.res)
+  ::         `state
+  ::       %thread  `state
+  ::     ==
+  :: ==
+  `state
 ++  handle-refollow  |=  sip=@p
   :_  state  :_   ~
   :: (urbit-watch sip)

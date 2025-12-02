@@ -7,9 +7,9 @@ import { ThemeSwitcher } from "@/styles/ThemeSwitcher";
 
 function SlidingMenu() {
   const [_, navigate] = useLocation();
-  const { api, unreadNotifications, setModal } = useLocalState((s) => ({
+  const { api, notifications, setModal } = useLocalState((s) => ({
     api: s.api,
-    unreadNotifications: s.unreadNotifications,
+    notifications: s.notifications,
     setModal: s.setModal,
   }));
 
@@ -41,9 +41,9 @@ function SlidingMenu() {
       >
         <div className="notification-icon-wrapper">
           <Icon name="bell" size={20} />
-          {unreadNotifications > 0 && (
+          {notifications.length > 0 && (
             <span className="notification-badge">
-              {unreadNotifications > 99 ? "99+" : unreadNotifications}
+              {notifications.length > 99 ? "99+" : notifications.length}
             </span>
           )}
         </div>

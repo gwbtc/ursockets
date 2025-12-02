@@ -28,8 +28,7 @@
         parent.sp
         ~
         cm
-        read.sp
-        write.sp
+        perms.sp
         *engagement:tp
         `@uvH`pubkey
         *signature:tp

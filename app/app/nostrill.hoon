@@ -1,4 +1,4 @@
-/-  sur=nostrill, nsur=nostr, tf=trill-feed, tp=trill-post, comms=nostrill-comms, hark
+/-  sur=nostrill, nsur=nostr, tf=trill-feed, tp=trill-post, comms=nostrill-comms, hark, noti=nostrill-noti
 /+  lib=nostrill, nostr-keys, sr=sortug, scri,
     ws=websockets,
     bip-b173,
@@ -143,7 +143,7 @@
     ?:  ?=(%dbug -.pok)  (debug +.pok)
     =^  cs  state
       ?-  -.pok
-        %req  (handle-req:coms +.pok)
+        %req  (handle-req:coms +.pok ~)
         %res  (handle-res:coms +.pok)
         %eng  (handle-eng:coms +.pok)
       ==
@@ -162,6 +162,8 @@
       %post  =^  cs  state
                (handle-post:mutat +.u.upoke)
              [cs this]
+      %reqs  ::  TODO
+      `this
     ==
   ++  handle-cycle-keys
         =/  ks  (gen-keys:nostr-keys eny.bowl)
@@ -218,7 +220,9 @@
         =/  content=(list content:hark)
           :~  'Lol hi'
           ==
-        =/  n=notif:sur  [%fans [%urbit ~sorreg-namtyv] 'uhmmm uhhh basically... i followed you']
+        =/  =req:sur  ['uhmmm uhhh basically... i followed you' %fans] 
+        =/  enreq     [[%urbit ~sorreg-namtyv] now.bowl req]
+        =/  n=notif:noti  [%req enreq ~]
         =/  =yarn:hark  (to-hark:harklib n bowl)
         =/  c  (poke-hark:harklib yarn bowl)
         :_  this  :~(c)
@@ -639,13 +643,19 @@
     =^  cs  state  (set-relay:mutan (slav %ud wids.pole))
     [cs this]
   [%websocket-server *]  `this
-  [%follow ~]  :_  this  (give-feed:coms pole)
-  [%beg %feed ~]
-    :_  this  (give-feed:coms pole)
-  [%beg %thread ids=@t ~]
+  [%follow msg=@ ~]
+    =^  cs  state  (handle-req:coms [msg.pole %fans] `pole)
+    [cs this]
+  [%beg %feed msg=@ ~]
+    =^  cs  state  (handle-req:coms [msg.pole %beg %feed] `pole)
+    [cs this]
+
+  [%beg %thread ids=@t msg=@ ~]
     =/  id  (slaw:sr %uw ids.pole)
     ?~  id  ~&  error-parsing-ted-id=pole  `this
-    :_  this  (give-ted:coms u.id pole)
+    =^  cs  state  (handle-req:coms [msg.pole %beg %thread u.id] `pole)
+    [cs this]
+
   [%ui ~]
     ?>  .=(our.bowl src.bowl)
     :_  this
@@ -677,7 +687,7 @@
   ~&  on-agent=[wire -.sign]
   ::  if p.sign  is  not ~ here that means it's intentional
   ?+  wire  `this
-    [%follow ~]
+    [%follow *]
       ?:  ?=(%watch-ack -.sign) 
         ?~  p.sign  `this
         =^  cs  state  (handle-kick-nack:fols src.bowl)  [cs this]
@@ -721,23 +731,23 @@
       =/  jstring=@t  q.octs
       ~&  >>  jstring=jstring
       
-      :: =/  msg  (parse-body:nclient jstring)
+   :: =/  msg  (parse-body:nclient jstring)
     :: ~&  "m5"
     ::   ?~  msg  ~&  badparse=`@t`jstring  `this
     ::   ~&  >>  ws-relay-msg=msg
-      :: ?>  ?=(%http -.u.msg)
-      :: =^  cards  state  (handle-http:mutan sub-id.wire +.u.msg)
+   :: ?>  ?=(%http -.u.msg)
+   :: =^  cards  state  (handle-http:mutan sub-id.wire +.u.msg)
       `this
-    :: [%ws sub-id=@t *]  
-    ::   ?>  ?=([%khan %arow *] sign-arvo)
-    ::   ?:  ?=(%| -.p.sign-arvo)  `this
-    ::   =/  jstring  !<(@ +>.p.sign-arvo)
-    ::   =/  msg  (parse-body:nclient jstring)
-    ::   ?~  msg  ~&  `@t`jstring  `this
-    ::   ~&  >>  ws-ui-msg=msg
-    ::   :: ?>  ?=(%http -.u.msg)
-    ::   :: =^  cards  state  (handle-http:mutan sub-id.wire +.u.msg)
-    ::   `this
+   :: [%ws sub-id=@t *]  
+   ::   ?>  ?=([%khan %arow *] sign-arvo)
+   ::   ?:  ?=(%| -.p.sign-arvo)  `this
+   ::   =/  jstring  !<(@ +>.p.sign-arvo)
+   ::   =/  msg  (parse-body:nclient jstring)
+   ::   ?~  msg  ~&  `@t`jstring  `this
+   ::   ~&  >>  ws-ui-msg=msg
+     :: ?>  ?=(%http -.u.msg)
+     :: =^  cards  state  (handle-http:mutan sub-id.wire +.u.msg)
+     :: `this
   ==
 ::
 ++  on-fail

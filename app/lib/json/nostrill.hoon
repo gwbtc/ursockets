@@ -1,4 +1,4 @@
-/-  sur=nostrill, nsur=nostr, feed=trill-feed, comms=nostrill-comms
+/-  sur=nostrill, nsur=nostr, feed=trill-feed, post=trill-post, comms=nostrill-comms, noti=nostrill-noti
 /+  sr=sortug, common=json-common, trill=json-trill, nostr=json-nostr
 |%
 ++  en
@@ -15,10 +15,26 @@
     feed+(feed-with-cursor:en:trill feed ~ ~)
     nostr+(en-nostr-feed nostr-feed)
     following+(enfollowing following)
-    following2+(feed-with-cursor:en:trill following2 ~ ~)
+    following2+(global-with-cursor following2 ~ ~)
     ['followGraph' (engraph follow-graph)]
   ~
   ==
+  ++  en-global  |=  gf=global-feed:sur  ^-  json
+    %-  pairs
+    %+  turn  (tap:uorm:sur gf)
+    |=  [=upid:sur p=post:post]
+      ^-  [@ta json]
+    :-  (crip (scow:sr %ud `@ud`id.upid))
+        (poast:en:trill p)
+
+  ++  global-with-cursor
+    |=  [gf=global-feed:sur start=(unit @da) end=(unit @da)]  ^-  json
+    %:  pairs
+      global+(en-global gf)
+      start+(cursor:en:trill start)
+      end+(cursor:en:trill end)
+    ~
+    ==
   ++  en-nostr-feed
   |=  feed=nostr-feed:sur  ^-  json
     :-  %a  %+  turn  (tap:norm:sur feed)  |=  [id=@ud ev=event:nsur]
@@ -85,7 +101,6 @@
       %prof    (en-profiles +.f)
       %enga    (enga +.f)
       %fols    (fols +.f)
-      %hark    (hark +.f)
     ==
   ++  en-nostr  |=  nf=nostr-fact:ui:sur  ^-  json
     %+  frond  -.nf
@@ -118,7 +133,7 @@
      :: TODO
     ^-  json
     ~
-  ++  hark  |=  =notif:sur
+  ++  hark  |=  =notif:noti
     ^-  json
     ::  TODO remove as we're using %hark instead
     ~
@@ -174,36 +189,31 @@
     =.  l  ?~  pr.p     l  :_  l  ['profile' (user-meta:en:nostr u.pr.p)]
     %-  pairs  l
 
-  ++  beg-res  |=  =res:comms  ^-  json
-    %+  frond  %begs  %+  frond  -.res
-    ?-  -.res
-      %ok  (resd +.res)
-      %ng  (resn +.res)
+  ++  res  |=  =res:comms  ^-  json
+    %+  frond  %res  %-  pairs
+    :~  :-  %msg  [%s msg.res]
+        :-  -.res.res  ?-  -.res.res
+                         %begs  (en-beg +.res.res)
+                         %fols  (en-fols +.res.res)
+                       ==
     ==
-  ++  resd  |=  [rd=res-data:comms msg=@t]  ^-  json
-    %-  pairs
-      :~  :-  'msg'  [%s msg]
-          :-  'data'  ?-  -.rd
-            %feed     (user-data +.rd)
-            :: TODO wrap it for nostr shit
-            %thread   (frond -.rd (thread:en:trill +.rd))
-          ==
+  ++  en-fols  |=  p=(approval:sur feed-data:comms)  ^-  json
+    ?@  p  ~  (feed-data data.p)
+  ++  en-beg   |=  p=beg-type:comms  ^-  json
+    ?-  -.p
+      %feed     ?@  +.p  (frond -.p ~)  (feed-data data.+.p)  
+      %thread   %+  frond  -.p
+        %-  pairs
+        :~  ['id' (ud:en:common id.p)]
+            :-  %data  ?@  +>.p  ~  (thread:en:trill data.p)
+        ==
     ==
-  ++  resn  |=  [=req:comms res-msg=@t]  ^-  json
-    %-  pairs
-      :~  :-  'msg'  [%s res-msg]
-          :-  'req'
-            ?-  -.req
-              %feed     [%s msg.req]
-              :: TODO wrap it for nostr shit
-              %thread   %-  pairs  :~([%msg %s msg.req] [%id (ud:en:common id.req)])
-            ==
-          ==
-  ++  user-data
-    |=  ud=[=fc:feed profile=(unit user-meta:nsur)]
+
+  ++  feed-data
+    |=  fd=feed-data:comms
     %:  pairs
-      feed+(feed-with-cursor:en:trill fc.ud)
-      :-  %profile  ?~  profile.ud  ~  (user-meta:en:nostr u.profile.ud)
+      feed+(feed-with-cursor:en:trill fc.fd)
+      :-  %profile  ?~  profile.fd  ~  (user-meta:en:nostr u.profile.fd)
       ~
     ==
   --

@@ -1,4 +1,4 @@
-/-  sur=nostrill, hark
+/-  sur=nostrill, hark, noti=nostrill-noti, comms=nostrill-comms
 /+  lib=nostrill
 |%
 :: |=  =pid:post
@@ -98,67 +98,187 @@
 :: engagement  ~
 :: ==
 ++  to-hark
-  |=  [n=notif:sur =bowl:gall]  ^-  yarn:hark
+  |=  [n=notif:noti =bowl:gall]  ^-  yarn:hark
   =/  id=@uvH  (sham n)
   =/  var=[(list content:hark) path]
   ?-  -.n
     %prof
-      =/  user  (user-to-atom:lib user.n)
-      :-  :~([%ship user] 'Changed his profile')  /prof/(scot %p user)
-    %fans
-      =/  user  (user-to-atom:lib user.n)
-      ::  TODO  handle if fed not open
-      :-  :~([%ship user] 'Followed you')         /fans/(scot %p user)
-    %fols
-      =/  user  (user-to-atom:lib user.n)
-      ::  TODO  handle if fed not open
-      =/  res  ?:  accepted.n  'accepted your follow request'  'refused your follow request'
-          =/  ok  %+  scot  %ud  ?:  accepted.n  1  0
-      :-  :~([%ship user] res msg.n)             /fols/[ok]/(scot %p user)
-    %beg-req
-      =/  user  (user-to-atom:lib user.n)
-      ?-  -.beg.n
-        %feed
-          :-  :~([%ship user] 'Requested access to your feed' msg.n)       /beg-req/(scot %p user)/feed
-        %thread
-          =/  ids  (scot %ud `@`id.beg.n)
-          :-  :~([%ship user] 'Requested access to your thread of id:' ids msg.n)       /beg-req/(scot %p user)/thread/[ids]
-      ==
-    %beg-res
-      ?-  -.beg.n
-        %feed
-          =/  user  p.beg.n
-          =/  res  ?:  accepted.n  'accepted your request to access his feed'  'refused your request to access his feed'
-          =/  ok  %+  scot  %ud  ?:  accepted.n  1  0
-          :-  :~([%ship user] res msg.n)            /beg-res/[ok]/feed/(scot %p user)
-        %thread
-          =/  user  p.beg.n
-          =/  res  ?:  accepted.n  'accepted your request to access his thread'  'refused your request to access his thread'
-          =/  ids  (scot %ud `@`id.beg.n)
-          =/  ok  %+  scot  %ud  ?:  accepted.n  1  0
-          :-  :~([%ship user] res 'id:' ids msg.n)  /beg-res/[ok]/thread/(scot %p user)/[ids]
-      ==
+      =/  ship  (user-to-atom:lib user.n)
+      :-  :~([%ship ship] 'Changed his profile')  /prof/(scot %p ship)
+    %req
+      =/  ship  (user-to-atom:lib user.n)
+      =/  ship-token  [%ship ship]
+      ?@  req.n  ::  follow
+        ?~  solved.n
+          :-  :~  ship-token
+                  'tried to follow you. Your decision is pending'
+                  'He left the following request message: '
+                   msg.n
+              ==
+              /req/fans/(scot %p ship)/pending
+        ::
+        ?.  approved.u.solved.n
+          :-  :~  ship-token
+                  'Tried to follow you but you rejected his request'
+              ==
+              /req/fans/(scot %p ship)/ng
+        ::
+          :-  :~  ship-token
+                  'Followed you'
+              ==
+              /req/fans/(scot %p ship)/ok
+      ::  begs
+      ?@  p.req.n  ::  %feed
+        ?~  solved.n
+          :-  :~  ship-token
+                  'Requested access to your feed. Your decision is pending.'
+                  'He left the following request message: '
+                   msg.n
+              ==
+              /req/begs/feed/(scot %p ship)/pending
+        ::
+          ?.  approved.u.solved.n
+            :-  :~  ship-token
+                  'Requested access to your feed but you rejected his request'
+              ==
+              /req/begs/feed/(scot %p ship)/ng
+          ::
+            :-  :~  ship-token
+                  'Requested and was granted one-time access to your feed'
+              ==
+              /req/begs/feed/(scot %p ship)/ok
+      ::  %thread
+        =/  ids  (scot %ud `@`+.p.req.n)
+        ?~  solved.n
+          :-  :~  ship-token
+                  'Requested access to your thread with id: '
+                  ids
+                  'Your decision is pending.'
+                  'He left the following request message: '
+                   msg.n
+              ==
+              /req/begs/thread/[ids]/(scot %p ship)/pending
+        ::
+          ?.  approved.u.solved.n
+            :-  :~  ship-token
+                    'Requested access to your thread with id: '
+                    ids
+                    ', but you rejected his request'
+                ==
+                /req/begs/thread/[ids]/(scot %p ship)/ng
+          ::
+            :-  :~  ship-token
+                    'Requested and was granted one-time access to your thread with id: '
+                    ids
+                ==
+                /req/begs/thread/[ids]/(scot %p ship)/ok
+
+    %res
+      =/  ship  (user-to-atom:lib user.n)
+      =/  ship-token  [%ship ship]
+      ?-  -.res.n
+        %fols  
+          ?^  +.res.n  ::  approved
+            :-  :~  ship-token
+                  ' accepted your follow request.'
+                ==
+                /res/fols/(scot %p ship)/ok
+          ::
+            :-  :~  ship-token
+                  ' rejected your follow request.'
+                ==
+                /res/fols/(scot %p ship)/ng
+        %begs
+          ?-  +<.res.n
+            %feed
+              ?^  +>.res.n
+                :-  :~  ship-token
+                        ' accepted your request to access his feed'
+                    ==
+                    /res/begs/feed/(scot %p ship)/ok
+              ::
+                :-  :~  ship-token
+                        ' rejected your request to access his feed'
+                    ==
+                    /res/begs/feed/(scot %p ship)/ng
+            %thread
+              =/  ids  (scot %ud `@ud`id.res.n)
+              =/  mt=(approval:sur thread-data:comms)  +>+.res.n
+              ?^  mt
+                :-  :~  ship-token
+                        ' accepted your request to access his thread of id:'
+                        ids
+                    ==
+                    /res/begs/thread/[ids]/(scot %p ship)/ok
+              ::
+                :-  :~  ship-token
+                        ' rejected your request to access his thread of id:'
+                        ids
+                    ==
+                    /res/begs/thread/[ids]/(scot %p ship)/ng
+            ==
+          ==
     %post
-      =/  user  (user-to-atom:lib user.n)
-      =/  ids  (scot %ud `@`id.pid.n)
-      =/  hosts  (scot %p ship.pid.n)
-      =/  pids  %-  spat  /[hosts]/[ids]
-      ?-  -.action.n
+      =/  ship  (user-to-atom:lib user.n)
+      =/  ship-token  [%ship ship]
+
+      =/  a=engagement:comms  +>+.n
+      :: =/  ids  (scot %ud `@`id.pid.n)
+      :: =/  hosts  (scot %p ship.pid.n)
+      :: =/  pids  %-  spat  /[hosts]/[ids]
+      ?-  -.a
         %reply
-          =/  tids  (scot %ud `@`id.p.action.n)
-          =/  thosts  (scot %p host.p.action.n)
-          :-  :~([%ship user] 'Replied to post:' pids)     /post/reply/(scot %p user)/[hosts]/[ids]/[thosts]/[tids]
+          =/  host  host.child.a
+          =/  parents  (scot %ud `@`parent.a)
+          =/  ids    (scot %ud `@`id.child.a)
+          =/  hosts  (scot %p host)
+          =/  parent-pids  (spat /[hosts]/[parents])
+          :-  :~(ship-token 'Replied to post:' parent-pids)     /post/reply/(scot %p ship)/[hosts]/[parents]/[ids]
+        %mention
+          =/  host  host.post.a
+          =/  ids    (scot %ud `@`id.post.a)
+          =/  hosts  (scot %p host)
+          =/  pids  (spat /[hosts]/[ids])
+          :: TODO show some text of the mention
+          :-  :~(ship-token 'Mentioned you in post:' pids)     /post/mention/(scot %p ship)/[hosts]/[ids]
         %quote
-          =/  tids  (scot %ud `@`id.p.action.n)
-          =/  thosts  (scot %p host.p.action.n)
-          :-  :~([%ship user] 'Quoted the post:' pids)     /post/quote/(scot %p user)/[hosts]/[ids]/[thosts]/[tids]
+          =/  host  host.post.a
+          =/  parents  (scot %ud `@`src.a)
+          =/  ids    (scot %ud `@`id.post.a)
+          =/  hosts  (scot %p host)
+          =/  parent-pids  (spat /[hosts]/[parents])
+          :: TODO show some text of the quote 
+          :-  :~([%ship ship] 'Quoted the post:' parent-pids)     /post/quote/(scot %p ship)/[parents]/[hosts]/[ids]
         %rp
-          :-  :~([%ship user] 'Reposted the post:' pids)   /post/rp/(scot %p user)/[hosts]/[ids]
-        %del
-          :-  :~([%ship user] 'Deleted the post:' pids)    /post/del/(scot %p user)/[hosts]/[ids]
+          =/  parents  (scot %ud `@`src.a)
+          =/  ids    (scot %ud `@`target.a)
+          :-  :~([%ship ship] 'Reposted the post:' ids)   /post/rp/(scot %p ship)/[parents]/[ids]
         %reaction
-          :-  :~([%ship user] 'Reacted to post:' pids reaction.action.n)   /post/react/(scot %p user)/[hosts]/[ids]
+          =/  ids    (scot %ud `@`post.a)
+          :-  :~([%ship ship] 'Reacted to post:' ids reaction.a)   /post/react/(scot %p ship)/[ids]
+        %del-reply
+          =/  parents  (scot %ud `@`parent.a)
+          =/  ids    (scot %ud `@`child.a)
+          :-  :~([%ship ship] 'Deleted his reply on:' parents)    /post/del-reply/(scot %p ship)/[parents]/[ids]
+        %del-parent
+          =/  parents  (scot %ud `@`parent.a)
+          =/  ids    (scot %ud `@`child.a)
+          :-  :~([%ship ship] 'Deleted the parent to the post on:' parents)    /post/del-parent/(scot %p ship)/[parents]/[ids]
+        %del-quote
+          =/  parents  (scot %ud `@`src.a)
+          =/  ids    (scot %ud `@`quote.a)
+          :-  :~([%ship ship] 'Deleted his quote of:' parents)    /post/del-quote/(scot %p ship)/[parents]/[ids]
       ==
+      %nostr
+        ?-  +<.n
+          %relay-down
+          :-  :~('The relay: ' url.n 'closed the websockets connection. Try to reconnect in the settings page.')
+            /nostr/relay-down/[url.n]
+          %new-relay
+          :-  :~('A new relay has become available: ' url.n 'Try it out some time. You can add it to the settings page.')
+            /nostr/new-relay/[url.n]
+        ==
+      
   ==
   =/  pat=path  (weld +.var /(scot %da now.bowl))
   =/  =rope:hark    [~ ~ dap.bowl pat]
@@ -171,7 +291,7 @@
   poke
 ::
 ++  send-hark
-  |=  [n=notif:sur =bowl:gall]  ^-  card:agent:gall
+  |=  [n=notif:noti =bowl:gall]  ^-  card:agent:gall
   =/  y  (to-hark n bowl)
   (poke-hark y bowl)
 :: |=  f=engagement:hark

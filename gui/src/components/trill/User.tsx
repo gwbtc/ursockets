@@ -86,11 +86,11 @@ function UserFeed({
     try {
       const res = await api.peekFeed(patp);
       toast.success(`Access request sent to ${patp}`);
-      addNotification({
-        type: "access_request",
-        from: patp,
-        message: `Access request sent to ${patp}`,
-      });
+      // addNotification({
+      //   type: "access_request",
+      //   from: patp,
+      //   message: `Access request sent to ${patp}`,
+      // });
       if ("error" in res) toast.error(res.error);
       else {
         console.log("peeked", res.ok.feed);

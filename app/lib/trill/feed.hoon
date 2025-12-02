@@ -1,5 +1,5 @@
 /-  feed=trill-feed, post=trill-post, sur=nostrill
-/+  sr=sortug, constants
+/+  sr=sortug, constants, lib=nostrill
 |%
 ++  latest-page
 =/  count  feed-page-size:constants
@@ -112,7 +112,7 @@
     
 ::
 ++  add-new-feed
-|=  [global=feed:feed new=feed:feed]  ^-  feed:feed
+|=  [global=global-feed:sur new=feed:feed]  ^-  global-feed:sur
   =/  poasts  (tap:orm:feed new)
   |-  ?~  poasts  global
     =/  poast  +.i.poasts
@@ -120,27 +120,38 @@
     $(poasts t.poasts)
 
 ++  consolidate-feeds
-|=  feeds=(list [* feed:feed])  ^-  feed:feed 
-  =|  nf=feed:feed
-  |-  ?~  feeds  nf
+|=  feeds=(list [* feed:feed])  ^-  global-feed:sur
+  =|  gf=global-feed:sur
+  |-  ?~  feeds  gf
     =/  poasts  (tap:orm:feed +.i.feeds)
-    =.  nf  |-  ?~  poasts  nf
+    =.  gf  |-  ?~  poasts  gf
       =/  poast  +.i.poasts
-      =.  nf  (insert-to-global nf poast)
+      =.  gf  (insert-to-global gf poast)
       $(poasts t.poasts)
     $(feeds t.feeds)
+:: ++  consolidate-feeds
+:: |=  feeds=(list [* feed:feed])  ^-  feed:feed 
+::   =|  nf=feed:feed
+::   |-  ?~  feeds  nf
+::     =/  poasts  (tap:orm:feed +.i.feeds)
+::     =.  nf  |-  ?~  poasts  nf
+::       =/  poast  +.i.poasts
+::       =.  nf  (insert-to-global nf poast)
+::       $(poasts t.poasts)
+::     $(feeds t.feeds)
 
-++  find-available-id
-=|  tries=@ud
-|=  [f=feed:feed id=@da]  ^-  @da
-  ?:  (gte tries 20)  ~|('find-available-id stack overflow' !!)
-  ?.  (has:orm:feed f id)  id
-  $(id +(id), tries +(tries))
+:: ++  find-available-id
+:: =|  tries=@ud
+:: |=  [f=feed:feed id=@da]  ^-  @da
+::   ?:  (gte tries 20)  ~|('find-available-id stack overflow' !!)
+::   ?.  (has:orm:feed f id)  id
+::   $(id +(id), tries +(tries))
 
 ++  insert-to-global
-|=  [f=feed:feed p=post:post]  ^-  feed:feed
-  =/  nid  (find-available-id f id.p)
-  (put:orm:feed f nid p)
+|=  [gf=global-feed:sur p=post:post]  ^-  global-feed:sur
+  =/  host  (atom-to-user:lib host.p)
+  =/  =upid:sur  [host id.p]
+  (put:uorm:sur gf upid p)
 
 ++  delete-children
   |=  [f=feed:feed p=post:post]  ^-  feed:feed
