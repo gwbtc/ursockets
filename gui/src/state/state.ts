@@ -5,11 +5,12 @@ import type { ComposerData } from "@/types/ui";
 import { create } from "zustand";
 import type { Fact, Relays, UserProfile } from "@/types/nostrill";
 import type { Event } from "@/types/nostr";
-import type { FC, Poast } from "@/types/trill";
+import type { FC, Gate, Poast } from "@/types/trill";
 import type { Notification } from "@/types/notifications";
 import { useShallow } from "zustand/shallow";
 import type { HarkAction, Skein, Yarn } from "@/logic/hark";
 import { skeinToNote } from "@/logic/notifications";
+import { defaultGate } from "@/logic/bunts";
 // TODO handle airlock connection issues
 // the SSE pipeline has a "status-update" event FWIW
 // type AirlockState = "connecting" | "connected" | "failed";
@@ -34,7 +35,10 @@ export type LocalState = {
   notifications: Notification[];
   setNotifications: (n: Notification[]) => void;
   dismissNotification: (n: string) => void;
+  addNotification: (n: any) => void;
   lastFact: Fact | null;
+  feedPerms: Gate;
+  contacts: Record<string, any>;
 };
 
 const creator = create<LocalState>();
@@ -45,6 +49,12 @@ export const useStore = creator((set, get) => ({
     const airlock = await start();
     const api = new IO(airlock);
     console.log({ api });
+    api.scryContacts().then((r) => {
+      console.log("contacts scry res", r);
+      if ("ok" in r) {
+        set({ contacts: r.ok });
+      }
+    });
     api.scryHark().then((r) => {
       console.log("hark scry res", r);
       if ("ok" in r) {
@@ -78,8 +88,16 @@ export const useStore = creator((set, get) => ({
     await api.subscribeStore((data) => {
       if ("state" in data) {
         console.log("state", data.state);
-        const { feed, nostr, following, following2, relays, profiles, pubkey } =
-          data.state;
+        const {
+          feed,
+          nostr,
+          following,
+          following2,
+          relays,
+          profiles,
+          pubkey,
+          perms,
+        } = data.state;
         const flwing = new Map(Object.entries(following as Record<string, FC>));
         flwing.set(api!.airlock.our!, feed);
         set({
@@ -89,6 +107,7 @@ export const useStore = creator((set, get) => ({
           following: flwing,
           following2,
           pubkey,
+          feedPerms: perms,
         });
       } else if ("fact" in data) {
         const fact: Fact = data.fact;
@@ -145,6 +164,8 @@ export const useStore = creator((set, get) => ({
     });
     set({ api });
   },
+  feedPerms: defaultGate,
+  contacts: {},
   pubkey: "",
   profiles: new Map(),
   addProfile: (key, profile) => {
@@ -158,6 +179,7 @@ export const useStore = creator((set, get) => ({
   following: new Map(),
   followers: [],
   following2: { feed: {}, start: "", end: "" },
+  gate: null,
   UISettings: {},
   modal: null,
   setModal: (modal) => set({ modal }),
@@ -168,6 +190,10 @@ export const useStore = creator((set, get) => ({
   notifications: [],
   setNotifications: (notifications) => {
     set({ notifications });
+  },
+  addNotification: (n) => {
+    const notifications = get().notifications;
+    set({ notifications: [n, ...notifications] });
   },
   dismissNotification: (id) => {
     const nots = get().notifications;
