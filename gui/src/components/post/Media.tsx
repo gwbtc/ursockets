@@ -1,4 +1,7 @@
 import type { Media } from "@/types/trill";
+import useLocalState from "@/state/state";
+import Lightbox from "@/components/Lightbox";
+
 interface Props {
   media: Media[];
 }
@@ -20,6 +23,8 @@ function M({ media }: Props) {
 export default M;
 
 function Images({ urls }: { urls: string[] }) {
+  const { setModal } = useLocalState((s) => ({ setModal: s.setModal }));
+  
   return (
     <>
       {urls.map((u, i) => (
@@ -28,6 +33,11 @@ function Images({ urls }: { urls: string[] }) {
           className={`body-img body-img-1-of-${urls.length}`}
           src={u}
           alt=""
+          onClick={(e) => {
+              e.stopPropagation();
+              setModal(<Lightbox src={u} />);
+          }}
+          style={{ cursor: "zoom-in" }}
         />
       ))}
     </>
