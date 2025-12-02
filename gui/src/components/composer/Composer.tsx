@@ -19,12 +19,12 @@ import {
   Minimize2,
   Plus,
   Trash2,
-  Split,
   Image as ImageIcon,
   Link as LinkIcon,
 } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import S3Browser from "@/components/S3Browser";
+import type { Poast } from "@/types/trill";
 
 function PermsWrapper({
   initialPerms,
@@ -462,7 +462,7 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
               // If we can't get ID, we break chain.
               // Let's just use rootId for all subsequent posts if we can't find intermediate IDs quickly.
               // Actually, let's try linear:
-              const feed = Object.values(res.ok.feed.feed).sort(
+              const feed = (Object.values(res.ok.feed.feed) as Poast[]).sort(
                 (a, b) => b.time - a.time,
               );
               if (
@@ -489,19 +489,19 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
     if (!composerData) return;
     const host: UserType =
       "trill" in composerData.post
-        ? { urbit: composerData.post.trill.author }
+        ? { urbit: (composerData.post as any).trill.author }
         : "nostr" in composerData.post
           ? { nostr: composerData.post.nostr.pubkey }
           : { urbit: api.airlock.our! };
     const id =
       "trill" in composerData.post
-        ? composerData.post.trill.id
+        ? (composerData.post as any).trill.id
         : "nostr" in composerData.post
           ? composerData.post.nostr.eventId
           : "";
     const thread =
       "trill" in composerData.post
-        ? composerData.post.trill.thread || composerData.post.trill.id
+        ? (composerData.post as any).trill.thread || (composerData.post as any).trill.id
         : "nostr" in composerData.post
           ? composerData.post.nostr.eventId
           : "";
