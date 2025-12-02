@@ -10,7 +10,9 @@
 +$  engagement
   $%  [%reply parent=@da child=post:post]
       [%del-reply parent=@da child=@da]
+      [%del-parent parent=@da child=@da]
       [%quote src=@da =post:post]
+      [%del-quote src=@da quote=@da]
       [%rp src=@da rt=@da]
       [%reaction post=@da reaction=@t]
   ==
