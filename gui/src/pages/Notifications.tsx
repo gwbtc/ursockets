@@ -1,19 +1,17 @@
 import { useState } from "react";
 import useLocalState from "@/state/state";
-import Modal from "./modals/Modal";
-import Icon from "./Icon";
-import Avatar from "./Avatar";
+import Icon from "@/components/Icon";
+import Avatar from "@/components/Avatar";
 import { useLocation } from "wouter";
 import type { Notification, NotificationType } from "@/types/notifications";
 import "@/styles/NotificationCenter.css";
 
-const NotificationCenter = () => {
-  const [_, _navigate] = useLocation();
-  const { notifications, dismissNotification, setModal } = useLocalState(
+const NotificationsPage = () => {
+  const [_, navigate] = useLocation();
+  const { notifications, dismissNotification } = useLocalState(
     (s) => ({
       notifications: s.notifications,
       dismissNotification: s.dismissNotification,
-      setModal: s.setModal,
     }),
   );
   console.log({ notifications });
@@ -32,14 +30,12 @@ const NotificationCenter = () => {
     // if (notification.postId) {
     //   // Navigate to post
     //   navigate(`/post/${notification.postId}`);
-    //   setModal(null);
     // } else if (
     //   notification.type === "follow" ||
     //   notification.type === "access_request"
     // ) {
     //   // Navigate to user profile
     //   navigate(`/feed/${notification.from}`);
-    //   setModal(null);
     // }
   };
 
@@ -87,27 +83,27 @@ const NotificationCenter = () => {
   }
   const unreadNotifications = notifications.filter((n) => n.unread);
   return (
-    <Modal close={() => setModal(null)}>
-      <div className="notification-center">
-        <div className="notification-header">
-          <h2>Notifications</h2>
-          <div className="notification-actions">
-            {unreadNotifications.length > 0 && (
-              <button
-                className="mark-all-read-btn"
-                onClick={markAllNotificationsRead}
-              >
-                Mark all as read
-              </button>
-            )}
-            {notifications.length > 0 && (
-              <button className="clear-all-btn" onClick={dismissAll}>
-                Clear all
-              </button>
-            )}
-          </div>
+    <div className="notifications-page">
+      <div className="page-header">
+        <h1>Notifications</h1>
+        <div className="notification-actions">
+          {unreadNotifications.length > 0 && (
+            <button
+              className="mark-all-read-btn"
+              onClick={markAllNotificationsRead}
+            >
+              Mark all as read
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button className="clear-all-btn" onClick={dismissAll}>
+              Clear all
+            </button>
+          )}
         </div>
+      </div>
 
+      <div className="notifications-content">
         <div className="notification-filters">
           <button
             className={`filter-btn ${filter === "all" ? "active" : ""}`}
@@ -172,8 +168,8 @@ const NotificationCenter = () => {
           )}
         </div>
       </div>
-    </Modal>
+    </div>
   );
 };
 
-export default NotificationCenter;
+export default NotificationsPage;

@@ -7,22 +7,15 @@ import { ThemeSwitcher } from "@/styles/ThemeSwitcher";
 
 function SlidingMenu() {
   const [_, navigate] = useLocation();
-  const { api, notifications, setModal } = useLocalState((s) => ({
+  const { api, notifications } = useLocalState((s) => ({
     api: s.api,
     notifications: s.notifications,
-    setModal: s.setModal,
   }));
 
   function goto(to: string) {
     navigate(to);
   }
 
-  function openNotifications() {
-    // We'll create this component next
-    import("../NotificationCenter").then(({ default: NotificationCenter }) => {
-      setModal(<NotificationCenter />);
-    });
-  }
   return (
     <div id="left-menu">
       <div id="logo">
@@ -37,7 +30,7 @@ function SlidingMenu() {
       <div
         className="opt notification-item"
         role="link"
-        onClick={openNotifications}
+        onClick={() => goto("/notifications")}
       >
         <div className="notification-icon-wrapper">
           <Icon name="bell" size={20} />
