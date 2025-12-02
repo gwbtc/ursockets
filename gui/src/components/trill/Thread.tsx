@@ -4,10 +4,11 @@ import spinner from "@/assets/triangles.svg";
 import Post from "@/components/post/Post";
 import { extractThread, toFlat } from "@/logic/trill/helpers";
 import type { FC, FullNode, Poast } from "@/types/trill";
-import Composer from "@/components/composer/Composer";
 import type { UserProfile } from "@/types/nostrill";
 import type { Ship } from "@/types/urbit";
 import { useEffect, useState } from "react";
+import Body from "../post/Body";
+import Footer from "../post/Footer";
 
 export default function Thread({
   host,
@@ -65,17 +66,23 @@ function Loader({
 }) {
   const api = useLocalState((s) => s.api);
   const [data, setData] = useState<FullNode>();
+  const [ted, setThread] = useState<FullNode[]>([]);
   const [error, setError] = useState("");
   console.log({ data });
   async function fetchThread() {
     const res = await api!.scryThread(host, id);
+    console.log("scried thread", res);
     if ("error" in res) setError(res.error);
-    else setData(res.ok);
+    else {
+      setData(res.ok.node);
+      setThread(res.ok.thread);
+    }
   }
   useEffect(() => {
     fetchThread();
   }, [host, id]);
-
+  if (ted.length > 1)
+    return <LongThread thread={ted} node={data} profile={profile} />;
   if (data)
     return (
       <>
@@ -152,6 +159,44 @@ function ChildTree({ node }: { node: FullNode }) {
     );
   }
 }
+
+function LongThread({
+  thread,
+  profile,
+}: {
+  thread: FullNode[];
+  node?: FullNode;
+  profile?: UserProfile;
+}) {
+  if (thread.length === 0) return <p>wtf</p>;
+  const op = thread[0];
+  return (
+    <div id="trill-thread">
+      <div id="thread-op">
+        <Post
+          poast={toFlat(op)}
+          user={{ urbit: op.author }}
+          profile={profile}
+          thread={true}
+        />
+      </div>
+      {thread.slice(1).map((child, i) => (
+        <div className="timeline-post trill-post cp thread-child">
+          <div className="left">{`${i + 2}/${thread.length}`}</div>
+          <div className="right">
+            <Body poast={toFlat(child)} user={{ urbit: child.author }} />
+            <Footer
+              poast={toFlat(child)}
+              user={{ urbit: child.author }}
+              thread={true}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // function ChildTree({ node }: { node: FullNode }) {
 //   const { threadChildren, replies } = extractThread(node);
 //   return (

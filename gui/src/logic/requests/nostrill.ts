@@ -1,9 +1,10 @@
 import type Urbit from "urbit-api";
-import type { Cursor, FC, FullNode, PID, PostID } from "@/types/trill";
+import type { Cursor, FC, FullNode, PostID } from "@/types/trill";
 import type { Ship } from "@/types/urbit";
 import { FeedPostCount } from "../constants";
 import type { UserProfile, UserType } from "@/types/nostrill";
 import type { AsyncRes } from "@/types/ui";
+import type { Skein } from "../hark";
 
 // Subscribe
 type Handler = (date: any) => void;
@@ -33,15 +34,16 @@ export default class IO {
       return { error: `${e}` };
     }
   }
-  private async scry(path: string) {
+  private async scry(path: string, agent?: string) {
     try {
-      const res = await this.airlock.scry({ app: "nostrill", path });
+      const app = agent ? agent : "nostrill";
+      const res = await this.airlock.scry({ app, path });
       return { ok: res };
     } catch (e) {
       return { error: `${e}` };
     }
   }
-  private async sub(path: string, handler: Handler) {
+  private async sub(path: string, handler: Handler, agent?: string) {
     const has = this.subs.get(path);
     if (has) return;
 
@@ -51,15 +53,17 @@ export default class IO {
       console.log(data, "nostrill subscription kicked");
       this.subs.delete(path);
     };
+    const app = agent ? agent : "nostrill";
     const res = await this.airlock.subscribe({
-      app: "nostrill",
+      app,
       path,
       event: handler,
       err,
       quit,
     });
     this.subs.set(path, res);
-    console.log(res, "subscribed to nostrill agent");
+    console.log(res, `subscribed to /${app}${path}`);
+    return res;
   }
   async unsub(sub: number) {
     return await this.airlock.unsubscribe(sub);
@@ -67,6 +71,10 @@ export default class IO {
   // subs
   async subscribeStore(handler: Handler) {
     const res = await this.sub("/ui", handler);
+    return res;
+  }
+  async subscribeHark(handler: Handler) {
+    const res = await this.sub("/ui", handler, "hark");
     return res;
   }
   // scries
@@ -91,7 +99,7 @@ export default class IO {
     // start: Cursor,
     // end: Cursor,
     // desc = true,
-  ): AsyncRes<FullNode> {
+  ): AsyncRes<{ node: FullNode; thread: FullNode[] }> {
     // const order = desc ? 1 : 0;
 
     // const path = `/j/thread/${host}/${id}/${start}/${end}/${FeedPostCount}/${order}`;
@@ -105,6 +113,23 @@ export default class IO {
       else return { ok: res.ok.begs.ok.thread };
     } else return { error: "wrong result" };
   }
+  // async scryHark(): AsyncRes<Skein[]> {
+  async scryHark(): AsyncRes<Skein[]> {
+    const path3 = "/all/skeins";
+    const path4 = "/all/latest";
+    const path = "/desk/nostrill/skeins";
+    // const path2 = "/desk/nostrill/latest";
+    // this returns Carpet
+    const res = await this.scry(path, "hark");
+    const res3 = await this.scry(path3, "hark");
+    const res4 = await this.scry(path4, "hark");
+    // const res2 = await this.scry(path2, "hark");
+    console.log("hark scry", res);
+    console.log("hark all skeins", res3);
+    console.log("hark all latest", res4);
+    return res;
+  }
+
   // pokes
 
   async pokeAlive() {
@@ -186,8 +211,8 @@ export default class IO {
     const json = { add: url };
     return await this.poke({ rela: json });
   }
-  async deleteRelay(url: string) {
-    const json = { del: url };
+  async deleteRelay(wid: number) {
+    const json = { del: wid };
     return await this.poke({ rela: json });
   }
   async syncRelays() {

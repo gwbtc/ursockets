@@ -1,15 +1,18 @@
-/-  sur=nostrill, nsur=nostr, tf=trill-feed, tp=trill-post, comms=nostrill-comms
+/-  sur=nostrill, nsur=nostr, tf=trill-feed, tp=trill-post, comms=nostrill-comms, hark
 /+  lib=nostrill, nostr-keys, sr=sortug, scri,
     ws=websockets,
     bip-b173,
     nreq=nostr-req,
     nostr-client,
     dbug,
+    seq,
     evlib=nostr-events,
     mutations-nostr,
     mutations-trill,
     jsonlib=json-nostrill,
     feedlib=trill-feed, postlib=trill-post,
+    seed,
+    harklib=hark,
     commlib=nostrill-comms, followlib=nostrill-follows
 /=  web  /web/router
 |%
@@ -211,6 +214,14 @@
   ::
   ++  debug  |=  noun=*
     ?+  noun  `this
+      %hark
+        =/  content=(list content:hark)
+          :~  'Lol hi'
+          ==
+        =/  n=notif:sur  [%fans [%urbit ~sorreg-namtyv] 'uhmmm uhhh basically... i followed you']
+        =/  =yarn:hark  (to-hark:harklib n bowl)
+        =/  c  (poke-hark:harklib yarn bowl)
+        :_  this  :~(c)
       %seed-threads
         ~&  >>  "seeding threads"
         =/  pubkey  pub.i.keys
@@ -257,10 +268,6 @@
                 =/  t=tarp  [days 0 0 0 ~]
                 =/  d=date  [[.y 0] months t]
                 =/  reply-id  %-  year  (add-to-date:jikan:sr opdate d)
-                ~&  opdate=`@`(year opdate)
-                ~&  diff=`@`(year d)
-                ~&  sr=`@`reply-id
-                ~&  add=(add (year opdate) (year d))
                 =/  reply=post:tp  (build-post:postlib reply-id pubkey sp)            
                 =.  new-parent  id.reply
                 =.  children.u.parent  (~(put in children.u.parent) id.reply)
@@ -333,6 +340,35 @@
         =.  total-count  +.new-state
         ~&  >  seeded-thread=[id.op count=total-count]
       :: !!
+    `this
+    %seed-own
+        =/  text  long-text:seed
+        =/  chunks  (chunk-by-size:seq text 256)
+        ?~  chunks  ~&  "wtf"  !!
+        =/  rest=(list tape)  t.chunks
+        =/  pubkey  pub.i.keys
+        =/  content  (crip i.chunks)
+        =/  sp=sent-post:tp  (build-sp:postlib our.bowl our.bowl content ~ ~)
+        =/  op=post:tp       (build-post:postlib now.bowl pubkey sp)
+        ~&  "thread id"
+        ~&  >>  id.op
+        =/  parent-id  id.op
+        =.  feed  (put:orm:tf feed id.op op)
+        =/  idx  1
+        =.  feed
+          |-  ?~  rest  feed
+            =/  parent  (get:orm:tf feed parent-id)
+            ?~  parent  ~&  >>>  ["parent wasn't set in feed??\0a" parent-id]  !!
+            =/  content  (crip i.rest)
+            =/  sp=sent-post:tp  (build-sp:postlib our.bowl our.bowl content `parent-id `id.op)
+            =/  reply-id   (add now.bowl (mul idx ~s10))
+            =/  p=post:tp  (build-post:postlib reply-id pubkey sp)
+            ::
+            =.  children.u.parent  (~(put in children.u.parent) id.p)
+            =.  feed       (put:orm:tf feed id.u.parent u.parent)
+            ::
+            =.  feed  (put:orm:tf feed id.p p)
+            $(rest t.rest, parent-id id.p, idx +(idx))        
       `this
       %feed-stats
         =/  posts  (tap:orm:tf feed)
@@ -373,7 +409,18 @@
           $(posts t.posts)
           
         `this
-      [%feed-inspect @]
+      [%ted-own @]
+        =/  op  (got:orm:tf feed +.noun)
+        =/  full-node  (node-to-full:feedlib op feed)
+        =/  ted  (extract-thread:feedlib full-node)
+        ~&  lent=(lent ted)
+        =/  ignore  |-  ?~  ted  ~
+                      =/  content  (content-map-to-md:postlib contents.i.ted)
+                      ~&  id=id.i.ted
+                      ~&  >>  content
+                    $(ted t.ted)
+        `this
+      [%ted-inspect @]
 
         =/  posts  (tap:orm:tf feed)
         =|  ted-count=@
@@ -382,10 +429,10 @@
         |-  ?~  posts  [ted-count child-sum]
           =/  p=post:tp  +.i.posts
           =/  nc  ?.  .=(thread.p +.noun)  [ted-count child-sum]
-                       :: ~&  >  parent=parent.p
-                       :: ~&  >>  id=id.p
-                       :: ~&    children=children.p
-                       :: ~&   >>>  ~(wyt in children.p)
+                       ~&  >  parent=parent.p
+                       ~&  >>  id=id.p
+                       ~&    children=children.p
+                       ~&   >>>  ~(wyt in children.p)
                       [+(ted-count) (add child-sum ~(wyt in children.p))]
           $(posts t.posts, ted-count -.nc, child-sum +.nc)
         ~&  >>  posts-under-ted=c
