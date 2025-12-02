@@ -154,7 +154,6 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
               ) : (
                 <Avatar
                   user={user}
-                  userString={userString}
                   profile={profile}
                   size={120}
                   picOnly={true}
@@ -232,7 +231,6 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
           <div className="profile-picture">
             <Avatar
               user={user}
-              userString={userString}
               profile={profile}
               size={120}
               picOnly={true}

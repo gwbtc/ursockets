@@ -134,7 +134,6 @@ export default function ({ user }: { user: UserType }) {
           >
             <Avatar
               user={user}
-              userString={userString}
               profile={profile}
               size={80}
               picOnly

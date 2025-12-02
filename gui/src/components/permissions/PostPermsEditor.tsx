@@ -2,7 +2,7 @@ import type { Gate } from "@/types/trill";
 import GateEditor from "./GateEditor";
 import { defaultGate } from "@/logic/bunts";
 
-interface PostPerms {
+export interface PostPerms {
   read: Gate;
   write: Gate;
 }

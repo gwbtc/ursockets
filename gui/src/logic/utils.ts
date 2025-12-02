@@ -223,19 +223,27 @@ export function wait(ms: number) {
 }
 
 export function quoteToReference(d: SPID): Reference | ExternalContent {
-  if (d.service === "twatter")
+  if ("twatter" in d)
     return {
       json: {
         origin: "twatter",
-        content: JSON.stringify(d.post),
+        content: JSON.stringify(d.twatter),
+      },
+    };
+  else if ("trill" in d)
+    return {
+      ref: {
+        type: "trill",
+        ship: d.trill.host,
+        path: `/${d.trill.id}`,
       },
     };
   else
     return {
       ref: {
         type: "trill",
-        ship: d.post.host,
-        path: `/${d.post.id}`,
+        ship: "",
+        path: "",
       },
     };
 }

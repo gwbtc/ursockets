@@ -4,6 +4,7 @@ import IO from "@/logic/requests/nostrill";
 import type { ComposerData } from "@/types/ui";
 import { create } from "zustand";
 import type { Fact, Relays, UserProfile } from "@/types/nostrill";
+import type { StorageCredentials, StorageConfiguration } from "@/types/urbit";
 import type { Event } from "@/types/nostr";
 import type { FC, Gate, Poast } from "@/types/trill";
 import type { Notification } from "@/types/notifications";
@@ -11,6 +12,9 @@ import { useShallow } from "zustand/shallow";
 import type { HarkAction, Skein, Yarn } from "@/logic/hark";
 import { skeinToNote } from "@/logic/notifications";
 import { defaultGate } from "@/logic/bunts";
+
+export type S3Config = StorageCredentials & StorageConfiguration;
+
 // TODO handle airlock connection issues
 // the SSE pipeline has a "status-update" event FWIW
 // type AirlockState = "connecting" | "connected" | "failed";
@@ -39,6 +43,9 @@ export type LocalState = {
   lastFact: Fact | null;
   feedPerms: Gate;
   contacts: Record<string, any>;
+  notificationsEnabled: boolean;
+  setNotificationsEnabled: (b: boolean) => void;
+  s3: S3Config | null;
 };
 
 const creator = create<LocalState>();
@@ -49,11 +56,29 @@ export const useStore = creator((set, get) => ({
     const airlock = await start();
     const api = new IO(airlock);
     console.log({ api });
+
+    // Check notification permissions on load
+    if (Notification.permission === "granted") {
+      set({ notificationsEnabled: true });
+    }
+
     api.scryContacts().then((r) => {
       console.log("contacts scry res", r);
       if ("ok" in r) {
         set({ contacts: r.ok });
       }
+    });
+    api.scryContacts().then((r) => {
+      console.log("contacts", r);
+    });
+    api.scrySettings().then((r) => {
+      console.log("settings", r);
+    });
+    api.scryStorage().then((r) => {
+      console.log("storage scry res", r);
+        if ("ok" in r) {
+            set({ s3: r.ok });
+        }
     });
     api.scryHark().then((r) => {
       console.log("hark scry res", r);
@@ -83,6 +108,20 @@ export const useStore = creator((set, get) => ({
         if ("error" in note) return;
         const notifications = [...nots, note.ok];
         set({ notifications });
+
+        // Trigger Browser Notification
+        if (get().notificationsEnabled && document.hidden) {
+          const body =
+            typeof note.ok.message[0] === "string"
+              ? note.ok.message[0]
+              : "New activity on Nostrill";
+
+          new Notification("Nostrill", {
+            body: body as string,
+            icon: "/nostril-icon.png",
+            tag: "nostrill-notification",
+          });
+        }
       }
     });
     await api.subscribeStore((data) => {
@@ -166,6 +205,20 @@ export const useStore = creator((set, get) => ({
   },
   feedPerms: defaultGate,
   contacts: {},
+  notificationsEnabled: false,
+  s3: null,
+  setNotificationsEnabled: async (b) => {
+    if (b) {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        set({ notificationsEnabled: true });
+      } else {
+        set({ notificationsEnabled: false });
+      }
+    } else {
+      set({ notificationsEnabled: false });
+    }
+  },
   pubkey: "",
   profiles: new Map(),
   addProfile: (key, profile) => {

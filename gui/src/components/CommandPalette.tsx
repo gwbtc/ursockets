@@ -1,15 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import useLocalState from "@/state/state";
-import Icon from "@/components/Icon";
+import Icon, { type IconName } from "@/components/Icon";
 import Avatar from "@/components/Avatar";
 import "@/styles/CommandPalette.css";
+import { Search } from "lucide-react";
 
 interface CommandItem {
   id: string;
   title: string;
   subtitle?: string;
-  icon?: string;
+  icon?: IconName;
   type: "page" | "user" | "action";
   action: () => void;
 }
@@ -124,7 +125,7 @@ export default function CommandPalette() {
     <div className="command-palette-overlay" onClick={() => setIsOpen(false)}>
       <div className="command-palette" onClick={(e) => e.stopPropagation()}>
         <div className="cp-input-wrapper">
-            <Icon name="search" size={18} color="textMuted" />
+            <Search size={18} color="#888" />
             <input 
                 ref={inputRef}
                 value={query}
@@ -146,7 +147,7 @@ export default function CommandPalette() {
                         onMouseEnter={() => setSelectedIndex(i)}
                     >
                         {item.type === "user" ? (
-                            <Avatar user={item.id} size={24} />
+                            <Avatar user={{ urbit: item.id }} size={24} />
                         ) : (
                             <div className="cp-icon">
                                 {item.icon && <Icon name={item.icon} size={16} />}

@@ -8,7 +8,7 @@
 
   &.expanded {
     padding: 20px 16px;
-    background: linear-gradient(to bottom, rgba(128, 128, 128, 0.05), transparent);
+    background: var(--color-bg-translucent, rgba(128, 128, 128, 0.05));
   }
 
   &.has-context {
@@ -22,7 +22,7 @@
     width: 100vw;
     height: 100vh;
     z-index: 2000;
-    background: var(--color-bg, #111);
+    background: var(--color-bg);
     padding: 24px;
     display: flex;
     flex-direction: column;
@@ -36,15 +36,18 @@
         flex-direction: column;
         height: 100%;
         gap: 16px;
+        align-items: stretch; /* Ensure full width */
+        width: 100%;
         
         & textarea {
             flex: 1;
             min-height: 300px;
             font-size: 1.2rem;
             border: none;
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--color-surface, rgba(255, 255, 255, 0.03));
             border-radius: 8px;
             padding: 16px;
+            width: 100%;
         }
 
         & .post-btn {
@@ -59,8 +62,8 @@
         top: 24px;
         right: 24px;
         background: transparent;
-        border: 1px solid #444;
-        color: #fff;
+        border: 1px solid var(--color-border, #444);
+        color: var(--color-text);
         width: 32px;
         height: 32px;
         border-radius: 50%;
@@ -70,7 +73,7 @@
         justify-content: center;
         
         &:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--color-bg-translucent, rgba(255, 255, 255, 0.1));
         }
     }
   }
@@ -94,7 +97,7 @@
   }
 
   & .composer-context {
-    background: rgba(128, 128, 128, 0.08);
+    background: var(--color-bg-translucent, rgba(128, 128, 128, 0.08));
     border-radius: 12px;
     padding: 12px;
     position: relative;
@@ -105,7 +108,7 @@
       max-height: 200px;
       overflow-y: auto;
       border-radius: 8px;
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--color-surface, rgba(255, 255, 255, 0.05));
 
 
       .trill-post {
@@ -172,7 +175,7 @@
       transition: all 0.2s;
 
       &:hover {
-        background: rgba(128, 128, 128, 0.2);
+        background: var(--color-bg-translucent, rgba(128, 128, 128, 0.2));
         color: var(--color-text);
       }
     }
@@ -200,7 +203,7 @@
     transition: border-color 0.2s;
     font-family: inherit;
     resize: vertical;
-    min-height: 40px;
+    min-height: 80px;
 
     &:focus {
       border-bottom-color: var(--color-accent, #2a9d8f);

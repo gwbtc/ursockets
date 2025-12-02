@@ -48,7 +48,6 @@ function Profile({
         <div className="profile-picture">
           <Avatar
             user={user}
-            userString={userString}
             size={120}
             picOnly={true}
             profile={profile}

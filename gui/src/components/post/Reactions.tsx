@@ -19,12 +19,12 @@ import emojis from "@/logic/emojis.json";
 import Modal from "../modals/Modal";
 import useLocalState from "@/state/state";
 
-export function ReactModal({ send }: { send: (s: string) => Promise<number> }) {
+export function ReactModal({ send }: { send: (s: string) => Promise<any> }) {
   const { setModal } = useLocalState((s) => ({ setModal: s.setModal }));
   async function sendReact(e: React.MouseEvent, s: string) {
     e.stopPropagation();
     const res = await send(s);
-    if (res) setModal(null);
+    if (res && "ok" in res) setModal(null);
   }
   // todo one more meme
   return (
@@ -117,9 +117,13 @@ export function TrillReactModal({ poast }: { poast: Poast }) {
   const our = api!.airlock.our!;
 
   async function sendReact(s: string) {
-    const result = await api!.addReact(poast.host, poast.id, s);
+    const result: any = await api!.addReact(
+      { urbit: poast.host },
+      poast.id,
+      s,
+    );
     // Only add notification if reacting to someone else's post
-    if (result && poast.author !== our) {
+    if (result && "ok" in result && poast.author !== our) {
       addNotification({
         type: "react",
         from: our,

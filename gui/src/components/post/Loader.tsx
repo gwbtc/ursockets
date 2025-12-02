@@ -51,7 +51,7 @@ function PostData(props: Props) {
       const res = await api!.scryThread(host, id);
       console.log("scry res", res);
       if ("error" in res) error = res.error;
-      if ("ok" in res) return res;
+      if ("ok" in res) return { ok: res.ok.node };
       else {
         const res2 = await api!.peekThread(host, id);
         return res2;
