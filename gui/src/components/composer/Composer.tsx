@@ -9,7 +9,7 @@ import Icon from "@/components/Icon";
 import { wait } from "@/logic/utils";
 import type { UserType } from "@/types/nostrill";
 
-function Composer({ isAnon }: { isAnon?: boolean }) {
+function Composer({ isAnon, isMe }: { isAnon?: boolean; isMe?: boolean }) {
   const { api, composerData, addNotification, setComposerData } = useLocalState(
     (s) => ({
       api: s.api,
@@ -24,6 +24,7 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   console.log({ composerData });
+
   useEffect(() => {
     if (composerData) {
       setIsExpanded(true);
@@ -39,6 +40,7 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
       }, 100); // Small delay to ensure the composer is rendered
     }
   }, [composerData]);
+
   async function addSimple() {
     if (!api) return; // TODOhandle error
     return await api.addPost(input);
@@ -87,11 +89,11 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
         mentions.forEach((mention) => {
           if (mention !== our) {
             // Don't notify self-mentions
-            addNotification({
-              type: "mention",
-              from: our,
-              message: `You mentioned ${mention} in a post`,
-            });
+            // addNotification({
+            //   type: "mention",
+            //   from: our,
+            //   message: `You mentioned ${mention} in a post`,
+            // });
           }
         });
       }
@@ -103,12 +105,12 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
         "trill" in composerData.post
       ) {
         if (composerData.post.trill.author !== our) {
-          addNotification({
-            type: "reply",
-            from: our,
-            message: `You replied to ${composerData.post.trill.author}'s post`,
-            postId: composerData.post.trill.id,
-          });
+          // addNotification({
+          //   type: "reply",
+          //   from: our,
+          //   message: `You replied to ${composerData.post.trill.author}'s post`,
+          //   postId: composerData.post.trill.id,
+          // });
         }
       }
 
@@ -135,84 +137,88 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
     setIsExpanded(false);
   };
 
-  return (
-    <form
-      id="composer"
-      className={`${isExpanded ? "expanded" : ""} ${composerData ? "has-context" : ""}`}
-      onSubmit={poast}
-    >
-      <div className="sigil avatar">
-        <Sigil patp={api?.airlock.our || ""} size={46} />
-      </div>
-
-      <div className="composer-content">
-        {/* Reply snippets appear above input */}
-        {composerData && composerData.type === "reply" && (
-          <div className="composer-context reply-context">
-            <div className="context-header">
-              <span className="context-type">
-                <Icon name="reply" size={14} /> Replying to
-              </span>
-              <button
-                className="clear-context"
-                onClick={clearComposer}
-                title="Clear"
-                type="button"
-              >
-                ×
+  if (isMe === false && !composerData) {
+      return null;
+  }else{
+    return (
+      <form
+        id="composer"
+        className={`${isExpanded ? "expanded" : ""} ${composerData ? "has-context" : ""}`}
+        onSubmit={poast}
+      >
+        <div className="sigil avatar">
+          <Sigil patp={api?.airlock.our || ""} size={46} />
+        </div>
+  
+        <div className="composer-content">
+          {/* Reply snippets appear above input */}
+          {composerData && composerData.type === "reply" && (
+            <div className="composer-context reply-context">
+              <div className="context-header">
+                <span className="context-type">
+                  <Icon name="reply" size={14} /> Replying to
+                </span>
+                <button
+                  className="clear-context"
+                  onClick={clearComposer}
+                  title="Clear"
+                  type="button"
+                >
+                  ×
+                </button>
+              </div>
+              <ReplySnippet post={composerData.post} />
+            </div>
+          )}
+  
+          {/* Quote context header above input (without snippet) */}
+          {composerData && composerData.type === "quote" && (
+            <div className="quote-header">
+              <div className="context-header">
+                <span className="context-type">
+                  <Icon name="quote" size={14} /> Quote posting
+                </span>
+                <button
+                  className="clear-context"
+                  onClick={clearComposer}
+                  title="Clear"
+                  type="button"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
+  
+          <div className="composer-input-row">
+            <input
+              ref={inputRef}
+              value={input}
+              onInput={(e) => setInput(e.currentTarget.value)}
+              onFocus={() => setIsExpanded(true)}
+              placeholder={placeHolder}
+            />
+            {isLoading ? (
+              <div className="loading-container">
+                <img src={spinner} />
+              </div>
+            ) : (
+              <button type="submit" disabled={!input.trim()} className="post-btn">
+                Post
               </button>
-            </div>
-            <ReplySnippet post={composerData.post} />
+            )}
           </div>
-        )}
-
-        {/* Quote context header above input (without snippet) */}
-        {composerData && composerData.type === "quote" && (
-          <div className="quote-header">
-            <div className="context-header">
-              <span className="context-type">
-                <Icon name="quote" size={14} /> Quote posting
-              </span>
-              <button
-                className="clear-context"
-                onClick={clearComposer}
-                title="Clear"
-                type="button"
-              >
-                ×
-              </button>
+  
+          {/* Quote snippets appear below input */}
+          {composerData && composerData.type === "quote" && (
+            <div className="composer-context quote-context">
+              <Snippets post={composerData.post} />
             </div>
-          </div>
-        )}
-
-        <div className="composer-input-row">
-          <input
-            ref={inputRef}
-            value={input}
-            onInput={(e) => setInput(e.currentTarget.value)}
-            onFocus={() => setIsExpanded(true)}
-            placeholder={placeHolder}
-          />
-          {isLoading ? (
-            <div className="loading-container">
-              <img src={spinner} />
-            </div>
-          ) : (
-            <button type="submit" disabled={!input.trim()} className="post-btn">
-              Post
-            </button>
           )}
         </div>
-
-        {/* Quote snippets appear below input */}
-        {composerData && composerData.type === "quote" && (
-          <div className="composer-context quote-context">
-            <Snippets post={composerData.post} />
-          </div>
-        )}
-      </div>
-    </form>
-  );
+      </form>
+    );
+  }
 }
 
 export default Composer;

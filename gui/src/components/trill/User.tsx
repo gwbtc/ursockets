@@ -147,9 +147,9 @@ function UserFeed({
       </div>
 
       {feed && hasFeed ? (
-        <Inner feed={feed} refetch={refetch} />
+        <Inner feed={feed} refetch={refetch} isMe={false} />
       ) : fc ? (
-        <Inner feed={fc} refetch={refetch} />
+        <Inner feed={fc} refetch={refetch} isMe={false} />
       ) : null}
 
       {!feed && !fc && (
@@ -171,10 +171,10 @@ function UserFeed({
 
 export default UserFeed;
 
-export function Inner({ feed, refetch }: { feed: FC; refetch: any }) {
+export function Inner({ feed, refetch, isMe }: { feed: FC; refetch: any, isMe: boolean }) {
   return (
     <div id="feed-proper">
-      <Composer />
+       <Composer isMe={isMe} />
       <PostList data={feed} refetch={refetch} />
     </div>
   );
