@@ -14,12 +14,11 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
   const [_showMenu, setShowMenu] = useState(false);
   const [location, navigate] = useLocation();
   const [reposting, _setReposting] = useState(false);
-  const { api, setComposerData, setModal, addNotification } = useLocalState(
+  const { api, setComposerData, setModal } = useLocalState(
     (s) => ({
       api: s.api,
       setComposerData: s.setComposerData,
       setModal: s.setModal,
-      addNotification: s.addNotification,
     }),
   );
   const our = api!.airlock.our!;

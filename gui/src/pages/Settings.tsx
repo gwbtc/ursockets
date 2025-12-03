@@ -73,8 +73,6 @@ function Settings() {
   };
 
   async function testHark() {
-    // const types = ["follow", "reply", "react", "mention", "access_request"];
-    // const randomType = types[Math.floor(Math.random() * types.length)] as any;
     // toast.success("Test notification sent!");
     const res = await api?.scryHark();
   }

@@ -107,7 +107,7 @@ export default class IO {
     const res = await this.scry(path);
     if ("error" in res) return res;
     if (!("begs" in res.ok)) return { error: "wrong result" };
-    if ("ng" in res.ok.begs) return { error: res.ok.begs.ng };
+    if ("ng" in res.ok.begs) return { error: res.ok.begs.ng.msg };
     if ("ok" in res.ok.begs) {
       if (!("data" in res.ok.begs.ok)) return { error: "wrong result on data" };
       if (!("thread" in res.ok.begs.ok.data)) return { error: "wrong result on thread" };
@@ -253,8 +253,8 @@ export default class IO {
       console.log("peeking feed", res);
       if (!("begs" in res)) return { error: "wrong request" };
       if ("ng" in res.begs) return { error: res.begs.ng };
-      if (!("thread" in res.begs.ok)) return { error: "wrong request" };
-      else return { ok: res.begs.ok.thread };
+      if (!("thread" in res.begs.ok.data)) return { error: "wrong request" };
+      else return { ok: res.begs.ok.data.thread };
     } catch (e) {
       return { error: `${e}` };
     }
