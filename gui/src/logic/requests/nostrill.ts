@@ -111,7 +111,7 @@ export default class IO {
     if ("ok" in res.ok.begs) {
       if (!("data" in res.ok.begs.ok)) return { error: "wrong result on data" };
       if (!("thread" in res.ok.begs.ok.data)) return { error: "wrong result on thread" };
-      else return { ok: res.ok.begs.ok.thread };
+      else return { ok: res.ok.begs.ok.data.thread };
     } else return { error: "wrong result" };
   }
   // async scryHark(): AsyncRes<Skein[]> {
