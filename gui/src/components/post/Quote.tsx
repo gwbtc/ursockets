@@ -42,12 +42,12 @@ function Quote({
   refetch,
   nest,
 }: {
-  data: QuoteData;
+  data: Poast | QuoteData;
   refetch?: Function;
   nest: number;
 }) {
   const [_, navigate] = useLocation();
-  const postData = data.node
+  const postData = 'node' in data ? data.node : data;
 
   function gotoQuote(e: React.MouseEvent) {
     e.stopPropagation();
