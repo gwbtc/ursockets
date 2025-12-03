@@ -14,5 +14,7 @@
   =/  jon    (relay-msg:en:js msg)
   =/  octs   (json-to-octs:server jon)
   =/  res-event=websocket-event:eyre  [%message 1 `octs]
-    (give-ws-payload:ws wid res-event)
+  :~
+    (give-ws-payload-server:ws wid res-event)
+  ==
 --

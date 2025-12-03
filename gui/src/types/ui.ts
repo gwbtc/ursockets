@@ -1,4 +1,4 @@
-import type { NostrMetadata } from "./nostrill";
+import type { NostrMetadata, NostrPost } from "./nostrill";
 import type { Poast } from "./trill";
 import type { Tweet } from "./twatter";
 import type { Ship } from "./urbit";

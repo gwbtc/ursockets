@@ -28,11 +28,18 @@ $:  name=@t
     other=(map @t json)
 ==
 +$  relay-stats
-$:  connected=(unit @da)
+$:  start=@da
+    url=@t
     reqs=(map sub-id event-stats)
 ==
 +$  event-stats
-  [filters=(list filter) received=event-count]
+$:  filters=(list filter)
+    received=event-count
+  ::  if not ongoing we kill the subscription on %eose. If ongoing we turn to .y after %eose
+    ongoing=(unit ?)
+  ::  if chunked we trigger a new subscription on %eose
+    chunked=(list filter)
+==
 +$  sub-id  @t
 +$  event-count  @ud
 
@@ -45,7 +52,7 @@ $:  sub-id=@t
 $:  ids=(unit (set @ux))
     authors=(unit (set @ux))
     kinds=(unit (set @ud))
-    tags=(unit (map @t (set @t)))
+    tags=(unit (map @t (list @t)))
     since=(unit @da)
     until=(unit @da)
     limit=(unit @ud)
@@ -58,8 +65,6 @@ $%  [%event sub-id=@t =event]
     [%closed sub-id=@t msg=@t]
     [%notice msg=@t]
     [%auth challenge=@t]
-    :: from our shim
-    [%error msg=@t]
 ==
 +$  client-msg
 $%  [%req relay-req]
@@ -67,14 +72,6 @@ $%  [%req relay-req]
     [%auth =event]
     [%close sub-id=@t]
 ==
-++  shim
-  |%
-  ++  url  'http://localhost:8888/shim'
-  +$  bulk-req  [relays=(list @t) req=client-msg]
-  +$  http-req  [relay=@t delay=@ud sub-id=@t filters=(list filter)]
-  +$  res  $%([%http p=(list relay-msg)] [%ws relay=@t msg=relay-msg])
-  --
-
 :: https://github.com/sesseor/nostr-relays-list/blob/main/relays.txt
 ++  public-relays  ^-  (list @t)
   :~

@@ -25,12 +25,14 @@
 ::
 +$  note
   $%  ::  %d: to dill
-      ::
       $:  %d
           ::
           ::
       $%  [%flog =flog:dill]
-  ==  ==  ==
+      ==  ==
+      ::
+      [%g $>(%deal task:gall)]
+  ==
 --
 ::  more structures
 ::
@@ -38,7 +40,8 @@
 +$  axle
   $:  ::  date: date at which light's state was updated to this data structure
       ::
-      date=%~2019.2.8
+      date=%~2025.10.28
+      :: date=%~2019.2.8
       ::
       ::
       =state
@@ -47,6 +50,8 @@
 ::
 +$  state
   $:  ::  next-id: monotonically increasing id number for the next connection
+      :: UIP-125
+      sockets=(map @ud websocket-connection)
       ::
       next-id=@ud
       ::  connection-by-id: open connections to the
@@ -253,6 +258,7 @@
     =/  connection  (~(got by connection-by-id.state) id)
     ::  reassemble the octs that we've received into their final form
     ::
+    ~&  iris-sending-finished=[id=id duct=duct connection=connection]
     =/  data=octs
       %-  combine-octs
       %-  flop
@@ -287,31 +293,97 @@
       connection-by-id    (~(del by connection-by-id.state) id)
       connection-by-duct  (~(del by connection-by-duct.state) duct.u.con)
     ==
+  ++  cleanup-ws
+    |=  wid=@ud
+    ^-  [(list move) ^state]
+    ?~  con=(~(get by sockets.state) wid)
+      `state
+    =.  sockets.state  (~(del by sockets.state) wid)
+    :_  state
+    :~  (leave-agent wid app.u.con)
+    ==
+    
+  
+  ::  outgoing websockets connection
   ++  ws-connect
     |=  [desk=term url=@t]
-      ~&  iris-ws-connect=[desk url]
+      ~&  iris-ws-connect=[desk url duct]
+
+      ?:  (~(has by connection-by-duct.state) duct)
+      ~&  "cant sent second ws-connect on same duct"  `state
       :: TODO ... the wid comes from vere tho...?
       =^  id  next-id.state  [next-id.state +(next-id.state)]
-      ::  add a new open session
-      =/  wid  id
-      ::
-      =.  connection-by-id.state
-        %+  ~(put by connection-by-id.state)  id
-        [duct [0 3 ~ ~ 0 ~]]
-      ::  keep track of the duct for cancellation
-      ::
-      =.  connection-by-duct.state
-        (~(put by connection-by-duct.state) duct id)
-      :-  [outbound-duct.state %give %websocket-handshake wid url]~
+
+      =/  wc=websocket-connection  [desk duct id url %pending]
+      =.  sockets.state  (~(put by sockets.state) id wc)
+    :: ::  keep track of the duct for cancellation
+
+      :: This sends it to Vere to actually do the request
+      :-  [outbound-duct.state %give %websocket-handshake id url]~
       state
+  :: 
+  ::  incoming websockets event to be sent BY VERE NOT USERSPACE
   ++  ws-event
-    |=  [id=@ud event=websocket-event:eyre]
-      ~&  iris-ws-event=[id event]
-      :-  [outbound-duct.state %give %websocket-response id event]~
-      state
+    |=  [wid=@ud event=websocket-event:eyre]
+      ~&  iris-ws-event=[wid -.event duct]
+      =/  wc  (~(get by sockets.state) wid)
+      ?~  wc  `state
+      =/  wc  u.wc
+      ~&  wc=wc
+      =^  moves  state
+        ?-  -.event
+          %accept
+            =.  wc  wc(status %accepted)
+            =.  sockets.state  (~(put by sockets.state) wid wc)
+            :_  state
+            :~  (watch-agent wid app.wc)                         
+            ==
+          %message  :_  state
+                    :~  (poke-agent [wid +.event] app.wc)
+                    ==
+          %reject  (cleanup-ws wid)
+
+          %disconnect  (cleanup-ws wid)
+        ==
+      =/  m2  (ws-response wc event)
+      [(welp m2 moves) state]
+
+      ++  ws-response
+      |=  [wc=websocket-connection event=websocket-event:eyre]
+        ~&  ws-response=wc
+        :~  :*
+                duct.wc
+                %give
+                %websocket-response
+                id.wc
+                event
+        ==  ==
+      
+  ++  ws-cancel
+    |=  wid=@ud
+    =.  sockets.state  (~(del by sockets.state) wid)
+    :_  state
+    :: TODO this goes to vere
+    :~  [outbound-duct.state %give %cancel-request wid]
+    ==
+  
+  ++  watch-agent
+    |=  [wid=@ud app=term]  ^-  move
+      =/  wids  (scot %ud wid)
+      =/  =note  [%g %deal [our our /iris] app %watch /websocket-client/[wids]]
+      [duct %pass /ws-watch/[wids] note]
+  ++  leave-agent
+    |=  [wid=@ud app=term]  ^-  move
+      ~&  iris-leave-agent=[wid app]
+      =/  wids  (scot %ud wid)
+      =/  =note  [%g %deal [our our /iris] app %leave ~]
+      [duct %pass /ws-watch/[wids] note]
+  ++  poke-agent
+    |=  [msg=[@ud websocket-message:eyre] app=term]  ^-  move
+      =/  =note  [%g %deal [our our /iris] app %poke %websocket-client-message !>(msg)]
+    [duct %pass /iris-ws-poke note]
   --
 --
-::  end the =~
 ::
 .  ==
 ::  begin with a default +axle as a blank slate
@@ -390,24 +462,76 @@
     %websocket-event
     =^  moves  state.ax  (ws-event:client +.task)
     [moves light-gate]
+    %cancel-websocket
+    =^  moves  state.ax  (ws-cancel:client +.task)
+    [moves light-gate]
   ==
 ::  http-client issues no requests to other vanes
+::  until now!
 ::
 ++  take
-  |=  [=wire =duct dud=(unit goof) sign=*]
+  |=  [wire=(pole knot) =duct dud=(unit goof) hin=sign-arvo]
   ^-  [(list move) _light-gate]
+  ~&  iris-take=[wire duct]
   ?<  ?=(^ dud)
-  !!
+  :_  light-gate
+  ?+  wire  ~
+    [%ws-watch wids=@t ~]  =/  wid  (slav %ud wids.wire)
+    ~&  iris-ws-take=-.hin
+    ?+    -.hin  ~
+      %gall
+        ?>  ?=(%unto +<.hin)
+        ~&  hin=-.p.hin
+        ?+    -.p.hin  ~
+          ?(%poke-ack %watch-ack)
+            ?~  p.p.hin  ~
+            ~
+          %kick  
+              =/  event-args  [[eny duct now rof] state.ax]
+              =/  client  (per-client-event event-args)
+              =^  movs  state.ax  (cleanup-ws:client wid)
+              movs
+          %fact
+            =*  cag  cage.p.hin
+            :: This comes from agent, goes to vere
+            ~&  >  iris-take-ws-fact=p.cag
+            ?+    p.cag  ~&(bad-fact+p.cag !!)
+              %message  =/  msg  !<(websocket-message:eyre q.cag)
+                        :~  [outbound-duct.state.ax %give %websocket-response wid %message msg]
+                        ==
+              %disconnect
+                ~&  iris-take-ws-disconnect=wid
+                =/  event-args  [[eny duct now rof] state.ax]
+                =/  client  (per-client-event event-args)
+                =^  movs  state.ax  (cleanup-ws:client wid)
+                %+  welp  movs
+                :~  [outbound-duct.state.ax %give %websocket-response wid %disconnect ~]
+                ==
+  ::       =/  =tang  !<(tang q.cag)
+  ::       ::  %-  (slog 'khan-fact' tang)
+  ::       :: [hen %give %arow %| p.cag tang]~
+        :: ~
+  ::     ::
+  ::         %thread-done
+  ::       :: [hen %give %arow %& %noun q.cag]~
+  ::       ~
+        ==
+      ==
+    ==
+  ==
 ::
 ++  light-gate  ..$
 ::  +load: migrate old state to new state (called on vane reload)
 ::
 ++  load
   |=  old=axle
+  :: |=  old=*
   ^+  ..^$
   ::
   ~!  %loading
-  ..^$(ax old)
+    :: ..^$(ax old)
+    ..^$
+
 ::  +stay: produce current state
 ::
 ++  stay  `axle`ax
@@ -417,15 +541,51 @@
   ^-  roon
   |=  [lyc=gang pov=path car=term bem=beam]
   ^-  (unit (unit cage))
+  ~&  >>  iris-scry=[lyc=lyc pov=pov car=car bem=bem syd=q.bem]
+  ?.  ?=(%x car)  [~ ~]
+  =/  caller  +<.pov
+  ?:  ?=(%ws q.bem)
+    ~&  iris-ws-scry-id=s.bem
+    ?+  s.bem  ~
+      ~  ``noun+!>(sockets.state.ax)
+
+    [%app ~]
+            =|  conns=(list [wid=@ud url=@t status=$?(%accepted %pending)])
+            =/  sockets  ~(tap by sockets.state.ax)
+            ::  pass a (unit websocket-connection)
+            :-  ~  :-  ~  :-  %noun  !>
+            |-  ?~  sockets  conns
+              =/  socket=websocket-connection:iris  q.i.sockets
+              ?.  .=(app.socket caller)  $(sockets t.sockets)
+                =.  conns  :_  conns  [id.socket url.socket status.socket]
+                $(sockets t.sockets)
+     [%id @ ~]
+        ~&  caller=caller
+        =/  wid  (slav %ud i.t.s.bem)
+        =/  socket  (~(get by sockets.state.ax) wid)
+        ?~  socket  ``noun+!>(~)
+        ?.  .=(app.u.socket caller)  ~
+        ``noun+!>(`[id.u.socket url.u.socket status.u.socket])
+
+    [%url @ ~]
+            =/  sockets  ~(tap by sockets.state.ax)
+            ::  pass a (unit websocket-connection)
+            :-  ~  :-  ~  :-  %noun  !>
+            |-  ?~  sockets  ~
+              =/  socket=websocket-connection:iris  q.i.sockets
+              ?.  .=(app.socket caller)  $(sockets t.sockets)
+              ?:  .=(url.socket i.t.s.bem)  `[id.socket url.socket status.socket]
+              $(sockets t.sockets)
+    ==
   =*  ren  car
   =*  why=shop  &/p.bem
   =*  syd  q.bem
   =*  lot=coin  $/r.bem
-  =*  tyl  s.bem
+  =*  tyl  s.bem  
   ::
   ?.  ?=(%& -.why)  ~
   =*  his  p.why
-  ?:  &(?=(%x ren) =(tyl //whey) =([~ ~] lyc))
+  ?:  &(=(tyl //whey) =([~ ~] lyc))
     =/  maz=(list mass)
       :~  nex+&+next-id.state.ax
           outbound+&+outbound-duct.state.ax
@@ -434,5 +594,5 @@
           axle+&+ax
       ==
     ``mass+!>(maz)
-  [~ ~]
---
+    [~ ~]
+  --

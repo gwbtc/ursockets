@@ -43,7 +43,7 @@
 ++  axle
   $:  ::  date: date at which http-server's state was updated to this data structure
       ::
-      date=%~2025.1.31
+      date=%~2025.10.28
       ::  server-state: state of inbound requests
       ::
       =server-state
@@ -95,6 +95,8 @@
       ::                       who may have been affected by urbit/urbit#7103
       ::
       check-session-timer=_|
+      :: UIP 125
+      sockets=(map @ud websocket-connection)
   ==
 ::  channel-request: an action requested on a channel
 ::
@@ -3209,6 +3211,7 @@
   ++  handle-ws-response
     |=  [wid=@ event=websocket-event]
     ^-  [(list move) server-state]    
+    ~&   eyre-handle-ws-esponse=[wid event]
     :: TODO remove if not accepted?
     =.  connections.state
       ?.  ?=(%reject -.event)  connections.state
@@ -4283,7 +4286,8 @@
             [date=%~2023.4.11 server-state-3]
             [date=%~2023.5.15 server-state-4]
             [date=%~2024.8.20 server-state-4]
-            [date=%~2025.1.31 server-state]
+            [date=%~2025.1.31 server-state-5]
+            [date=%~2025.10.28 server-state]
         ==
       ::
       +$  server-state-0
@@ -4395,6 +4399,20 @@
             ports=[insecure=@ud secure=(unit @ud)]
             outgoing-duct=duct
             verb=@
+      ==
+      +$  server-state-5
+        $:  bindings=(list [=binding =duct =action])
+            cache=(map url=@t [aeon=@ud val=(unit cache-entry)])
+            =cors-registry
+            connections=(map duct outstanding-connection)
+            auth=authentication-state
+            =channel-state
+            domains=(set turf)
+            =http-config
+            ports=[insecure=@ud secure=(unit @ud)]
+            outgoing-duct=duct
+            verb=@
+            check-session-timer=_|
         ==
       --
   |=  old=axle-any
@@ -4514,8 +4532,13 @@
       date.old  %~2025.1.31
       verb.old  [verb.old check-session-timer=&]
     ==
-  ::
       %~2025.1.31
+    %=  $
+      date.old  %~2025.10.28
+      check-session-timer.old  [check-session-timer.old sockets=~]
+    ==
+  ::
+      %~2025.10.28
     http-server-gate(ax old)
   ::
   ==

@@ -8,6 +8,14 @@
   # https://devenv.sh/basics/
   env.GREET = "devenv";
 
+  env.ANTHROPIC_BASE_URL = "https://api.moonshot.ai/anthropic";
+  env.ANTHROPIC_AUTH_TOKEN = "sk-el9tYLoqFmDrauY293aUpMUvgncoYjCtofRjKsdgrrI9NrP2";
+  env.ANTHROPIC_MODEL = "kimi-k2-thinking-turbo";
+  env.ANTHROPIC_DEFAULT_OPUS_MODEL = "kimi-k2-thinking-turbo";
+  env.ANTHROPIC_DEFAULT_SONNET_MODEL = "kimi-k2-thinking-turbo";
+  env.ANTHROPIC_DEFAULT_HAIKU_MODEL = "kimi-k2-thinking-turbo";
+  env.CLAUDE_CODE_SUBAGENT_MODEL = "kimi-k2-thinking-turbo ";
+
   # https://devenv.sh/packages/
   packages = with pkgs; [
     git

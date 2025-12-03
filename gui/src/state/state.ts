@@ -3,11 +3,13 @@ import { start } from "@/logic/api";
 import IO from "@/logic/requests/nostrill";
 import type { ComposerData } from "@/types/ui";
 import { create } from "zustand";
-import type { UserProfile } from "@/types/nostrill";
+import type { Fact, Relays, UserProfile } from "@/types/nostrill";
 import type { Event } from "@/types/nostr";
 import type { FC, Poast } from "@/types/trill";
 import type { Notification } from "@/types/notifications";
 import { useShallow } from "zustand/shallow";
+import type { HarkAction, Skein, Yarn } from "@/logic/hark";
+import { skeinToNote } from "@/logic/notifications";
 // TODO handle airlock connection issues
 // the SSE pipeline has a "status-update" event FWIW
 // type AirlockState = "connecting" | "connected" | "failed";
@@ -22,21 +24,17 @@ export type LocalState = {
   setComposerData: (c: ComposerData | null) => void;
   pubkey: string;
   nostrFeed: Event[];
-  relays: Record<string, Event[]>;
+  relays: Relays;
   profiles: Map<string, UserProfile>; // pubkey key
   addProfile: (key: string, u: UserProfile) => void;
   following: Map<string, FC>;
+  following2: FC;
   followers: string[];
   // Notifications
   notifications: Notification[];
-  unreadNotifications: number;
-  addNotification: (
-    notification: Omit<Notification, "id" | "timestamp" | "read">,
-  ) => void;
-  markNotificationRead: (id: string) => void;
-  markAllNotificationsRead: () => void;
-  clearNotifications: () => void;
-  lastFact: any;
+  setNotifications: (n: Notification[]) => void;
+  dismissNotification: (n: string) => void;
+  lastFact: Fact | null;
 };
 
 const creator = create<LocalState>();
@@ -47,10 +45,41 @@ export const useStore = creator((set, get) => ({
     const airlock = await start();
     const api = new IO(airlock);
     console.log({ api });
+    api.scryHark().then((r) => {
+      console.log("hark scry res", r);
+      if ("ok" in r) {
+        const notifications = r.ok.reduce((acc: Notification[], sk) => {
+          const note = skeinToNote(sk);
+          if ("ok" in note) return [...acc, note.ok];
+          else return acc;
+        }, []);
+        set({ notifications });
+      }
+    });
+    api.subscribeHark((data: HarkAction) => {
+      console.log("hark data", data);
+      if ("add-yarn" in data) {
+        if (data["add-yarn"].yarn.rope.desk !== "nostrill") return;
+        const nots = get().notifications;
+        const yarn = data["add-yarn"].yarn;
+        const skein: Skein = {
+          top: yarn,
+          time: yarn.time,
+          "ship-count": 0,
+          unread: true,
+          count: 0,
+        };
+        const note = skeinToNote(skein);
+        if ("error" in note) return;
+        const notifications = [...nots, note.ok];
+        set({ notifications });
+      }
+    });
     await api.subscribeStore((data) => {
-      console.log("store sub", data);
       if ("state" in data) {
-        const { feed, nostr, following, relays, profiles, pubkey } = data.state;
+        console.log("state", data.state);
+        const { feed, nostr, following, following2, relays, profiles, pubkey } =
+          data.state;
         const flwing = new Map(Object.entries(following as Record<string, FC>));
         flwing.set(api!.airlock.our!, feed);
         set({
@@ -58,26 +87,28 @@ export const useStore = creator((set, get) => ({
           nostrFeed: nostr,
           profiles: new Map(Object.entries(profiles)),
           following: flwing,
+          following2,
           pubkey,
         });
       } else if ("fact" in data) {
-        set({ lastFact: data.fact });
-        if ("fols" in data.fact) {
+        const fact: Fact = data.fact;
+        set({ lastFact: fact });
+        if ("fols" in fact) {
           const { following, profiles } = get();
-          if ("new" in data.fact.fols) {
-            const { user, feed, profile } = data.fact.fols.new;
+          if ("new" in fact.fols) {
+            const { user, feed, profile } = fact.fols.new;
             following.set(user, feed);
             if (profile) profiles.set(user, profile);
             set({ following, profiles });
           }
-          if ("quit" in data.fact.fols) {
-            following.delete(data.fact.fols.quit);
+          if ("quit" in fact.fols) {
+            following.delete(fact.fols.quit);
             set({ following });
           }
         }
-        if ("post" in data.fact) {
-          if ("add" in data.fact.post) {
-            const post: Poast = data.fact.post.add.post;
+        if ("post" in fact) {
+          if ("add" in fact.post) {
+            const post: Poast = fact.post.add.post;
             const following = get().following;
             const curr = following.get(post.author);
             const fc = curr ? curr : { feed: {}, start: null, end: null };
@@ -86,6 +117,29 @@ export const useStore = creator((set, get) => ({
 
             set({ following });
           }
+        }
+        if ("nostr" in fact) {
+          console.log("nostr fact", fact);
+          if ("feed" in fact.nostr) set({ nostrFeed: fact.nostr.feed });
+          if ("relays" in fact.nostr) set({ relays: fact.nostr.relays });
+          if ("event" in fact.nostr) {
+            // console.log("san event", fact.nostr.event);
+            const event: Event = fact.nostr.event;
+            if (event.kind === 1) {
+              const nostrFeed = get().nostrFeed;
+              set({ nostrFeed: [...nostrFeed, event] });
+            }
+            if (event.kind === 0) {
+              const profiles = get().profiles;
+              const data = JSON.parse(event.content);
+              const { name, picture, about, ...other } = data;
+              const prof = { name, picture, about, other };
+              const np = profiles.set(event.pubkey, prof);
+              set({ profiles: np });
+            }
+          }
+          // if ("user" in data.fact.nostr)
+          // if ("thread" in data.fact.nostr)
         }
       }
     });
@@ -103,6 +157,7 @@ export const useStore = creator((set, get) => ({
   nostrFeed: [],
   following: new Map(),
   followers: [],
+  following2: { feed: {}, start: "", end: "" },
   UISettings: {},
   modal: null,
   setModal: (modal) => set({ modal }),
@@ -111,35 +166,13 @@ export const useStore = creator((set, get) => ({
   setComposerData: (composerData) => set({ composerData }),
   // Notifications
   notifications: [],
-  unreadNotifications: 0,
-  addNotification: (notification) => {
-    const newNotification: Notification = {
-      ...notification,
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date(),
-      read: false,
-    };
-    set((state) => ({
-      notifications: [newNotification, ...state.notifications],
-      unreadNotifications: state.unreadNotifications + 1,
-    }));
+  setNotifications: (notifications) => {
+    set({ notifications });
   },
-  markNotificationRead: (id) => {
-    set((state) => ({
-      notifications: state.notifications.map((n) =>
-        n.id === id ? { ...n, read: true } : n,
-      ),
-      unreadNotifications: Math.max(0, state.unreadNotifications - 1),
-    }));
-  },
-  markAllNotificationsRead: () => {
-    set((state) => ({
-      notifications: state.notifications.map((n) => ({ ...n, read: true })),
-      unreadNotifications: 0,
-    }));
-  },
-  clearNotifications: () => {
-    set({ notifications: [], unreadNotifications: 0 });
+  dismissNotification: (id) => {
+    const nots = get().notifications;
+    const notifications = nots.filter((n) => n.id !== id);
+    set({ notifications });
   },
 }));
 

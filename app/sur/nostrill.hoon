@@ -4,7 +4,8 @@
 +$  state-0
   $:  %0
       :: nostr config
-      relays=(map @t relay-stats:nostr)
+      relays=(map @ud relay-stats:nostr)  ::  key is the websocket id
+      :: ws-msg-queue=(list websocket-event:eyre)
       keys=(lest keys:nostr)  :: cycled, i.keys is current one
       ::  own feed
       feed=feed:trill
@@ -15,8 +16,11 @@
       ::  profiles
       profiles=(map user user-meta:nostr)
       following=(map user =feed:trill)
+      following2=feed:trill
       follow-graph=(map user (set user))
     :: TODO global feed somehow?
+    :: TODO use %hark agent instead?
+      :: notifications=((mop @da notif) gth)
 
   ==
 +$  nostr-feed  ((mop @ud event:nostr) gth)
@@ -33,16 +37,33 @@ $:  pub=(unit @ux)
 +$  user  $%([%urbit p=@p] [%nostr p=@ux])
 
 +$  follow  [pubkey=@ux name=@t relay=(unit @t)]
++$  notif
+      ::  TODO where do we get profs?
+  $%  [%prof =user prof=user-meta:nostr]              :: profile change
+      [%fans =user msg=@t]                            :: someone folowed me
+      [%fols =user accepted=? msg=@t]                 :: follow response 
+      [%beg-req =user beg=begs-poke:ui msg=@t]        :: feed/post data request request
+      [%beg-res beg=begs-poke:ui accepted=? msg=@t]   :: feed/post data request response
+      [%post =pid:tp =user action=post-notif]         :: someone replied, reacted etc.
+  ==
++$  post-notif
+$%   [%reply p=post:tp]
+     [%quote p=post:tp]
+     [%reaction reaction=@t]
+     :: [%rt id=@ux pubkey=@ux relay=@t]  :: NIP-18
+     [%rp ~]  :: NIP-18
+     [%del ~]
+==
 ++  ui
   |%
   +$  poke
   $%  [%fols fols-poke]
       [%begs begs-poke]
       [%post post-poke]
-      :: [%reac reac-poke]
       [%prof prof-poke]
       [%keys ~]  ::  cycle-keys
       [%rela relay-poke]
+      :: [%notif @da]  :: dismiss notification
   ==
   +$  begs-poke
   $%  [%feed p=@p]
@@ -50,11 +71,12 @@ $:  pub=(unit @ux)
   ==
   +$  post-poke
   $%  [%add content=@t]
-      [%reply content=@t host=@p id=@ thread=@]
-      [%quote content=@t host=@p id=@]
-      [%rp host=@p id=@]  :: NIP-18
+      [%reply content=@t host=user id=@da thread=@da]
+      [%quote content=@t host=user id=@da]
+      [%rp host=user id=@da]  :: NIP-18
+      [%reaction host=user id=@da reaction=@t]
       :: [%rt id=@ux pubkey=@ux relay=@t]  :: NIP-18
-      :: [%del pubkey=@ux]
+      [%del host=user id=@da]
   ==
   +$  fols-poke
   $%  [%add =user]
@@ -63,21 +85,37 @@ $:  pub=(unit @ux)
   +$  prof-poke
   $%  [%add meta=user-meta:nostr]
       [%del ~]
+      [%fetch p=(list user)]
   ==
   +$  relay-poke
   $%  [%add p=@t]
-      [%del p=@t]
+      [%del p=@ud]
       ::
-      [%sync ~]
+      relay-handling
+  ==
+  +$  relay-handling
+  $%  [%sync ~]
+      [%prof ~]
+      [%user pubkey=@ux]
+      [%thread id=@ux]
       ::  send event for... relaying
       [%send host=@p id=@ relays=(list @t)]
   ==
   :: facts
   +$  fact
-  $%  [%nostr feed=nostr-feed]
+  $%  [%nostr nostr-fact]
       [%post post-fact]
+      [%prof (map user user-meta:nostr)]
       [%enga p=post-wrapper reaction=*]
       [%fols fols-fact]
+      [%hark =notif]
+  ==
+  +$  nostr-fact
+  $%  [%feed feed=nostr-feed]
+      [%user feed=nostr-feed]
+      [%thread feed=nostr-feed]
+      [%event event:nostr]
+      [%relays (map @ relay-stats:nostr)]
   ==
   +$  post-fact
   $%  [%add post-wrapper]

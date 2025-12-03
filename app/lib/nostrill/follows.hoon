@@ -1,19 +1,25 @@
 /-  sur=nostrill, nsur=nostr, comms=nostrill-comms, feed=trill-feed
-/+  lib=nostrill, js=json-nostr, shim, sr=sortug, constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill
+/+  lib=nostrill, js=json-nostr, nostr-client, sr=sortug, constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill, mutations-nostr
 |_  [=state:sur =bowl:gall]
 ++  handle-add  |=  =user:sur
   ^-  (quip card:agent:gall _state)
   ?-  -.user
     %urbit  =/  c  (urbit-watch +.user)
             :-  :~(c)  state
-    %nostr  =/  shimm  ~(. shim [state bowl])  
+    %nostr  =/  mutan  ~(. mutations-nostr [state bowl])
+            =/  rl  get-relay:mutan
+            ?~  rl  ~&   >>>  "no relay!"  `state
+            =/  wid  -.u.rl
+            =/  relay  +.u.rl
+            =/  nclient  ~(. nostr-client [state bowl wid relay])  
             :: TODO now or on receival?
             =.  following.state  (~(put by following.state) user *feed:feed)
             =/  graph  (~(get by follow-graph.state) [%urbit our.bowl])
             =/  follows  ?~  graph  (silt ~[user])  (~(put in u.graph) user)
             =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] follows)
             
-            =^  cards  state  (get-user-feed:shimm +.user)
+            =^  cards  relay  (get-user-feed:nclient +.user)
+            =.  relays.state  (~(put by relays.state) wid relay)
             [cards state]
   ==
 ++  handle-del  |=  =user:sur
@@ -33,8 +39,10 @@
 
 ++  handle-follow-res  |=  =res:comms
   ?-  -.res
-    %ng  :: bruh
-          `state
+    %ng   
+          :_  state
+          =/  =fact:ui:sur  [%hark %fols [%urbit src.bowl] .n msg.res]
+          =/  c  (update-ui:cards:lib fact)  :~(c)
     %ok
       ?-  -.p.res
         %feed  (handle-follow-ok [%urbit src.bowl] fc.+.p.res profile.+.p.res)
@@ -48,7 +56,8 @@
 
 ++  handle-follow-ok  |=  [=user:sur =fc:feed profile=(unit user-meta:nsur)]
   ^-  (quip card:agent:gall _state)
-  =.  following.state  (~(put by following.state) user feed.fc)
+  =.  following.state   (~(put by following.state) user feed.fc)
+  =.  following2.state  (add-new-feed:feedlib following2.state feed.fc)
   =/  graph  (~(get by follow-graph.state) [%urbit our.bowl])
   =/  follows  ?~  graph  (silt ~[user])  (~(put in u.graph) user)
   =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] follows)

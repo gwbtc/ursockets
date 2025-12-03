@@ -1,4 +1,4 @@
-/-  feed=trill-feed, post=trill-post
+/-  feed=trill-feed, post=trill-post, sur=nostrill
 /+  common=json-common, sr=sortug
 |%
 ++  en
@@ -23,16 +23,26 @@
       :-  (crip (scow:sr %ud `@ud`post-id))
           (poast p)
 
+    ++  branch-user  |=  p=@p  ^-  user:sur
+      =/  bitsize  (met 3 p)
+      :: TODO surely there's proper verification methods
+      ?:  .=(32 bitsize)  [%nostr `@ux`p]  [%urbit p]
+    ++  user  |=  u=user:sur  ^-  json
+    ?-  -.u
+      %urbit  (patp:en:common +.u)
+      %nostr  (hex:en:common +.u)
+    ==
     ++  poast
     |=  p=post:post  ^-  json
       %-  pairs
       :~  id+(ud:en:common id.p)
-          host+(patp:en:common host.p)
-          author+(patp:en:common author.p)
+          host+(user (branch-user host.p))
+          author+(user (branch-user author.p))
           thread+(ud:en:common thread.p)
           parent+?~(parent.p ~ (ud:en:common u.parent.p))
           contents+(content contents.p)
-          hash+(b64:en:common hash.p)
+          :: hash+(b64:en:common hash.p)
+          hash+(hex:en:common `@ux`hash.p)
           engagement+(engagement engagement.p)
           children+a+(turn ~(tap in children.p) ud:en:common)
           time+(time id.p)
@@ -184,6 +194,12 @@
       %-  pairs
       :~  ship+(patp:en:common ship.pid)
           id+(ud:en:common id.pid)
+      ==
+    ++  thread
+    |=  [p=full-node:post q=(list full-node:post)]  ^-  json
+      %-  pairs
+      :~  :-  %node    (full-node p)
+          :+  %thread  %a  (turn q full-node)
       ==
     ++  full-node
     |=  p=full-node:post  ^-  json

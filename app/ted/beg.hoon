@@ -1,5 +1,5 @@
-/-  spider
-/+  strandio, jsonlib=json-nostrill, sr=sortug
+/-  spider, sur=nostrill
+/+  strandio, jsonlib=json-nostrill, sr=sortug, lib=nostrill
 =,  strand=strand:spider
 =,  strand-fail=strand-fail:libstrand:spider
 ^-  thread:spider
@@ -7,9 +7,10 @@
   =/  m  (strand ,vase)  ^-  form:m
   |^
   =/  ujon  !<((unit json) arg)
-  :: ~&  ujon=ujon
+  ~&  >>  beg-thread=ujon
   ?~  ujon  (pure:m !>(bail))
   =/  req  (ui:de:jsonlib u.ujon)
+  ~&  >  beg-thread=req
   ?~  req  (pure:m !>(bail))
   ?.  ?=(%begs -.u.req)  (pure:m !>(bail))
   ?-  +<.u.req
@@ -17,23 +18,45 @@
       ;<  =bowl:spider  bind:m  get-bowl:strandio
       =/  desk  q.byk.bowl
       ~&  dock=[+>.u.req desk]
-      ;<  =cage  bind:m  (watch-one:strandio /beg/feed [+>.u.req desk] /beg/feed)
-      ~&  >  watch-cage=-.cage
-      =/  j  !<(json +.cage)
-      (pure:m !>(j))
+      =/  ship=@p  +>.u.req
+      ~&  >  ship=ship
+      =/  =user:sur  (atom-to-user:lib ship)
+      ?-  -.user
+        %nostr
+          ::  TODO  wat do here
+          =/  j=json  ~
+          (pure:m !>(j))
+        %urbit
+          ;<  =cage  bind:m  (watch-one:strandio /beg/feed [p.user desk] /beg/feed)
+          ~&  >  watch-cage=-.cage
+          =/  j  !<(json +.cage)
+          (pure:m !>(j))
+      ==
 
     %thread
       ;<  =bowl:spider  bind:m  get-bowl:strandio
       =/  desk  q.byk.bowl
       ~&  dock=[+>.u.req desk]
       =/  ship=@p  +>-.u.req
+      ~&  >  ship=ship
+      =/  =user:sur  (atom-to-user:lib ship)
+      ~&  >>  user=user
       =/  id=@da  +>+.u.req
+      ~&  >  id=id
       =/  ids  (crip (scow:sr %uw `@`id))
       =/  wire  /beg/thread/[ids]
-      ;<  =cage  bind:m  (watch-one:strandio wire [ship desk] wire)
-      ~&  >  watch-cage=-.cage
-      =/  j  !<(json +.cage)
-      (pure:m !>(j))
+      ~&  >  [ids wire]
+      ?-  -.user
+        %nostr
+          ::  TODO  wat do here
+          =/  j=json  ~
+          (pure:m !>(j))
+        %urbit
+          ;<  =cage  bind:m  (watch-one:strandio wire [p.user desk] wire)
+          ~&  >  watch-cage=-.cage
+          =/  j  !<(json +.cage)
+          (pure:m !>(j))
+      ==
   ==
     ++  bail  ^-  json
     %+  frond:enjs:format  %error

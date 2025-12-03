@@ -9,6 +9,10 @@
   justify-content: center;
   min-height: 400px;
   padding: 40px 20px;
+
+  .icon {
+    width: 6rem;
+  }
 }
 
 .empty-content {
@@ -88,7 +92,7 @@
   border: 1px solid var(--color-border);
 }
 
-.resync-btn-small {
+.btn-small {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -101,12 +105,12 @@
   color: var(--color-text);
 }
 
-.resync-btn-small:hover:not(:disabled) {
+.btn-small:hover:not(:disabled) {
   background: var(--color-surface-hover);
   border-color: var(--color-primary);
 }
 
-.resync-btn-small:disabled {
+.btn-small:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

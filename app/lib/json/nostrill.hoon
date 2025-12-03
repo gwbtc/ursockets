@@ -15,6 +15,7 @@
     feed+(feed-with-cursor:en:trill feed ~ ~)
     nostr+(en-nostr-feed nostr-feed)
     following+(enfollowing following)
+    following2+(feed-with-cursor:en:trill following2 ~ ~)
     ['followGraph' (engraph follow-graph)]
   ~
   ==
@@ -24,12 +25,13 @@
       (event:en:nostr ev)
 
   ++  en-relays
-  |=  r=(map @t relay-stats:nsur)  ^-  json
+  |=  r=(map @ relay-stats:nsur)  ^-  json
     %-  pairs  %+  turn  ~(tap by r)
-    |=  [url=@t rs=relay-stats:nsur]
-      :-  url  %-  pairs
-        :~  :-  %connected  ?~  connected.rs  ~  (time u.connected.rs)
-            :-  %reqs  (relay-stats reqs.rs)
+    |=  [wid=@ud rs=relay-stats:nsur]
+      :-  url.rs  %-  pairs
+        :~  :-  %start  (time start.rs)
+            :-  %wid    (numb wid)
+            :-  %reqs   (relay-stats reqs.rs)
         ==
   ++  relay-stats  |=  rm=(map @t event-stats:nsur)
     %-  pairs  %+  turn  ~(tap by rm)  |=  [sub-id=@t es=event-stats:nsur]
@@ -78,10 +80,21 @@
     %+  frond  %fact
     %+  frond  -.f
     ?-  -.f
-      %nostr   (en-nostr-feed +.f)
+      %nostr   (en-nostr +.f)
       %post    (postfact +.f)
+      %prof    (en-profiles +.f)
       %enga    (enga +.f)
       %fols    (fols +.f)
+      %hark    (hark +.f)
+    ==
+  ++  en-nostr  |=  nf=nostr-fact:ui:sur  ^-  json
+    %+  frond  -.nf
+    ?-  -.nf
+      %feed    (en-nostr-feed +.nf)
+      %user    (en-nostr-feed +.nf)
+      %thread  (en-nostr-feed +.nf)
+      %event   (event:en:nostr +.nf)
+      %relays  (en-relays +.nf)
     ==
   ++  fols  |=  ff=fols-fact:ui:sur  ^-  json
     %+  frond  -.ff
@@ -102,9 +115,52 @@
     (post-wrapper +.pf)
 
   ++  enga  |=  [pw=post-wrapper:sur reaction=*]
+     :: TODO
     ^-  json
     ~
+  ++  hark  |=  =notif:sur
+    ^-  json
+    ::  TODO remove as we're using %hark instead
+    ~
+  ::   %+  frond  -.notif
+  ::   ?-  -.notif
+  ::     %prof  (prof-notif +.notif)
+  ::     %fols  (pairs :~(['user' (user user.notif)] ['accepted' %b accepted.notif] ['msg' %s msg.notif]))
+  ::     %fans  (pairs :~(['user' (user user.notif)] ['msg' %s msg.notif]))
+  ::     %beg   (beg-notif +.notif)
+  ::     %post  (post-notif +.notif)
+  ::   ==
+  :: ++  prof-notif  |=  [u=user:sur prof=user-meta:nsur]
+  ::   %-  pairs
+  ::   :~  user+(user u)
+  ::       profile+(user-meta:en:nostr prof)
+  ::   ==
+  :: ++  beg-notif  |=  [beg=begs-poke:ui:sur accepted=? msg=@t]
+  ::   ^-  json
+  ::   %+  frond  -.beg
+  ::   %-  pairs
+  ::     :~  ['accepted' %b accepted]
+  ::         ['msg' %s msg]
+  ::       ?-  -.beg
+  ::         %feed    ['ship' %s (scot %p +.beg)]
+  ::         %thread  ['post' (pid:en:trill +.beg)]
+  ::       ==
+  ::     ==
 
+  :: ++  post-notif  |=  [pid=[@p @da] u=user:sur p=post-notif:sur]
+  ::   ^-  json
+  ::   %-  pairs
+  ::     :~  ['post' (pid:en:trill pid)]
+  ::         ['user' (user u)]
+  ::         :-  -.p
+  ::         ?-  -.p
+  ::           %reply  (poast:en:trill +.p)
+  ::           %quote  (poast:en:trill +.p)
+  ::           %reaction  [%s +.p]
+  ::           %rp    ~
+  ::           %del   ~
+  ::         ==
+  ::     ==
   ++  post-wrapper  |=  p=post-wrapper:sur
     %-  pairs
     :~  post+(poast:en:trill post.p)
@@ -122,14 +178,27 @@
     %+  frond  %begs  %+  frond  -.res
     ?-  -.res
       %ok  (resd +.res)
-      %ng  [%s msg.res]
+      %ng  (resn +.res)
     ==
-  ++  resd  |=  rd=res-data:comms  ^-  json
-    ?-  -.rd
-      %feed     (user-data +.rd)
-      :: TODO wrap it for nostr shit
-      %thread   (frond -.rd (full-node:en:trill +.rd))
+  ++  resd  |=  [rd=res-data:comms msg=@t]  ^-  json
+    %-  pairs
+      :~  :-  'msg'  [%s msg]
+          :-  'data'  ?-  -.rd
+            %feed     (user-data +.rd)
+            :: TODO wrap it for nostr shit
+            %thread   (frond -.rd (thread:en:trill +.rd))
+          ==
     ==
+  ++  resn  |=  [=req:comms res-msg=@t]  ^-  json
+    %-  pairs
+      :~  :-  'msg'  [%s res-msg]
+          :-  'req'
+            ?-  -.req
+              %feed     [%s msg.req]
+              :: TODO wrap it for nostr shit
+              %thread   %-  pairs  :~([%msg %s msg.req] [%id (ud:en:common id.req)])
+            ==
+          ==
   ++  user-data
     |=  ud=[=fc:feed profile=(unit user-meta:nsur)]
     %:  pairs
@@ -175,6 +244,7 @@
   %-  of  :~
     add+ui-meta
     del+ul
+    fetch+(ar user)
   ==
 ++  ui-meta
   %-  ot  :~
@@ -190,9 +260,10 @@
     add+postadd
     reply+reply
     quote+quote
-    rp+rp
+    rp+pid
     :: rt+de-rt
-    :: del+hex:de:common
+    reaction+reaction
+    del+pid
   ==
 ++  postadd
   %-  ot  :~
@@ -201,20 +272,26 @@
 ++  reply
   %-  ot  :~
     content+so
-    host+(se:de:common %p)
-    id+de-atom-id
-    thread+de-atom-id
+    host+user
+    id+de-post-id
+    id+de-post-id
   ==
 ++  quote
   %-  ot  :~
     content+so
-    host+(se:de:common %p)
+    host+user
+    id+de-post-id
+  ==
+++  pid
+  %-  ot  :~
+    host+user
     id+de-atom-id
   ==
-++  rp
+++  reaction
   %-  ot  :~
-    host+(se:de:common %p)
-    id+de-atom-id
+    host+user
+    id+de-post-id
+    reaction+so
   ==
 ++  rt
   %-  ot  :~
@@ -225,8 +302,11 @@
 ++  ui-relay
   %-  of  :~
     add+so
-    del+so
+    del+ni
     sync+ul
+    prof+ul
+    user+hex:de:common
+    thread+hex:de:common
     send+de-relay-send
   ==
 ++  de-relay-send  %-  ot  :~
@@ -234,6 +314,14 @@
     id+de-atom-id
     relays+(ar so)
   ==
+
+++  de-post-id
+  |=  jon=json  ^-  (unit @)
+  ?.  ?=([%s @t] jon)  ~
+  =/  tryatom  (rush p.jon dem)
+  ?^  tryatom  tryatom
+  ^-  (unit @)  (hex:de:common jon)
+
 ++  de-atom-id
   |=  jon=json  ^-  (unit @)
   ?.  ?=([%s @t] jon)  ~

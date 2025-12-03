@@ -7,16 +7,16 @@ import { ThemeSwitcher } from "@/styles/ThemeSwitcher";
 
 function SlidingMenu() {
   const [_, navigate] = useLocation();
-  const { api, unreadNotifications, setModal } = useLocalState((s) => ({ 
+  const { api, unreadNotifications, setModal } = useLocalState((s) => ({
     api: s.api,
     unreadNotifications: s.unreadNotifications,
-    setModal: s.setModal
+    setModal: s.setModal,
   }));
-  
+
   function goto(to: string) {
     navigate(to);
   }
-  
+
   function openNotifications() {
     // We'll create this component next
     import("../NotificationCenter").then(({ default: NotificationCenter }) => {
@@ -30,11 +30,15 @@ function SlidingMenu() {
         <h3> Nostrill </h3>
       </div>
       <h3>Feeds</h3>
-      <div className="opt" role="link" onClick={() => goto(`/feed/global`)}>
+      <div className="opt" role="link" onClick={() => goto(`/f`)}>
         <Icon name="home" size={20} />
         <div>Home</div>
       </div>
-      <div className="opt notification-item" role="link" onClick={openNotifications}>
+      <div
+        className="opt notification-item"
+        role="link"
+        onClick={openNotifications}
+      >
         <div className="notification-icon-wrapper">
           <Icon name="bell" size={20} />
           {unreadNotifications > 0 && (
@@ -47,14 +51,15 @@ function SlidingMenu() {
       </div>
       <hr />
 
-      <div
+      {/*<div
         className="opt tbd"
         role="link"
-        // onClick={() => goto("/chat")}
+        // onClick={() => setModal(<p>lmao</p>)}
       >
         <Icon name="messages" size={20} />
         <div>Messages</div>
       </div>
+    */}
       <div className="opt" role="link" onClick={() => goto("/pals")}>
         <Icon name="pals" size={20} />
         <div>Pals</div>
@@ -63,7 +68,7 @@ function SlidingMenu() {
       <div
         className="opt"
         role="link"
-        onClick={() => goto(`/feed/${api!.airlock.our}`)}
+        onClick={() => goto(`/u/${api!.airlock.our}`)}
       >
         <Icon name="profile" size={20} />
         <div>Profile</div>

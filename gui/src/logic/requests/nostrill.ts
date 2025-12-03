@@ -1,9 +1,10 @@
 import type Urbit from "urbit-api";
-import type { Cursor, FC, FullNode, PID, PostID } from "@/types/trill";
+import type { Cursor, FC, FullNode, PostID } from "@/types/trill";
 import type { Ship } from "@/types/urbit";
 import { FeedPostCount } from "../constants";
 import type { UserProfile, UserType } from "@/types/nostrill";
 import type { AsyncRes } from "@/types/ui";
+import type { Skein } from "../hark";
 
 // Subscribe
 type Handler = (date: any) => void;
@@ -22,12 +23,27 @@ export default class IO {
     });
   }
   private async poke(json: any) {
-    return this.airlock.poke({ app: "nostrill", mark: "json", json });
+    try {
+      const res = await this.airlock.poke({
+        app: "nostrill",
+        mark: "json",
+        json,
+      });
+      return { ok: res };
+    } catch (e) {
+      return { error: `${e}` };
+    }
   }
-  private async scry(path: string) {
-    return this.airlock.scry({ app: "nostrill", path });
+  private async scry(path: string, agent?: string) {
+    try {
+      const app = agent ? agent : "nostrill";
+      const res = await this.airlock.scry({ app, path });
+      return { ok: res };
+    } catch (e) {
+      return { error: `${e}` };
+    }
   }
-  private async sub(path: string, handler: Handler) {
+  private async sub(path: string, handler: Handler, agent?: string) {
     const has = this.subs.get(path);
     if (has) return;
 
@@ -37,15 +53,17 @@ export default class IO {
       console.log(data, "nostrill subscription kicked");
       this.subs.delete(path);
     };
+    const app = agent ? agent : "nostrill";
     const res = await this.airlock.subscribe({
-      app: "nostrill",
+      app,
       path,
       event: handler,
       err,
       quit,
     });
     this.subs.set(path, res);
-    console.log(res, "subscribed to nostrill agent");
+    console.log(res, `subscribed to /${app}${path}`);
+    return res;
   }
   async unsub(sub: number) {
     return await this.airlock.unsubscribe(sub);
@@ -53,6 +71,10 @@ export default class IO {
   // subs
   async subscribeStore(handler: Handler) {
     const res = await this.sub("/ui", handler);
+    return res;
+  }
+  async subscribeHark(handler: Handler) {
+    const res = await this.sub("/ui", handler, "hark");
     return res;
   }
   // scries
@@ -77,19 +99,37 @@ export default class IO {
     // start: Cursor,
     // end: Cursor,
     // desc = true,
-  ): AsyncRes<FullNode> {
+  ): AsyncRes<{ node: FullNode; thread: FullNode[] }> {
     // const order = desc ? 1 : 0;
 
     // const path = `/j/thread/${host}/${id}/${start}/${end}/${FeedPostCount}/${order}`;
     const path = `/j/thread/${host}/${id}`;
     const res = await this.scry(path);
-    if (!("begs" in res)) return { error: "wrong result" };
-    if ("ng" in res.begs) return { error: res.begs.ng };
-    if ("ok" in res.begs) {
-      if (!("thread" in res.begs.ok)) return { error: "wrong result" };
-      else return { ok: res.begs.ok.thread };
+    if ("error" in res) return res;
+    if (!("begs" in res.ok)) return { error: "wrong result" };
+    if ("ng" in res.ok.begs) return { error: res.ok.begs.ng };
+    if ("ok" in res.ok.begs) {
+      if (!("thread" in res.ok.begs.ok)) return { error: "wrong result" };
+      else return { ok: res.ok.begs.ok.thread };
     } else return { error: "wrong result" };
   }
+  // async scryHark(): AsyncRes<Skein[]> {
+  async scryHark(): AsyncRes<Skein[]> {
+    const path3 = "/all/skeins";
+    const path4 = "/all/latest";
+    const path = "/desk/nostrill/skeins";
+    // const path2 = "/desk/nostrill/latest";
+    // this returns Carpet
+    const res = await this.scry(path, "hark");
+    const res3 = await this.scry(path3, "hark");
+    const res4 = await this.scry(path4, "hark");
+    // const res2 = await this.scry(path2, "hark");
+    console.log("hark scry", res);
+    console.log("hark all skeins", res3);
+    console.log("hark all latest", res4);
+    return res;
+  }
+
   // pokes
 
   async pokeAlive() {
@@ -99,16 +139,16 @@ export default class IO {
     const json = { add: { content } };
     return this.poke({ post: json });
   }
-  async addReply(content: string, host: string, id: string, thread: string) {
+  async addReply(content: string, host: UserType, id: string, thread: string) {
     const json = { reply: { content, host, id, thread } };
     return this.poke({ post: json });
   }
-  async addQuote(content: string, pid: PID) {
-    const json = { quote: { content, host: pid.ship, id: pid.id } };
+  async addQuote(content: string, host: UserType, id: string) {
+    const json = { quote: { content, host, id } };
     return this.poke({ post: json });
   }
-  async addRP(pid: PID) {
-    const json = { quote: { host: pid.ship, id: pid.id } };
+  async addRP(host: UserType, id: string) {
+    const json = { rp: { host, id } };
     return this.poke({ post: json });
   }
 
@@ -122,29 +162,26 @@ export default class IO {
   //   return this.poke(json);
   // }
 
-  async deletePost(id: string) {
-    const host = `~${this.airlock.ship}`;
+  async deletePost(host: UserType, id: string) {
     const json = {
-      "del-post": {
-        ship: host,
-        id: id,
+      del: {
+        host,
+        id,
       },
     };
-    return this.poke(json);
+    return this.poke({ post: json });
   }
 
-  async addReact(ship: Ship, id: PostID, reaction: string) {
+  async addReact(host: UserType, id: PostID, reaction: string) {
     const json = {
-      "new-react": {
-        react: reaction,
-        pid: {
-          id: id,
-          ship: ship,
-        },
+      reaction: {
+        reaction: reaction,
+        id,
+        host,
       },
     };
 
-    return this.poke(json);
+    return this.poke({ post: json });
   }
 
   //  follows
@@ -174,14 +211,18 @@ export default class IO {
     const json = { add: url };
     return await this.poke({ rela: json });
   }
-  async deleteRelay(url: string) {
-    const json = { del: url };
+  async deleteRelay(wid: number) {
+    const json = { del: wid };
     return await this.poke({ rela: json });
   }
   async syncRelays() {
     // TODO make it choosable?
     const json = { sync: null };
     return await this.poke({ rela: json });
+  }
+  async getProfiles(users: UserType[]) {
+    const json = { fetch: users };
+    return await this.poke({ prof: json });
   }
   async relayPost(host: string, id: string, relays: string[]) {
     const json = { send: { host, id, relays } };
@@ -216,6 +257,20 @@ export default class IO {
     } catch (e) {
       return { error: `${e}` };
     }
+  }
+  // nostr
+  //
+  async nostrFeed(pubkey: string): AsyncRes<number> {
+    const json = { rela: { user: pubkey } };
+    return await this.poke(json);
+  }
+  async nostrThread(id: string): AsyncRes<number> {
+    const json = { rela: { thread: id } };
+    return await this.poke(json);
+  }
+  async nostrProfiles() {
+    const json = { prof: null };
+    return await this.poke({ rela: json });
   }
 }
 

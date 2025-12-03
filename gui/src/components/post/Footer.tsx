@@ -7,9 +7,10 @@ import { displayCount } from "@/logic/utils";
 import { TrillReactModal, stringToReact } from "./Reactions";
 import toast from "react-hot-toast";
 import NostrIcon from "./wrappers/NostrIcon";
+import type { SPID } from "@/types/ui";
 // TODO abstract this somehow
 
-function Footer({ poast, refetch }: PostProps) {
+function Footer({ user, poast, thread, refetch }: PostProps) {
   const [_showMenu, setShowMenu] = useState(false);
   const [location, navigate] = useLocation();
   const [reposting, _setReposting] = useState(false);
@@ -22,11 +23,16 @@ function Footer({ poast, refetch }: PostProps) {
     }),
   );
   const our = api!.airlock.our!;
+  function getComposerData(): SPID {
+    return "urbit" in user
+      ? { trill: poast }
+      : { nostr: { post: poast, pubkey: user.nostr, eventId: poast.hash } };
+  }
   function doReply(e: React.MouseEvent) {
     console.log("do reply");
     e.stopPropagation();
     e.preventDefault();
-    setComposerData({ type: "reply", post: { trill: poast } });
+    setComposerData({ type: "reply", post: getComposerData() });
     // Scroll to top where composer is located
     window.scrollTo({ top: 0, behavior: "smooth" });
     // Focus will be handled by the composer component
@@ -36,7 +42,7 @@ function Footer({ poast, refetch }: PostProps) {
     e.preventDefault();
     setComposerData({
       type: "quote",
-      post: { trill: poast },
+      post: getComposerData(),
     });
     // Scroll to top where composer is located
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -50,40 +56,20 @@ function Footer({ poast, refetch }: PostProps) {
   async function cancelRP(e: React.MouseEvent) {
     e.stopPropagation();
     e.preventDefault();
-    const r = await api!.deletePost(our);
+    const r = await api!.deletePost(user, poast.id);
     if (r) toast.success("Repost deleted");
-    refetch();
+    // refetch();
     if (location.includes(poast.id)) navigate("/");
   }
   async function sendRP(e: React.MouseEvent) {
     // TODO update backend because contents are only markdown now
     e.stopPropagation();
     e.preventDefault();
-    // const c = [
-    //   {
-    //     ref: {
-    //       type: "trill",
-    //       ship: poast.host,
-    //       path: `/${poast.id}`,
-    //     },
-    //   },
-    // ];
-    // const post: SentPoast = {
-    //   host: our,
-    //   author: our,
-    //   thread: null,
-    //   parent: null,
-    //   contents: input,
-    //   read: openLock,
-    //   write: openLock,
-    //   tags: [], // TODO
-    // };
-    // const r = await api!.addPost(post, false);
-    // setReposting(true);
-    // if (r) {
-    //   setReposting(false);
-    //   toast.success("Your post was published");
-    // }
+    const id = "urbit" in user ? poast.id : poast.hash;
+    const r = await api!.addRP(user, id);
+    if (r) {
+      toast.success("Your repost was published");
+    }
   }
   function doReact(e: React.MouseEvent) {
     e.stopPropagation();
@@ -137,20 +123,26 @@ function Footer({ poast, refetch }: PostProps) {
   return (
     <div className="footer-wrapper post-footer">
       <footer>
-        <div className="icon">
-          <span role="link" onMouseUp={showReplyCount} className="reply-count">
-            {displayCount(childrenCount)}
-          </span>
-          <div className="icon-wrapper" role="link" onMouseUp={doReply}>
-            <Icon name="reply" size={20} />
+        {!thread && (
+          <div className="icon">
+            <span
+              role="link"
+              onMouseUp={showReplyCount}
+              className="reply-count"
+            >
+              {displayCount(childrenCount)}
+            </span>
+            <div className="icon-wrapper" role="link" onMouseUp={doReply}>
+              <Icon name="reply" />
+            </div>
           </div>
-        </div>
+        )}
         <div className="icon">
           <span role="link" onMouseUp={showQuoteCount} className="quote-count">
             {displayCount(poast.engagement.quoted.length)}
           </span>
           <div className="icon-wrapper" role="link" onMouseUp={doQuote}>
-            <Icon name="quote" size={20} />
+            <Icon name="quote" />
           </div>
         </div>
         <div className="icon">
@@ -165,16 +157,11 @@ function Footer({ poast, refetch }: PostProps) {
             <p>...</p>
           ) : myRP ? (
             <div className="icon-wrapper" role="link" onMouseUp={cancelRP}>
-              <Icon
-                name="repost"
-                size={20}
-                className="my-rp"
-                title="cancel repost"
-              />
+              <Icon name="repost" className="my-rp" title="cancel repost" />
             </div>
           ) : (
             <div className="icon-wrapper" role="link" onMouseUp={sendRP}>
-              <Icon name="repost" size={20} title="repost" />
+              <Icon name="repost" title="repost" />
             </div>
           )}
         </div>

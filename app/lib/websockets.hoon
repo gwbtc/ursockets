@@ -1,17 +1,65 @@
 |%
-  ++  give-ws-payload
+  ++  connect  |=  [endpoint=@t =bowl:gall]
+    ^-  card:agent:gall
+    =/  =task:iris  [%websocket-connect dap.bowl endpoint]
+    [%pass /ws-connect %arvo %i task]
+
+  ++  cancel-connect  |=  wid=@ud
+    ^-  card:agent:gall
+    =/  =task:iris  [%cancel-websocket wid]
+    [%pass /ws-connect %arvo %i task]
+
+  ++  disconnect  |=  wid=@ud
+    ^-  card:agent:gall
+    =/  =path  /websocket-client/(scot %ud wid)
+    =/  ws-paths  :~(path)
+    [%give %fact ws-paths %disconnect !>(~)]
+  ::
+  ++  give-ws-payload-client
+    |=  [wid=@ msg=websocket-message:eyre]
+    ^-  card:agent:gall
+    =/  =cage
+      [%message !>(msg)]
+    =/  wsid  (scot %ud wid)
+    [%give %fact ~[/websocket-client/[wsid]] cage]
+  ++  close-ws-client
+    |=  wid=@
+    ^-  card:agent:gall
+    =/  =cage
+      [%disconnect !>(~)]
+    =/  wsid  (scot %ud wid)
+    [%give %fact ~[/websocket-client/[wsid]] cage]
+
+  ++  give-ws-payload-server
     |=  [wid=@ event=websocket-event:eyre]
-    ^-  (list card:agent:gall)
+    ^-  card:agent:gall
     =/  =cage
       [%websocket-response !>([wid event])]
     =/  wsid  (scot %ud wid)
-    :~  [%give %fact ~[/websocket-server/[wsid]] cage]
-    ==
+    [%give %fact ~[/websocket-server/[wsid]] cage]
+  
   ++  accept-handshake  |=  wid=@
     =/  response  [%accept ~]
-    (give-ws-payload wid response)
+    :~
+    (give-ws-payload-server wid response)
+    ==
   ++  refuse-handshake  |=  wid=@
     =/  response  [%reject ~]
-    (give-ws-payload wid response)
-
+    :~
+    (give-ws-payload-server wid response)
+    ==
+::  %iris scries
+  +$  socket  [wid=@ud url=@t status=$?(%accepted %pending)]
+  ++  get-url
+    |=  [wid=@ud =bowl:gall]  ^-  (unit socket)
+    =/  scry-path=path  /(scot %p our.bowl)/ws/(scot %da now.bowl)/id/(scot %ud wid)
+    .^((unit socket) %ix scry-path)
+  ++  check-connected
+    |=  [url=@t =bowl:gall]  ^-  (unit socket)
+    =/  scry-path=path  /(scot %p our.bowl)/ws/(scot %da now.bowl)/url/[url]
+    .^((unit socket) %ix scry-path)
+  ++  list-connected
+    |=  =bowl:gall  ^-  (list socket)
+    =/  scry-path=path  /(scot %p our.bowl)/ws/(scot %da now.bowl)/app
+    .^((list socket) %ix scry-path)
 --

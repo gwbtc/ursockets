@@ -1,24 +1,32 @@
+import type { YarnContent } from "@/logic/hark";
 import type { Ship } from "./urbit";
+import type { UserType } from "./nostrill";
 
-export type NotificationType = 
+export type NotificationType =
   | "follow"
   | "unfollow"
+  | "profile"
   | "mention"
   | "reply"
   | "repost"
   | "react"
-  | "access_request"
-  | "access_granted";
+  | "follow-granted"
+  | "follow-denied"
+  | "access-request"
+  | "access-granted"
+  | "access-denied"
+  | "fetching-nostr"
+  | "nostr_fetch_success";
 
 export interface Notification {
   id: string;
   type: NotificationType;
-  from: Ship | string; // Ship for Urbit users, string for Nostr pubkeys
-  timestamp: Date;
-  read: boolean;
+  from: UserType;
+  timestamp: number;
+  unread: boolean;
   // Optional context data
   postId?: string;
-  message?: string;
+  message: YarnContent[];
   reaction?: string;
 }
 

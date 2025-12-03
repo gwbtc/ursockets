@@ -1,39 +1,33 @@
 import Sidebar from "@/components/layout/Sidebar";
-
-// new
+import useLocalState from "@/state/state";
 import Feed from "@/pages/Feed";
+import User from "@/pages/User";
 import Settings from "@/pages/Settings";
-import Thread from "@/pages/Thread";
+import Thread, { NostrThreadLoader } from "@/pages/Thread";
 import { Switch, Router, Redirect, Route } from "wouter";
+import { P404 } from "./pages/Error";
 
 export default function r() {
+  const modal = useLocalState((s) => s.modal);
   return (
     <Switch>
       <Router base="/apps/nostrill">
         <Sidebar />
         <main>
-          <Route path="/" component={toGlobal} />
+          <Route path="/" component={toMain} />
           <Route path="/sets" component={Settings} />
-          <Route path="/feed/:taip" component={Feed} />
-          <Route path="/feed/:host/:id" component={Thread} />
+          <Route path="/f" component={Feed} />
+          <Route path="/f/:taip" component={Feed} />
+          <Route path="/u/:user" component={User} />
+          <Route path="/t/:host/:id" component={Thread} />
+          <Route path="/t/:id" component={NostrThreadLoader} />
         </main>
+        {modal && modal}
       </Router>
       <Route component={P404} />
     </Switch>
   );
 }
-function toGlobal() {
-  return <Redirect to="/feed/nostr" />;
-}
-
-export function P404() {
-  return <h1 className="x-center">404</h1>;
-}
-export function ErrorPage({ msg }: { msg: string }) {
-  return (
-    <div>
-      <P404 />
-      <h3>{msg}</h3>
-    </div>
-  );
+function toMain() {
+  return <Redirect to="/f" />;
 }

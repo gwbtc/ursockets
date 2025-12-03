@@ -4,23 +4,7 @@
 ++  en
 =,  enjs:format  
   |%
-  ::  shim comms
-  ++  bulk-req  |=  [relays=(list @t) r=client-msg:sur]  ^-  json
-    %+  frond  %ws
-    %:  pairs
-      relays+a+(turn relays cord:en:common)
-      req+(req r)
-    ~
-    ==
-  ++  http-req  |=  [relay=@t delay=@ud sub-id=@t fs=(list filter:sur)]
-    %+  frond  %http
-    %:  pairs
-      relay+s+relay
-      delay+(numb delay)
-      ['subscription_id' %s sub-id]
-      filters+a+(turn fs filter)
-    ~
-    ==
+  ::  relay comms
   ++  req  |=  req=client-msg:sur  ^-  json
     =/  en-ev  event
     :-  %a  :-  s+(crip (cuss (trip -.req)))
@@ -58,7 +42,7 @@
   |=  e=event:sur  ^-  json
     =/  pubkey  ?.  nostr
         (hex:en:common pubkey.e)
-      =/  pubkeyt  (scow:sr %ux pubkey.e)
+      =/  pubkeyt  (scow:parsing:sr %ux pubkey.e)
       ?~  pubkeyt  !!
       [%s (crip t.pubkeyt)]
     %:  pairs
@@ -93,10 +77,10 @@
 
 
   ++  tags
-  |=  tm=(map @t (set @t))  ^-  (list [@t json])  ::  entries to the filter obeject
-    %+  turn  ~(tap by tm)    |=  [key=@t values=(set @t)]
+  |=  tm=(map @t (list @t))  ^-  (list [@t json])  ::  entries to the filter obeject
+    %+  turn  ~(tap by tm)    |=  [key=@t values=(list @t)]
       =/  nkey  (cat 3 '#' key)
-      [nkey %a (turn ~(tap in values) cord:en:common)]
+      [nkey %a (turn values cord:en:common)]
 
   ++  user-meta
   |=  meta=user-meta:sur
@@ -117,31 +101,57 @@
     %closed  ~[[%s sub-id.msg]]
     %notice  ~[[%s msg.msg]]
     %auth    ~[[%s challenge.msg]]
-    %error  ~
   ==
   --
 ++  de
 =,  dejs-soft:format
   |%
-    :: shim
-  ++  shim-res
-    %-  of  :~
-      http+(ar relay-msg)
-      ws+msg
-    ==    
+    :: relay
   ++  msg
     %-  ot  :~
       relay+so
       msg+relay-msg
     ==
   ++  relay-msg
-    %-  of  :~
-      event+event-sub
-      ok+relay-ok
-      eose+so
-      closed+closed
-      notice+so
-      error+so
+    |=  jon=json  ^-  (unit relay-msg:sur)
+    ?.  ?=(%a -.jon)  ~
+    ?~  p.jon  ~
+    =/  head  i.p.jon
+    ?~  t.p.jon  ~
+    =/  second  i.t.p.jon
+    ?.  ?=(%s -.head)  ~
+    :: TODO make sure they're always caps
+    ?+  p.head  ~
+      %'EVENT'
+        =/  d  (so second)  ?~  d  ~
+         ?~  t.t.p.jon  ~  
+         =/  third  i.t.t.p.jon
+         =/  t  (event third)   ?~  t  ~
+        `[%event u.d u.t] 
+      %'OK'
+         =/  d  (hex:de:common second)  ?~  d  ~
+         ?~  t.t.p.jon  ~  
+         =/  third  i.t.t.p.jon
+         =/  t  (bo third)   ?~  t  ~
+         ?~  t.t.t.p.jon  ~  
+         =/  fourth  i.t.t.t.p.jon
+         =/  f  (so fourth)   ?~  f  ~
+        `[%ok u.d u.t u.f]  
+      %'CLOSED'
+         =/  d  (so second)  ?~  d  ~
+         ?~  t.t.p.jon  ~  
+         =/  third  i.t.t.p.jon
+         =/  t  (so third)   ?~  t  ~
+        `[%closed u.d u.t]
+      %'EOSE'
+         =/  d  (so second)  ?~  d  ~
+        `[%eose u.d]
+      %'NOTICE'
+         =/  d  (so second)  ?~  d  ~
+        `[%notice u.d]
+      %'AUTH'
+         =/  d  (so second)  ?~  d  ~
+        `[%auth u.d]
     ==
   ++  client-msg
     |=  jon=json  ^-  (unit client-msg:sur)
@@ -202,9 +212,8 @@
         ::   ::  anything else is a tag
             =/  vl  ((ar so) +.entry)
             ?~  vl  f
-            =/  ctags  ?~  tags.f  *(map @t (set @t))  u.tags.f
-            =/  values  (silt u.vl)
-            =/  ntags  (~(put by ctags) -.entry values)
+            =/  ctags  ?~  tags.f  *(map @t (list @t))  u.tags.f
+            =/  ntags  (~(put by ctags) -.entry u.vl)
             f(tags `ntags)
         $(entries t.entries)
       
@@ -266,8 +275,11 @@
         ?~  crd  $(fields t.fields)  $(fields t.fields, um um(name u.crd))
       %'about'
         =/  crd  (so jn)
-        ?~  crd  $(fields t.fields)  $(fields t.fields, um um(picture u.crd))
+        ?~  crd  $(fields t.fields)  $(fields t.fields, um um(about u.crd))
       %'picture'
+        =/  crd  (so jn)
+        ?~  crd  $(fields t.fields)  $(fields t.fields, um um(picture u.crd))
+      %'image'
         =/  crd  (so jn)
         ?~  crd  $(fields t.fields)  $(fields t.fields, um um(picture u.crd))
       ==

@@ -49,12 +49,11 @@ function Quote({
   return (
     <div onMouseUp={gotoQuote} className="quote-in-post">
       <header className="btw">
-        (
         <div className="quote-author flex">
           <Sigil patp={data.author} size={20} />
           {data.author}
         </div>
-        )<span>{date_diff(data.time, "short")}</span>
+        <span>{date_diff(data.time, "short")}</span>
       </header>
       <Body poast={data} nest={nest} refetch={refetch!} />
     </div>

@@ -340,6 +340,10 @@
   :: %ref   acc
   :: %json  acc
   ==  
+++  content-map-to-md  |=  cm=content-map:tp  ^-  tape
+  =/  latest  (latest-post-content cm)
+  (content-list-to-md latest)
+
 ++  latest-post-content
 |=  cm=content-map:tp  ^-  content-list:tp
   =/  last  (pry:corm:tp cm)
