@@ -109,7 +109,8 @@ export default class IO {
     if (!("begs" in res.ok)) return { error: "wrong result" };
     if ("ng" in res.ok.begs) return { error: res.ok.begs.ng };
     if ("ok" in res.ok.begs) {
-      if (!("thread" in res.ok.begs.ok)) return { error: "wrong result" };
+      if (!("data" in res.ok.begs.ok)) return { error: "wrong result on data" };
+      if (!("thread" in res.ok.begs.ok.data)) return { error: "wrong result on thread" };
       else return { ok: res.ok.begs.ok.thread };
     } else return { error: "wrong result" };
   }

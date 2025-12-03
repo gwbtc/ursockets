@@ -4,6 +4,11 @@ import { useLocation } from "wouter";
 import Body from "./Body";
 import Sigil from "../Sigil";
 
+type QuoteData = {
+    node: Poast;
+    thread: FullNode[];
+  };
+
 // function Quote({
 //   data,
 //   refetch,
@@ -37,23 +42,25 @@ function Quote({
   refetch,
   nest,
 }: {
-  data: Poast;
+  data: QuoteData | Poast;
   refetch?: Function;
   nest: number;
 }) {
   const [_, navigate] = useLocation();
+  const postData = 'node' in data ? data.node : data;
+
   function gotoQuote(e: React.MouseEvent) {
     e.stopPropagation();
-    navigate(`/feed/${data.host}/${data.id}`);
+    navigate(`/t/${postData.host}/${postData.id}`);
   }
   return (
     <div onMouseUp={gotoQuote} className="quote-in-post">
       <header className="btw">
         <div className="quote-author flex">
-          <Sigil patp={data.author} size={20} />
-          {data.author}
+          <Sigil patp={postData.author} size={20} />
+          {postData.author}
         </div>
-        <span>{date_diff(data.time, "short")}</span>
+        <span>{date_diff(postData.time, "short")}</span>
       </header>
       <Body poast={data} nest={nest} refetch={refetch!} />
     </div>
