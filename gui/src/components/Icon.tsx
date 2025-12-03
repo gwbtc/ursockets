@@ -75,8 +75,8 @@ const Icon: React.FC<IconProps> = ({
   className = "",
   title,
   onClick,
-  color = "text",
-  customColor,
+  color: _color = "text",
+  customColor: _customColor,
 }) => {
   const { theme } = useTheme();
 

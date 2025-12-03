@@ -29,6 +29,7 @@ function RP({
   return (
     <Post
       poast={toFlat(data)}
+      user={{ urbit: data.author }}
       rter={rter}
       rtat={rtat}
       rtid={rtid}

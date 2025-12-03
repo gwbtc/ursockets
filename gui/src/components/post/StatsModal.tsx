@@ -20,7 +20,7 @@ function StatsModal({ poast, close }: { close: any; poast: Poast }) {
   return (
     <Modal close={close}>
       <div id="stats-modal">
-        <Post poast={poast} refetch={() => {}} />
+        <Post poast={poast} user={{ urbit: poast.author }} refetch={() => {}} />
         <div id="tabs">
           <div
             role="link"
@@ -84,7 +84,7 @@ function StatsModal({ poast, close }: { close: any; poast: Poast }) {
             <div id="reposts">
               {reposts.map((p) => (
                 <div key={p.pid.id} className="repost-stat">
-                  <Avatar p={p.pid.ship} size={40} />
+                  <Avatar user={{ urbit: p.pid.ship }} size={40} />
                 </div>
               ))}
             </div>
@@ -92,7 +92,7 @@ function StatsModal({ poast, close }: { close: any; poast: Poast }) {
             <div id="reacts">
               {Object.keys(reacts).map((p) => (
                 <div key={p} className="react-stat btw">
-                  <Avatar p={p} size={32} />
+                  <Avatar user={{ urbit: p }} size={32} />
                   {stringToReact(reacts[p])}
                 </div>
               ))}

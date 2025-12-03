@@ -8,11 +8,13 @@ import WebSocketWidget from "@/components/WsWidget";
 import type { RelayStats } from "@/types/nostrill";
 
 function Settings() {
-  const { key, relays, api, addNotification } = useLocalState((s) => ({
+  const { key, relays, api, addNotification, notificationsEnabled, setNotificationsEnabled } = useLocalState((s) => ({
     key: s.pubkey,
     relays: s.relays,
     api: s.api,
     addNotification: s.addNotification,
+    notificationsEnabled: s.notificationsEnabled,
+    setNotificationsEnabled: s.setNotificationsEnabled,
   }));
   const [newRelay, setNewRelay] = useState("");
   const [isAddingRelay, setIsAddingRelay] = useState(false);
@@ -74,15 +76,16 @@ function Settings() {
   };
 
   async function testHark() {
-    // const types = ["follow", "reply", "react", "mention", "access_request"];
-    // const randomType = types[Math.floor(Math.random() * types.length)] as any;
-    // addNotification({
-    //   type: randomType,
-    //   from: "~sampel-palnet",
-    //   message: "This is a test notification",
-    //   reaction: randomType === "react" ? "👍" : undefined,
-    // });
-    // toast.success("Test notification sent!");
+    // Force a notification to test browser permissions even if not from backend
+    if (notificationsEnabled) {
+        new Notification("Nostrill Test", {
+            body: "This is a test notification from Nostrill settings.",
+            icon: "/nostril-icon.png"
+        });
+    } else {
+        toast("Enable notifications first to test browser push.");
+    }
+    // Also scry backend
     const res = await api?.scryHark();
   }
 
@@ -95,17 +98,34 @@ function Settings() {
 
       <div className="settings-content">
         <WebSocketWidget url="ws://localhost:8090/nostrill-ui" />
-        {/* Notifications Test Section - Remove in production */}
+        {/* Notifications Section */}
         <div className="settings-section">
           <div className="section-header">
             <Icon name="bell" size={20} />
-            <h2>Test Notifications</h2>
+            <h2>Notifications</h2>
           </div>
           <div className="section-content">
             <div className="setting-item">
               <div className="setting-info">
+                <label>Enable Desktop Notifications</label>
+                <p>Receive browser notifications for new activity when the app is open</p>
+              </div>
+              <div className="setting-control">
+                <label className="switch">
+                  <input 
+                    type="checkbox" 
+                    checked={notificationsEnabled}
+                    onChange={(e) => setNotificationsEnabled(e.target.checked)}
+                  />
+                  <span className="slider round"></span>
+                </label>
+              </div>
+            </div>
+            
+            <div className="setting-item">
+              <div className="setting-info">
                 <label>Test Notification System</label>
-                <p>Generate test notifications to see how they work</p>
+                <p>Generate a test notification to check permissions</p>
               </div>
               <div className="setting-control">
                 <button className="test-notification-btn" onClick={testHark}>

@@ -82,7 +82,7 @@ export default function NostrUser({
         message: `Fetching nostr feed from ${userString}`,
       });
     } catch (error) {
-      toast.error(`Failed to request access from ${user.urbit}`);
+      toast.error(`Failed to request access from ${userString}`);
       console.error("Access request error:", error);
     } finally {
       setIsAccessLoading(false);

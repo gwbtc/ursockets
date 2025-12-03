@@ -24,7 +24,7 @@ export default function ({ ship }: { ship: Ship }) {
     <Modal close={close}>
       <div id="ship-modal">
         <div className="flex">
-          <Avatar p={ship} size={60} />
+          <Avatar user={{ urbit: ship }} size={60} />
           <Icon
             name="copy"
             size={20}

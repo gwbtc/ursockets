@@ -55,7 +55,7 @@ function Quote({
         </div>
         <span>{date_diff(data.time, "short")}</span>
       </header>
-      <Body poast={data} nest={nest} refetch={refetch!} />
+      <Body poast={data} nest={nest} refetch={refetch!} user={{ urbit: data.author }} />
     </div>
   );
 }

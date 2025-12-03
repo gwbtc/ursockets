@@ -1,6 +1,5 @@
 import Icon from "@/components/Icon";
 import { auraToHex } from "@/logic/utils";
-import { isValidPatp } from "urbit-ob";
 import { sigil } from "urbit-sigils";
 import { reactRenderer } from "urbit-sigils";
 

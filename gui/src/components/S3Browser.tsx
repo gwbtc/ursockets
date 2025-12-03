@@ -4,7 +4,6 @@ import { AwsClient } from "aws4fetch";
 import type { S3Config } from "@/state/state";
 import spinner from "@/assets/triangles.svg";
 import Icon from "@/components/Icon";
-import Modal from "@/components/modals/Modal";
 
 interface S3BrowserProps {
   onSelect: (url: string) => void;
