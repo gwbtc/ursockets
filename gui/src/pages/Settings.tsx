@@ -8,11 +8,10 @@ import WebSocketWidget from "@/components/WsWidget";
 import type { RelayStats } from "@/types/nostrill";
 
 function Settings() {
-  const { key, relays, api, addNotification } = useLocalState((s) => ({
+  const { key, relays, api } = useLocalState((s) => ({
     key: s.pubkey,
     relays: s.relays,
     api: s.api,
-    addNotification: s.addNotification,
   }));
   const [newRelay, setNewRelay] = useState("");
   const [isAddingRelay, setIsAddingRelay] = useState(false);
@@ -76,12 +75,6 @@ function Settings() {
   async function testHark() {
     // const types = ["follow", "reply", "react", "mention", "access_request"];
     // const randomType = types[Math.floor(Math.random() * types.length)] as any;
-    // addNotification({
-    //   type: randomType,
-    //   from: "~sampel-palnet",
-    //   message: "This is a test notification",
-    //   reaction: randomType === "react" ? "👍" : undefined,
-    // });
     // toast.success("Test notification sent!");
     const res = await api?.scryHark();
   }

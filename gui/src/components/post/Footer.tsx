@@ -24,9 +24,9 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
   );
   const our = api!.airlock.our!;
   function getComposerData(): SPID {
-    return "urbit" in user
+    return user && "urbit" in user
       ? { trill: poast }
-      : { nostr: { post: poast, pubkey: user.nostr, eventId: poast.hash } };
+      : { nostr: { post: poast, pubkey: user?.nostr || "", eventId: poast.hash } };
   }
   function doReply(e: React.MouseEvent) {
     console.log("do reply");
@@ -65,7 +65,7 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
     // TODO update backend because contents are only markdown now
     e.stopPropagation();
     e.preventDefault();
-    const id = "urbit" in user ? poast.id : poast.hash;
+    const id = user && "urbit" in user ? poast.id : poast.hash;
     const r = await api!.addRP(user, id);
     if (r) {
       toast.success("Your repost was published");

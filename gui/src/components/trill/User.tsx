@@ -23,10 +23,9 @@ function UserFeed({
   isAccessLoading: boolean;
   setIsAccessLoading: (b: boolean) => void;
 }) {
-  const { api, addProfile, addNotification, lastFact } = useLocalState((s) => ({
+  const { api, addProfile, lastFact } = useLocalState((s) => ({
     api: s.api,
     addProfile: s.addProfile,
-    addNotification: s.addNotification,
     lastFact: s.lastFact,
   }));
   const hasFeed = !feed ? false : Object.entries(feed).length > 0;
@@ -46,19 +45,9 @@ function UserFeed({
       if (patp !== follow.new.user) return;
       toast.success(`Now following ${patp}`);
       setIsFollowLoading(false);
-      addNotification({
-        type: "follow",
-        from: patp,
-        message: `You are now following ${patp}`,
-      });
     } else if ("quit" in follow) {
       toast.success(`Unfollowed ${patp}`);
       setIsFollowLoading(false);
-      addNotification({
-        type: "unfollow",
-        from: patp,
-        message: `You unfollowed ${patp}`,
-      });
     }
   }, [lastFact, patp, isFollowLoading]);
 
@@ -87,11 +76,6 @@ function UserFeed({
       const res = await api.peekFeed(patp);
       toast.success(`Access request sent to ${patp}`);
 
-      // addNotification({
-      //   type: "access-request",
-      //   from: patp,
-      //   message: `Access request sent to ${patp}`,
-      // });
       if ("error" in res) toast.error(res.error);
       else {
         console.log("peeked", res.ok.feed);

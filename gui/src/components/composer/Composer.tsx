@@ -10,11 +10,10 @@ import { wait } from "@/logic/utils";
 import type { UserType } from "@/types/nostrill";
 
 function Composer({ isAnon, isMe }: { isAnon?: boolean; isMe?: boolean }) {
-  const { api, composerData, addNotification, setComposerData } = useLocalState(
+  const { api, composerData, setComposerData } = useLocalState(
     (s) => ({
       api: s.api,
       composerData: s.composerData,
-      addNotification: s.addNotification,
       setComposerData: s.setComposerData,
     }),
   );
@@ -83,37 +82,6 @@ function Composer({ isAnon, isMe }: { isAnon?: boolean; isMe?: boolean }) {
     const res = !composerData ? addSimple() : addComplex();
     const ares = await res;
     if (ares) {
-      // // Check for mentions in the post (ship names starting with ~)
-      const mentions = input.match(/~[a-z-]+/g);
-      if (mentions) {
-        mentions.forEach((mention) => {
-          if (mention !== our) {
-            // Don't notify self-mentions
-            // addNotification({
-            //   type: "mention",
-            //   from: our,
-            //   message: `You mentioned ${mention} in a post`,
-            // });
-          }
-        });
-      }
-
-      // If this is a reply, add notification
-      if (
-        composerData?.type === "reply" &&
-        composerData.post &&
-        "trill" in composerData.post
-      ) {
-        if (composerData.post.trill.author !== our) {
-          // addNotification({
-          //   type: "reply",
-          //   from: our,
-          //   message: `You replied to ${composerData.post.trill.author}'s post`,
-          //   postId: composerData.post.trill.id,
-          // });
-        }
-      }
-
       setInput("");
       setComposerData(null); // Clear composer data after successful post
       toast.success("post sent");

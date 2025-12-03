@@ -110,24 +110,11 @@ export function stringToReact(s: string) {
 }
 
 export function TrillReactModal({ poast }: { poast: Poast }) {
-  const { api, addNotification } = useLocalState((s) => ({
-    api: s.api,
-    addNotification: s.addNotification,
-  }));
+  const { api } = useLocalState((s) => ({ api: s.api }));
   const our = api!.airlock.our!;
 
   async function sendReact(s: string) {
     const result = await api!.addReact(poast.host, poast.id, s);
-    // Only add notification if reacting to someone else's post
-    // if (result && poast.author !== our) {
-    //   addNotification({
-    //     type: "react",
-    //     from: our,
-    //     message: `You reacted to ${poast.author}'s post`,
-    //     reaction: s,
-    //     postId: poast.id,
-    //   });
-    // }
     return result;
   }
   return <ReactModal send={sendReact} />;
