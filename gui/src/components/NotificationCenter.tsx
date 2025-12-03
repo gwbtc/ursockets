@@ -8,7 +8,7 @@ import type { Notification, NotificationType } from "@/types/notifications";
 import "@/styles/NotificationCenter.css";
 
 const NotificationCenter = () => {
-  const [_, _navigate] = useLocation();
+  const [_, navigate] = useLocation();
   const { notifications, dismissNotification, setModal } = useLocalState(
     (s) => ({
       notifications: s.notifications,
@@ -23,24 +23,31 @@ const NotificationCenter = () => {
   const filteredNotifications =
     filter === "unread" ? notifications.filter((n) => n.unread) : notifications;
 
-  const handleNotificationClick = (notification: Notification) => {
+  console.log(filteredNotifications)
+
+  const handleNotificationClick = (notification: Notification ) => {
+
+    const from = "urbit" in notification.from
+        ? notification.from.urbit
+        : notification.from.nostr;
+
     // // Mark as read
-    // if (!notification.read) {
+    // if (notification.unread) {
     //   markNotificationRead(notification.id);
     // }
-    // // Navigate based on notification type
-    // if (notification.postId) {
-    //   // Navigate to post
-    //   navigate(`/post/${notification.postId}`);
-    //   setModal(null);
-    // } else if (
-    //   notification.type === "follow" ||
-    //   notification.type === "access_request"
-    // ) {
-    //   // Navigate to user profile
-    //   navigate(`/feed/${notification.from}`);
-    //   setModal(null);
-    // }
+    // Navigate based on notification type
+    if (notification.postId) {
+      // Navigate to post
+      navigate(`/t/${notification.postId}`);
+      setModal(null);
+    } else if (
+      notification.type === "follow" ||
+      notification.type === "access-request"
+    ) {
+      // Navigate to user profile
+      navigate(`/u/${from}`);
+      setModal(null);
+    }
   };
 
   const getNotificationIcon = (type: NotificationType) => {
@@ -134,7 +141,7 @@ const NotificationCenter = () => {
               <div
                 key={notification.id}
                 className={`notification-item ${notification.unread ? "unread" : ""}`}
-                onClick={() => handleNotificationClick(notification)}
+                onClick={(e) => handleNotificationClick(notification, e)}
               >
                 <div className="notification-icon">
                   <Icon
