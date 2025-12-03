@@ -240,8 +240,8 @@ export default class IO {
       console.log("peeking feed", res);
       if (!("begs" in res)) return { error: "wrong request" };
       if ("ng" in res.begs) return { error: res.begs.ng };
-      if (!("feed" in res.begs.ok)) return { error: "wrong request" };
-      else return { ok: res.begs.ok };
+      if (!("feed" in res.begs.ok.data)) return { error: "wrong request" };
+      else return { ok: res.begs.ok.data };
     } catch (e) {
       return { error: `${e}` };
     }
