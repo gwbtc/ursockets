@@ -169,7 +169,6 @@ body,
   height: 100vh;
   max-height: 100vh;
   width: 100vw;
-  overflow: hidden;
   /* no scrolling!!!*/
 }
 
@@ -207,10 +206,7 @@ h6 {
 
 #root {
   padding: 1rem 2rem;
-  overflow-y: auto;
   font-family: "Inter";
-
-
   display: flex;
 
   & #left-menu {
@@ -252,7 +248,8 @@ h6 {
   & main {
     width: 726px;
     margin: 0 auto;
-    height: 95%;
+    height: 100%;
+    overflow-y: auto;
     /* i hate this */
 
     & #top-tabs {
@@ -275,7 +272,6 @@ h6 {
       border: 1px solid grey;
       border-radius: 0.75rem;
       height: 100%;
-      overflow-y: auto;
 
       @keyframes slideDown {
         from {
@@ -359,9 +355,6 @@ h6 {
       }
     }
 
-    & .thread-content {
-      /* Use same styling as feed content */
-    }
 
     & .loading-container {
       display: flex;
@@ -376,94 +369,6 @@ h6 {
     }
   }
 
-  & .trill-post,
-  & .twatter-post {
-    border-top: 1px solid grey;
-
-    & .left {
-      margin-right: 10px;
-      width: unset;
-
-      & .sigil {
-        width: 48px;
-        height: 48px;
-      }
-    }
-
-    & header {
-      align-items: center;
-      justify-content: left;
-
-      & .author {
-        flex: unset;
-        gap: 0;
-        margin: 0.7rem 0.3rem;
-        font-weight: 700;
-        flex-grow: 1;
-
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-
-        & .name {
-          display: flex;
-          align-items: center;
-
-          & .p {
-            font-family: "Source Code Pro";
-          }
-        }
-      }
-
-
-      & .date {
-        color: grey;
-      }
-
-    }
-
-    .body {
-      max-height: 500px;
-      overflow-y: hidden;
-    }
-
-    & footer {
-      justify-content: left;
-      margin: unset;
-
-      & .icon {
-        margin: 0;
-        align-items: center;
-        gap: 0.2rem;
-        width: 64px;
-
-        & img {
-          height: 18px;
-        }
-
-        & .react-img {
-          height: 24px;
-        }
-
-        & .react-icon {
-          font-size: 20px;
-        }
-
-        & span {
-          margin-right: unset;
-          text-align: left;
-          font-size: 14px;
-          line-height: 1rem;
-          color: grey;
-          width: unset;
-        }
-      }
-
-      & .menu-icon {
-        margin-left: auto;
-      }
-    }
-  }
 
 
   & .user-contact {
@@ -506,10 +411,6 @@ h6 {
   padding: 0.5rem 2rem;
 }
 
-& .sigil,
-& .sigil svg {
-  border-radius: 0.5rem;
-}
 
 #big-button {
   position: absolute;

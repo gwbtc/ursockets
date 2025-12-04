@@ -120,45 +120,47 @@
     ~
   ++  hark  |=  =notif:sur
     ^-  json
-    %+  frond  -.notif
-    ?-  -.notif
-      %prof  (prof-notif +.notif)
-      %fols  (pairs :~(['user' (user user.notif)] ['accepted' %b accepted.notif] ['msg' %s msg.notif]))
-      %fans  (user p.notif)
-      %beg   (beg-notif +.notif)
-      %post  (post-notif +.notif)
-    ==
-  ++  prof-notif  |=  [u=user:sur prof=user-meta:nsur]
-    %-  pairs
-    :~  user+(user u)
-        profile+(user-meta:en:nostr prof)
-    ==
-  ++  beg-notif  |=  [beg=begs-poke:ui:sur accepted=? msg=@t]
-    ^-  json
-    %+  frond  -.beg
-    %-  pairs
-      :~  ['accepted' %b accepted]
-          ['msg' %s msg]
-        ?-  -.beg
-          %feed    ['ship' %s (scot %p +.beg)]
-          %thread  ['post' (pid:en:trill +.beg)]
-        ==
-      ==
+    ::  TODO remove as we're using %hark instead
+    ~
+  ::   %+  frond  -.notif
+  ::   ?-  -.notif
+  ::     %prof  (prof-notif +.notif)
+  ::     %fols  (pairs :~(['user' (user user.notif)] ['accepted' %b accepted.notif] ['msg' %s msg.notif]))
+  ::     %fans  (pairs :~(['user' (user user.notif)] ['msg' %s msg.notif]))
+  ::     %beg   (beg-notif +.notif)
+  ::     %post  (post-notif +.notif)
+  ::   ==
+  :: ++  prof-notif  |=  [u=user:sur prof=user-meta:nsur]
+  ::   %-  pairs
+  ::   :~  user+(user u)
+  ::       profile+(user-meta:en:nostr prof)
+  ::   ==
+  :: ++  beg-notif  |=  [beg=begs-poke:ui:sur accepted=? msg=@t]
+  ::   ^-  json
+  ::   %+  frond  -.beg
+  ::   %-  pairs
+  ::     :~  ['accepted' %b accepted]
+  ::         ['msg' %s msg]
+  ::       ?-  -.beg
+  ::         %feed    ['ship' %s (scot %p +.beg)]
+  ::         %thread  ['post' (pid:en:trill +.beg)]
+  ::       ==
+  ::     ==
 
-  ++  post-notif  |=  [pid=[@p @da] u=user:sur p=post-notif:sur]
-    ^-  json
-    %-  pairs
-      :~  ['post' (pid:en:trill pid)]
-          ['user' (user u)]
-          :-  -.p
-          ?-  -.p
-            %reply  (poast:en:trill +.p)
-            %quote  (poast:en:trill +.p)
-            %reaction  [%s +.p]
-            %rp    ~
-            %del   ~
-          ==
-      ==
+  :: ++  post-notif  |=  [pid=[@p @da] u=user:sur p=post-notif:sur]
+  ::   ^-  json
+  ::   %-  pairs
+  ::     :~  ['post' (pid:en:trill pid)]
+  ::         ['user' (user u)]
+  ::         :-  -.p
+  ::         ?-  -.p
+  ::           %reply  (poast:en:trill +.p)
+  ::           %quote  (poast:en:trill +.p)
+  ::           %reaction  [%s +.p]
+  ::           %rp    ~
+  ::           %del   ~
+  ::         ==
+  ::     ==
   ++  post-wrapper  |=  p=post-wrapper:sur
     %-  pairs
     :~  post+(poast:en:trill post.p)
@@ -176,14 +178,27 @@
     %+  frond  %begs  %+  frond  -.res
     ?-  -.res
       %ok  (resd +.res)
-      %ng  [%s msg.res]
+      %ng  (resn +.res)
     ==
-  ++  resd  |=  rd=res-data:comms  ^-  json
-    ?-  -.rd
-      %feed     (user-data +.rd)
-      :: TODO wrap it for nostr shit
-      %thread   (frond -.rd (full-node:en:trill +.rd))
+  ++  resd  |=  [rd=res-data:comms msg=@t]  ^-  json
+    %-  pairs
+      :~  :-  'msg'  [%s msg]
+          :-  'data'  ?-  -.rd
+            %feed     (user-data +.rd)
+            :: TODO wrap it for nostr shit
+            %thread   (frond -.rd (thread:en:trill +.rd))
+          ==
     ==
+  ++  resn  |=  [=req:comms res-msg=@t]  ^-  json
+    %-  pairs
+      :~  :-  'msg'  [%s res-msg]
+          :-  'req'
+            ?-  -.req
+              %feed     [%s msg.req]
+              :: TODO wrap it for nostr shit
+              %thread   %-  pairs  :~([%msg %s msg.req] [%id (ud:en:common id.req)])
+            ==
+          ==
   ++  user-data
     |=  ud=[=fc:feed profile=(unit user-meta:nsur)]
     %:  pairs
@@ -287,7 +302,7 @@
 ++  ui-relay
   %-  of  :~
     add+so
-    del+de-atom-id
+    del+ni
     sync+ul
     prof+ul
     user+hex:de:common

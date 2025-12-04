@@ -1,15 +1,19 @@
-/-  sur=nostrill, nsur=nostr, tf=trill-feed, comms=nostrill-comms
+/-  sur=nostrill, nsur=nostr, tf=trill-feed, tp=trill-post, comms=nostrill-comms, hark
 /+  lib=nostrill, nostr-keys, sr=sortug, scri,
     ws=websockets,
     bip-b173,
     nreq=nostr-req,
     nostr-client,
     dbug,
+    seq,
     evlib=nostr-events,
     mutations-nostr,
     mutations-trill,
     jsonlib=json-nostrill,
-    trill=trill-post, commlib=nostrill-comms, followlib=nostrill-follows
+    feedlib=trill-feed, postlib=trill-post,
+    seed,
+    harklib=hark,
+    commlib=nostrill-comms, followlib=nostrill-follows
 /=  web  /web/router
 |%
 +$  versioned-state  $%(state-0:sur)
@@ -181,7 +185,7 @@
       ?-  -.poke
         %add  (handle-add:fols +.poke)
     
-        %del   (handle-del:fols +.poke)
+        %del  (handle-del:fols +.poke)
       ==
       [cs this]
 
@@ -209,12 +213,246 @@
     [cs this]
   ::
   ++  debug  |=  noun=*
-    =/  rl  get-relay:mutan
-    ?~  rl  ~&  >>>  "no relay!!!!"  `this
-    =/  wid  -.u.rl
-    =/  relay  +.u.rl
-    =/  nclient  ~(. nostr-client [state bowl wid relay])
     ?+  noun  `this
+      %hark
+        =/  content=(list content:hark)
+          :~  'Lol hi'
+          ==
+        =/  n=notif:sur  [%fans [%urbit ~sorreg-namtyv] 'uhmmm uhhh basically... i followed you']
+        =/  =yarn:hark  (to-hark:harklib n bowl)
+        =/  c  (poke-hark:harklib yarn bowl)
+        :_  this  :~(c)
+      %seed-threads
+        ~&  >>  "seeding threads"
+        =/  pubkey  pub.i.keys
+        =/  baseda  ~2020.1.1
+        =/  basedate  (yore baseda)
+        =/  l  (gulf 0 10)
+        =.  feed  |-  ?~  l  feed
+          =/  i  +(i.l)
+          =/  eny  (scow %p (add i (end 5 eny.bowl)))
+          =/  content=@t  %-  crip  "THREAD OP \0a{eny}"
+          =/  sp=sent-post:tp  (build-sp:postlib our.bowl our.bowl content ~ ~)
+          =/  basemonth  (add i m.basedate)
+          =/  opdate  basedate(m basemonth)
+          =/  opid  (year opdate)
+          =/  op=post:tp        (build-post:postlib opid pubkey sp)
+          =.  feed  (put:orm:tf feed id.op op)
+          =/  nests  10
+          =/  nnests  nests
+          =/  rng  ~(. og eny.bowl)
+          =/  parent-id  id.op
+          =/  new-parent  parent-id
+          =.  feed
+            |-  ?:  .=(nests 0)  feed
+          ::     ::  For each level of nested replies
+              =/  parent  (get:orm:tf feed parent-id)
+              ?~  parent  ~&  >>>  ["parent wasn't set in feed??\0a" parent-id]  !!
+            
+              =^  reply-count  rng  (rads:rng 10)  ::  number of replies at this level
+              =.  reply-count  +(reply-count)
+              =/  rcount  reply-count
+              ~&  >>>  [reply-count=reply-count at-level=nests]
+
+              =/  new-state=[_feed @da]  |-  ?:  .=(reply-count 0)  [feed new-parent]
+                ::  Well the pubkey would be the actual author's here but w/e
+                =^  author-atom  rng  (rads:rng (bex 32))  ::  author of reply
+                =/  author  `@p`author-atom
+                =/  pubkey  pub.i.keys
+                =/  reny  (scow %p (add eny.bowl (add nests reply-count)))
+                =/  reply-content  %-  crip  "Reply to \0a{(scow %da parent-id)}\0a on thread {(scow %da id.op)}\0a{reny}"
+                =/  sp=sent-post:tp  (build-sp:postlib host.u.parent author reply-content `parent-id `id.op)
+                :: =/  reply-id  (add now.bowl (mul +(nests) +(reply-count)))
+                =/  months  +((sub nnests nests))
+                =/  days    +((sub rcount reply-count))
+                =/  t=tarp  [days 0 0 0 ~]
+                =/  d=date  [[.y 0] months t]
+                =/  reply-id  %-  year  (add-to-date:jikan:sr opdate d)
+                =/  reply=post:tp  (build-post:postlib reply-id pubkey sp)            
+                =.  new-parent  id.reply
+                =.  children.u.parent  (~(put in children.u.parent) id.reply)
+                :: ~&  post-count-pre=(lent (tap:orm:tf feed))
+                =.  feed       (put:orm:tf feed id.u.parent u.parent)
+                =.  feed       (put:orm:tf feed id.reply reply)
+                $(reply-count (dec reply-count))
+
+              =.  feed  -.new-state
+              =.  parent-id  +.new-state
+          :: ::     ::
+              $(nests (dec nests))
+            $(l t.l)
+       !!
+      :: `this
+      %seed-thread
+        =/  eny  (scow %p (end 5 eny.bowl))
+        =/  content=@t  %-  crip  "THREAD OP \0a{eny}"
+        =/  sp=sent-post:tp  (build-sp:postlib our.bowl our.bowl content ~ ~)
+        =/  pubkey  pub.i.keys
+        =/  opid  ~2020.1.1
+        =/  opdate  (yore opid)
+        =/  op=post:tp        (build-post:postlib opid pubkey sp)
+        =.  feed  (put:orm:tf feed id.op op)
+        =/  nests  10
+        =/  nnests  nests
+        =/  rng  ~(. og eny.bowl)
+        =|  total-count=@
+        =/  parent-id  id.op
+        =/  new-parent  parent-id
+        =/  new-state=[_feed @]
+          |-  ?:  .=(nests 0)  [feed total-count]
+        ::     ::  For each level of nested replies
+            =/  parent  (get:orm:tf feed parent-id)
+            ?~  parent  ~&  >>>  ["parent wasn't set in feed??\0a" parent-id]  !!
+            
+            =^  reply-count  rng  (rads:rng 10)  ::  number of replies at this level
+            =.  reply-count  +(reply-count)
+            =/  rcount  reply-count
+            :: ?:  .=(reply-count 0)  $(nests (dec nests))
+            ~&  >>>  [reply-count=reply-count at-level=nests]
+
+            =/  new-state=[_feed @da @]  |-  ?:  .=(reply-count 0)  [feed new-parent total-count]
+              ::  Well the pubkey would be the actual author's here but w/e
+              =^  author-atom  rng  (rads:rng (bex 32))  ::  author of reply
+              =/  author  `@p`author-atom
+              =/  pubkey  pub.i.keys
+              =/  reny  (scow %p (add eny.bowl (add nests reply-count)))
+              =/  reply-content  %-  crip  "Reply to \0a{(scow %da parent-id)}\0a on thread {(scow %da id.op)}\0a{reny}"
+              =/  sp=sent-post:tp  (build-sp:postlib host.u.parent author reply-content `parent-id `id.op)
+              :: =/  reply-id  (add now.bowl (mul +(nests) +(reply-count)))
+              =/  months  (add m.opdate +((sub nnests nests)))
+              =/  days    (add d.t.opdate +((sub rcount reply-count)))
+              =/  reply-id  %-  year  opdate(m months, d.t days)
+              =/  reply=post:tp  (build-post:postlib reply-id pubkey sp)            
+              =.  total-count  +(total-count)
+              =.  new-parent  id.reply
+              =.  children.u.parent  (~(put in children.u.parent) id.reply)
+              :: ~&  post-count-pre=(lent (tap:orm:tf feed))
+              =.  feed       (put:orm:tf feed id.u.parent u.parent)
+              =.  feed       (put:orm:tf feed id.reply reply)
+              $(reply-count (dec reply-count))
+
+            =.  feed  -.new-state
+            =.  parent-id  +<.new-state
+            =.  total-count  +>.new-state
+        ::     ::
+            $(nests (dec nests))
+        =.  feed  -.new-state
+        =.  total-count  +.new-state
+        ~&  >  seeded-thread=[id.op count=total-count]
+      :: !!
+    `this
+    %seed-own
+        =/  text  long-text:seed
+        =/  chunks  (chunk-by-size:seq text 256)
+        ?~  chunks  ~&  "wtf"  !!
+        =/  rest=(list tape)  t.chunks
+        =/  pubkey  pub.i.keys
+        =/  content  (crip i.chunks)
+        =/  sp=sent-post:tp  (build-sp:postlib our.bowl our.bowl content ~ ~)
+        =/  op=post:tp       (build-post:postlib now.bowl pubkey sp)
+        ~&  "thread id"
+        ~&  >>  id.op
+        =/  parent-id  id.op
+        =.  feed  (put:orm:tf feed id.op op)
+        =/  idx  1
+        =.  feed
+          |-  ?~  rest  feed
+            =/  parent  (get:orm:tf feed parent-id)
+            ?~  parent  ~&  >>>  ["parent wasn't set in feed??\0a" parent-id]  !!
+            =/  content  (crip i.rest)
+            =/  sp=sent-post:tp  (build-sp:postlib our.bowl our.bowl content `parent-id `id.op)
+            =/  reply-id   (add now.bowl (mul idx ~s10))
+            =/  p=post:tp  (build-post:postlib reply-id pubkey sp)
+            ::
+            =.  children.u.parent  (~(put in children.u.parent) id.p)
+            =.  feed       (put:orm:tf feed id.u.parent u.parent)
+            ::
+            =.  feed  (put:orm:tf feed id.p p)
+            $(rest t.rest, parent-id id.p, idx +(idx))        
+      `this
+      %feed-stats
+        =/  posts  (tap:orm:tf feed)
+        |-  ?~  posts  `this
+          =/  post=post:tp  +.i.posts
+          =/  full-node  (node-to-full:feedlib post feed)
+          =/  count  (print-full-node:feedlib full-node)
+          ~&  >  [post=id.full-node tree=count]
+           $(posts t.posts)
+      %threads-inspect
+        =/  posts  (tap:orm:tf feed)
+        =/  ignore  |-  ?~  posts  ~
+          =/  p=post:tp  +.i.posts
+          ?^  parent.p  $(posts t.posts)
+          ~&  id=id.p
+          =/  content  (content-map-to-md:postlib contents.p)
+          ~&  >>  content
+          ~&  children.p
+          =/  ignore  ?~  children.p  ~
+            =/  full-node  (node-to-full:feedlib p feed)
+            =/  count  (print-full-node:feedlib full-node)
+            ~
+
+          $(posts t.posts)
+          
+        `this
+      %feed-inspect
+        =/  posts  (tap:orm:tf feed)
+        =/  ignore  |-  ?~  posts  ~
+          =/  p=post:tp  +.i.posts
+          ~&  id=id.p
+          =/  content  (content-map-to-md:postlib contents.p)
+          ~&  >>  content
+          =/  ign  ?^  parent.p
+                      ~&  >  par=u.parent.p
+                      ~&  >>>  ted=thread.p
+                      ~  ~
+          $(posts t.posts)
+          
+        `this
+      [%ted-own @]
+        =/  op  (got:orm:tf feed +.noun)
+        =/  full-node  (node-to-full:feedlib op feed)
+        =/  ted  (extract-thread:feedlib full-node)
+        ~&  lent=(lent ted)
+        =/  ignore  |-  ?~  ted  ~
+                      =/  content  (content-map-to-md:postlib contents.i.ted)
+                      ~&  id=id.i.ted
+                      ~&  >>  content
+                    $(ted t.ted)
+        `this
+      [%ted-inspect @]
+
+        =/  posts  (tap:orm:tf feed)
+        =|  ted-count=@
+        =|  child-sum=@
+        =/  c=[@ @]
+        |-  ?~  posts  [ted-count child-sum]
+          =/  p=post:tp  +.i.posts
+          =/  nc  ?.  .=(thread.p +.noun)  [ted-count child-sum]
+                       ~&  >  parent=parent.p
+                       ~&  >>  id=id.p
+                       ~&    children=children.p
+                       ~&   >>>  ~(wyt in children.p)
+                      [+(ted-count) (add child-sum ~(wyt in children.p))]
+          $(posts t.posts, ted-count -.nc, child-sum +.nc)
+        ~&  >>  posts-under-ted=c
+       ~&  >>>  "**********************************************************"
+       ~&  >>>  "**********************************************************"
+        =/  op  (got:orm:tf feed +.noun)
+        =/  full-node  (node-to-full:feedlib op feed)
+        =/  count  (print-full-node:feedlib full-node)
+        ~&  >>  descendants=count
+        `this
+      [%del-ted @]
+        =/  posts  (tap:orm:tf feed)
+        =.  feed
+          |-  ?~  posts  feed
+            =/  p=post:tp  +.i.posts
+            =.  feed  ?.  .=(thread.p +.noun)  feed
+            =<  +  (del:orm:tf feed id.p)
+            $(posts t.posts)
+
+        `this
       %iris
         =/  endpoint  'ws://localhost:8888'
         :_  this
@@ -225,12 +463,6 @@
         :_  this
         :~  (connect:ws endpoint bowl)
         ==
-      %wstest
-        :: =/  url  'ws://localhost:8888'
-        :: =/  url  'wss://nos.lol'
-        =^  cs  relay  test-connection:nclient
-        =.  relays  (~(put by relays) wid relay)
-        [cs this]
       %wsl
         =/  l  (list-connected:ws bowl)
         ~&  >  ws-connections=l
@@ -346,35 +578,55 @@
       `this
       %http
       `this
-      %rt  ::  relay test
-        =^  cards  relay  get-posts:nclient
-        =.  relays  (~(put by relays) wid relay)
-        [cards this]
+      %ui
+        =/  =fact:ui:sur  [%post %add *post-wrapper:sur]
+        =/  card     (update-ui:cards fact)
+        :_  this  :~(card)
+      %kick
+        :_  this   =/  subs  ~(tap by sup.bowl)
+          %+  turn  subs  |=  [* p=@p pat=path]
+          [%give %kick ~[pat] ~]
+      %leave
+        :_  this   =/  subs  ~(tap by wex.bowl)
+          %+  turn  subs  |=  [[wire sip=@p term] q=*]
+          (urbit-leave:fols sip)
+      %comms
+       :_  this
+       :~  (urbit-watch:fols ~zod)
+           [%pass /foldbug %agent [~zod dap.bowl] %poke %bitch !>(~)]
+       ==
+      ::  requires a relay
+      :: 
       %rt0
+          =/  rl  get-relay:mutan
+          ?~  rl  ~&  >>>  "no relay!!!!"  `this
+          =/  wid  -.u.rl
+          =/  relay  +.u.rl
+          =/  nclient  ~(. nostr-client [state bowl wid relay])
           =^  cards  relay  get-profiles:nclient
           =.  relays  (~(put by relays) wid relay)
         [cards this]
-    %ui
-      =/  =fact:ui:sur  [%post %add *post-wrapper:sur]
-      =/  card     (update-ui:cards fact)
-      :_  this  :~(card)
-    %kick
-      :_  this   =/  subs  ~(tap by sup.bowl)
-        %+  turn  subs  |=  [* p=@p pat=path]
-        [%give %kick ~[pat] ~]
-    %leave
-      :_  this   =/  subs  ~(tap by wex.bowl)
-        %+  turn  subs  |=  [[wire sip=@p term] q=*]
-        (urbit-leave:fols sip)
-    %comms
-     :_  this
-     :~  (urbit-watch:fols ~zod)
-         [%pass /foldbug %agent [~zod dap.bowl] %poke %bitch !>(~)]
-     ==
-
-
-    ==
-      
+      %wstest
+        :: =/  url  'ws://localhost:8888'
+        :: =/  url  'wss://nos.lol'
+        =/  rl  get-relay:mutan
+        ?~  rl  ~&  >>>  "no relay!!!!"  `this
+        =/  wid  -.u.rl
+        =/  relay  +.u.rl
+        =/  nclient  ~(. nostr-client [state bowl wid relay])
+        =^  cs  relay  test-connection:nclient
+        =.  relays  (~(put by relays) wid relay)
+        [cs this]
+      %rt  ::  relay test
+        =/  rl  get-relay:mutan
+        ?~  rl  ~&  >>>  "no relay!!!!"  `this
+        =/  wid  -.u.rl
+        =/  relay  +.u.rl
+        =/  nclient  ~(. nostr-client [state bowl wid relay])
+        =^  cards  relay  get-posts:nclient
+        =.  relays  (~(put by relays) wid relay)
+        [cards this]
+      ==
   ::
   --
 ::
