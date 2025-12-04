@@ -178,7 +178,7 @@ export default class IO {
       reaction: {
         reaction: reaction,
         id,
-        host: {urbit: host},
+        host: host,
       },
     };
 

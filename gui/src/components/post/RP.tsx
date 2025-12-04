@@ -1,7 +1,9 @@
 import Post from "./Post";
 import type { Ship } from "@/types/urbit";
 import type { Poast, FullNode, ID } from "@/types/trill";
+import type { UserType } from "@/types/nostrill";
 import PostData from "./Loader";
+import { isValidPatp } from "urbit-ob";
 export default function (props: {
   host: string;
   id: string;
@@ -26,9 +28,16 @@ function RP({
   rtat: number;
   rtid: ID;
 }) {
+  const poast = toFlat(data);
+  const user: UserType = poast.event
+    ? { nostr: poast.event.pubkey }
+    : isValidPatp(poast.author)
+      ? { urbit: poast.author }
+      : { nostr: poast.author };
   return (
     <Post
-      poast={toFlat(data)}
+      poast={poast}
+      user={user}
       rter={rter}
       rtat={rtat}
       rtid={rtid}
