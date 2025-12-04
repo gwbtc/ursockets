@@ -107,10 +107,11 @@ export default class IO {
     const res = await this.scry(path);
     if ("error" in res) return res;
     if (!("begs" in res.ok)) return { error: "wrong result" };
-    if ("ng" in res.ok.begs) return { error: res.ok.begs.ng };
+    if ("ng" in res.ok.begs) return { error: res.ok.begs.ng.msg };
     if ("ok" in res.ok.begs) {
-      if (!("thread" in res.ok.begs.ok)) return { error: "wrong result" };
-      else return { ok: res.ok.begs.ok.thread };
+      if (!("data" in res.ok.begs.ok)) return { error: "wrong result on data" };
+      if (!("thread" in res.ok.begs.ok.data)) return { error: "wrong result on thread" };
+      else return { ok: res.ok.begs.ok.data.thread };
     } else return { error: "wrong result" };
   }
   // async scryHark(): AsyncRes<Skein[]> {
@@ -177,7 +178,7 @@ export default class IO {
       reaction: {
         reaction: reaction,
         id,
-        host,
+        host: host,
       },
     };
 
@@ -239,8 +240,8 @@ export default class IO {
       console.log("peeking feed", res);
       if (!("begs" in res)) return { error: "wrong request" };
       if ("ng" in res.begs) return { error: res.begs.ng };
-      if (!("feed" in res.begs.ok)) return { error: "wrong request" };
-      else return { ok: res.begs.ok };
+      if (!("feed" in res.begs.ok.data)) return { error: "wrong request" };
+      else return { ok: res.begs.ok.data };
     } catch (e) {
       return { error: `${e}` };
     }
@@ -252,8 +253,8 @@ export default class IO {
       console.log("peeking feed", res);
       if (!("begs" in res)) return { error: "wrong request" };
       if ("ng" in res.begs) return { error: res.begs.ng };
-      if (!("thread" in res.begs.ok)) return { error: "wrong request" };
-      else return { ok: res.begs.ok.thread };
+      if (!("thread" in res.begs.ok.data)) return { error: "wrong request" };
+      else return { ok: res.begs.ok.data.thread };
     } catch (e) {
       return { error: `${e}` };
     }

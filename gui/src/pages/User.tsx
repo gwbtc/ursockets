@@ -33,9 +33,6 @@ function UserFeed({
 }) {
   const { api, pubkey } = useLocalState((s) => ({
     api: s.api,
-    addProfile: s.addProfile,
-    addNotification: s.addNotification,
-    lastFact: s.lastFact,
     pubkey: s.pubkey,
   }));
   const isMe =
@@ -56,7 +53,7 @@ function UserFeed({
     <div id="user-page">
       <Profile user={user} userString={userString} isMe={isMe} />
       {isMe ? (
-        <MyFeed our={api!.airlock.our!} />
+        <MyFeed our={api!.airlock.our!} isMe={isMe}/>
       ) : "urbit" in user ? (
         <TrillFeed
           patp={user.urbit}
@@ -83,9 +80,9 @@ function UserFeed({
 
 export default UserLoader;
 
-function MyFeed({ our }: { our: string }) {
+function MyFeed({ our, isMe }: { our: string, isMe: boolean }) {
   const following = useLocalState((s) => s.following);
   const feed = following.get(our);
   if (!feed) return <ErrorPage msg="Critical error" />;
-  return <Inner feed={feed} refetch={() => {}} />;
+  return <Inner feed={feed} refetch={() => {}} isMe={isMe} />;
 }

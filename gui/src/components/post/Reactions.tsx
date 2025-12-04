@@ -1,4 +1,5 @@
 import type { Poast } from "@/types/trill";
+import type { UserType } from "@/types/nostrill";
 import yeschad from "@/assets/reacts/yeschad.png";
 import cringe from "@/assets/reacts/cringe.png";
 import cry from "@/assets/reacts/cry.png";
@@ -18,6 +19,7 @@ import Icon from "@/components/Icon";
 import emojis from "@/logic/emojis.json";
 import Modal from "../modals/Modal";
 import useLocalState from "@/state/state";
+import { isValidPatp } from "urbit-ob";
 
 export function ReactModal({ send }: { send: (s: string) => Promise<number> }) {
   const { setModal } = useLocalState((s) => ({ setModal: s.setModal }));
@@ -110,24 +112,17 @@ export function stringToReact(s: string) {
 }
 
 export function TrillReactModal({ poast }: { poast: Poast }) {
-  const { api, addNotification } = useLocalState((s) => ({
-    api: s.api,
-    addNotification: s.addNotification,
-  }));
+  const { api } = useLocalState((s) => ({ api: s.api }));
   const our = api!.airlock.our!;
 
+  const user: UserType = poast.event
+    ? { nostr: poast.event.pubkey }
+    : isValidPatp(poast.author)
+      ? { urbit: poast.author }
+      : { nostr: poast.author };
+
   async function sendReact(s: string) {
-    const result = await api!.addReact(poast.host, poast.id, s);
-    // Only add notification if reacting to someone else's post
-    if (result && poast.author !== our) {
-      addNotification({
-        type: "react",
-        from: our,
-        message: `You reacted to ${poast.author}'s post`,
-        reaction: s,
-        postId: poast.id,
-      });
-    }
+    const result = await api!.addReact(user, poast.id, s);
     return result;
   }
   return <ReactModal send={sendReact} />;

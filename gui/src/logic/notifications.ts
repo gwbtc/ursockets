@@ -4,7 +4,7 @@ import type { Skein } from "./hark";
 
 export function skeinToNote(skein: Skein): Result<Notification> {
   const path = skein.top.wer.split("/").filter((s) => !!s);
-  console.log("skein path", path);
+
   const key = path[0];
   if (!key) return { error: "no path" };
   if (key === "fans") {
@@ -74,15 +74,20 @@ export function skeinToNote(skein: Skein): Result<Notification> {
     };
     return { ok: n };
   } else if (key === "post") {
+    const type =
+      path[1] === "react" ? "reactions" :
+      path[1];
     const ship = path[2];
     const from = { urbit: ship };
+
     const n: Notification = {
       id: skein.top.id,
-      type: "follow",
+      type: type,
       from,
       timestamp: skein.time,
       unread: skein.unread,
       message: skein.top.con,
+      postId: `${path[3]}/${path.at(-2)?.replaceAll(".", "")}`,
     };
     return { ok: n };
   } else return { error: "bad notification" };
