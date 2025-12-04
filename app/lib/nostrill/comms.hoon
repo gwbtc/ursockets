@@ -213,8 +213,11 @@
       =.  quoted.engagement.u.poast  (~(del in quoted.engagement.u.poast) spid)
       =.  feed.state  (put:orm:feed feed.state src.e u.poast)
       =/  f=fact:comms  [%post %changes u.poast]
+      =/  pw  [u.poast (some pubkey) ~ ~ profile]
+      =/  jfact=fact:ui:sur  [%post %upd pw]
       :_  state
       :~  (update-followers:cards:lib f)
+          (update-ui:cards:lib jfact)
           hark-card
       ==
     %rp
