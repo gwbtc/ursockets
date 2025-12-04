@@ -127,6 +127,8 @@
 ::  engagement pokes, heads up when replying etc. to a post on your feed
 ++  handle-eng
   |=  e=engagement:comms
+  =/  profile  (~(get by profiles.state) [%urbit our.bowl])
+  =/  pubkey   pub.i.keys.state
   =/  user  [%urbit src.bowl]
   ?-  -.e
     %reply
@@ -142,9 +144,16 @@
       =.  feed.state  (put:orm:feed feed.state id.child.e child.e)
       =/  f=fact:comms  [%post %add child.e]
       =/  f2=fact:comms  [%post %changes u.poast]
+      =/  pw  [u.poast (some pubkey) ~ ~ profile]
+      =/  jfact=fact:ui:sur  [%post %upd pw]
+      =/  rep-profile  (~(get by profiles.state) urbit+author.child.e)
+      =/  pw-rep  [child.e ~ ~ ~ rep-profile]
+      =/  jfact-rep=fact:ui:sur  [%post %add pw]
       :_  state
       :~  (update-followers:cards:lib f)
           (update-followers:cards:lib f2)
+          (update-ui:cards:lib jfact)
+          (update-ui:cards:lib jfact-rep)
           hark-card
       ==
     %del-parent
@@ -165,9 +174,12 @@
       =.  feed.state  =<  +  (del:orm:feed feed.state child.e)
       =.  children.u.poast  (~(del in children.u.poast) child.e)
       =.  feed.state  (put:orm:feed feed.state parent.e u.poast)
+      =/  pw  [u.poast (some pubkey) ~ ~ profile]
+      =/  jfact=fact:ui:sur  [%post %upd pw]
       :_  state
       :~  (update-followers:cards:lib [%post %changes u.poast])
           (update-followers:cards:lib [%post %del child.e])
+          (update-ui:cards:lib jfact)
           hark-card
       ==
     :: TODO ideally we want the full quote to display it within the post engagement. So do we change quoted.engagement.post? What if the quoter edits the quote down the line, etc.
@@ -182,8 +194,11 @@
       =.  quoted.engagement.u.poast  (~(put in quoted.engagement.u.poast) spid)
       =.  feed.state  (put:orm:feed feed.state src.e u.poast)
       =/  f=fact:comms  [%post %changes u.poast]
+      =/  pw  [u.poast (some pubkey) ~ ~ profile]
+      =/  jfact=fact:ui:sur  [%post %upd pw]
       :_  state
       :~  (update-followers:cards:lib f)
+          (update-ui:cards:lib jfact)
           hark-card
       ==
     %del-quote
@@ -198,10 +213,12 @@
       =.  quoted.engagement.u.poast  (~(del in quoted.engagement.u.poast) spid)
       =.  feed.state  (put:orm:feed feed.state src.e u.poast)
       =/  f=fact:comms  [%post %changes u.poast]
+      =/  pw  [u.poast (some pubkey) ~ ~ profile]
+      =/  jfact=fact:ui:sur  [%post %upd pw]
       :_  state
       :~  (update-followers:cards:lib f)
+          (update-ui:cards:lib jfact)
           hark-card
-      ::  TODO: update %ui card
       ==
     %rp
       =/  poast  (get:orm:feed feed.state src.e)
@@ -218,10 +235,12 @@
         (~(put in shared.engagement.u.poast) spid)
       =.  feed.state  (put:orm:feed feed.state src.e u.poast)
       =/  f=fact:comms  [%post %changes u.poast]
+      =/  pw  [u.poast (some pubkey) ~ ~ profile]
+      =/  jfact=fact:ui:sur  [%post %upd pw]
       :_  state
       :~  (update-followers:cards:lib f)
+          (update-ui:cards:lib jfact)
            hark-card
-      ::  TODO: update %ui card
       ==
     %reaction
       =/  poast  (get:orm:feed feed.state post.e)
@@ -235,10 +254,12 @@
       =.  reacts.engagement.u.poast  (~(put by reacts.engagement.u.poast) src.bowl [reaction.e sign])
       =.  feed.state  (put:orm:feed feed.state post.e u.poast)
       =/  f=fact:comms  [%post %changes u.poast]
+      =/  pw  [u.poast (some pubkey) ~ ~ profile]
+      =/  jfact=fact:ui:sur  [%post %upd pw]
       :_  state
       :~  (update-followers:cards:lib f)
+          (update-ui:cards:lib jfact)
           hark-card
-      ::  TODO: update %ui card
       ==
   ==
 

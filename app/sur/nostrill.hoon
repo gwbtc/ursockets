@@ -119,6 +119,7 @@ $%   [%reply p=post:tp]
   ==
   +$  post-fact
   $%  [%add post-wrapper]
+      [%upd post-wrapper]
       [%del post-wrapper]
   ==
   +$  fols-fact
