@@ -188,7 +188,12 @@
         =/  fact  [%post %add pw]
         =/  ui-card    (update-ui:cards:lib fact)
         =/  fact-card  (update-followers:cards:lib fact)
+
+        =/  mentions  (extract-mentions:postlib p)
+        =/  mention-cards  %+  turn  mentions  |=  s=@p
+          %+  poke-host:crds  s  [%eng %mention p]
         :_  state
+          %+  weld  mention-cards
           :~  ui-card
               fact-card
           ==
@@ -206,7 +211,13 @@
         =/  fact-card  (update-followers:cards:lib fact)
         =/  eng-poke  [%eng (headsup-poke poke p)]
         =/  eng-card  (poke-host:crds host.p eng-poke)
+
+        =/  mentions  (extract-mentions:postlib p)
+        =/  mention-cards  %+  turn  mentions  |=  s=@p
+          %+  poke-host:crds  s  [%eng %mention p]
+        
         :_  state
+          %+  weld  mention-cards
           :~  ui-card
               fact-card
               eng-card
@@ -238,7 +249,13 @@
         =/  fact-card  (update-followers:cards:lib fact)
         =/  eng-poke  [%eng (headsup-poke poke p)]
         =/  eng-card  (poke-host:crds host.p eng-poke)
+
+        =/  mentions  (extract-mentions:postlib p)
+        =/  mention-cards  %+  turn  mentions  |=  s=@p
+          %+  poke-host:crds  s  [%eng %mention p]
+        
         :_  state
+          %+  weld  mention-cards
           :~  ui-card
               fact-card
               eng-card
