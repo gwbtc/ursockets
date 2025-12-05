@@ -1,5 +1,5 @@
-/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
-    feed=trill-feed,
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui, noti=nostrill-notif,
+    tf=trill-feed, tp=trill-post,
     wrap
 /+  sr=sortug, common=json-common, trill=json-trill, nostr=json-nostr
 |%
@@ -17,10 +17,27 @@
     feed+(feed-with-cursor:en:trill feed ~ ~)
     nostr+(en-nostr-feed nostr-feed)
     following+(enfollowing following)
-    following2+(feed-with-cursor:en:trill following2 ~ ~)
+    following2+(global-with-cursor following2 ~ ~)
     ['followGraph' (engraph follow-graph)]
   ~
   ==
+
+  ++  en-global  |=  gf=global-feed:sur  ^-  json
+    %-  pairs
+    %+  turn  (tap:uorm:sur gf)
+    |=  [=upid:sur p=post:tp]
+      ^-  [@ta json]
+    :-  (crip (scow:sr %ud `@ud`id.upid))
+        (poast:en:trill p)
+
+  ++  global-with-cursor
+    |=  [gf=global-feed:sur start=(unit @da) end=(unit @da)]  ^-  json
+    %:  pairs
+      global+(en-global gf)
+      start+(cursor:en:trill start)
+      end+(cursor:en:trill end)
+    ~
+    ==
   ++  en-nostr-feed
   |=  feed=nostr-feed:sur  ^-  json
     :-  %a  %+  turn  (tap:norm:sur feed)  |=  [id=@ud ev=event:nsur]
@@ -48,9 +65,9 @@
         :-  +.jkey  (user-meta:en:nostr p)
 
   ++  enfollowing
-  |=  m=(map user:sur feed:feed)
+  |=  m=(map user:sur feed:tf)
   ^-  json
-    %-  pairs  %+  turn  ~(tap by m)  |=  [key=user:sur f=feed:feed]
+    %-  pairs  %+  turn  ~(tap by m)  |=  [key=user:sur f=feed:tf]
       =/  jkey  (user key)
       ?>  ?=(%s -.jkey)
       :: TODO proper cursor stuff
@@ -104,7 +121,7 @@
       %relays  (en-relays +.nf)
     ==
   ++  user-data
-    |=  ud=[=fc:feed profile=(unit user-meta:nsur)]
+    |=  ud=[=fc:tf profile=(unit user-meta:nsur)]
     %:  pairs
       feed+(feed-with-cursor:en:trill fc.ud)
       :-  %profile  ?~  profile.ud  ~  (user-meta:en:nostr u.profile.ud)

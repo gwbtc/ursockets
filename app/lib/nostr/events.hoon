@@ -1,4 +1,5 @@
-/-  sur=nostrill, nsur=nostr, post=trill-post, gate=trill-gate
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms,
+    post=trill-post, gate=trill-gate
 /+  js=json-nostr, sr=sortug, trill=trill-post, nostr-keys
 |%
 ::  filters
@@ -144,7 +145,7 @@
 
 ++  event-to-post
   |=  [=event:nsur profile=(unit user-meta:nsur) relay=(unit @t)]
-    ^-  post-wrapper:sur
+    ^-  post-wrapper:comms
     ::  most people on nostr don't use markdown, they just spam links like retards
     =/  cl  (tokenize:trill content.event)
     =/  ts  (from-unix:jikan:sr created-at.event)
@@ -165,6 +166,8 @@
       *signature:post
       tags=~
     ==  
-    =/  meta  [(some pubkey.event) (some id.event) relay profile]
+    =/  relays=(list @t)  ?~  relay  ~  ~[u.relay]
+    :: TODO make this more reliable
+    =/  meta=nostr-meta:comms  [pubkey.event profile `id.event relays]
     [p meta]
 --

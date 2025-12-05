@@ -38,34 +38,33 @@
     =/  c2   (urbit-leave +.user)
     :~(c1 c2)
 
-++  handle-follow-res  |=  =res:comms
-  ?-  -.res
-    %ng   
-          :_  state
-          =/  =fact:ui  [%hark %fols [%urbit src.bowl] .n msg.res]
-          =/  c  (update-ui:cards:lib fact)  :~(c)
-    %ok
-      ?-  -.p.res
-        %feed  (handle-follow-ok [%urbit src.bowl] fc.+.p.res profile.+.p.res)
-        %thread  `state
-      ==
+++  handle-follow-res  |=  fr=fols-res:comms
+  ^-  (quip card:agent:gall _state)
+  =/  =user:sur  [%urbit src.bowl]
+  =?  state  ?=(^ fr)
+    =.  following.state   (~(put by following.state) user feed.fc.data.fr)
+    =.  following2.state  (add-new-feed:feedlib following2.state feed.fc.data.fr)
+    =?  profiles.state  ?=(^ profile.data.fr)  (~(put by profiles.state) user u.profile.data.fr)
+    =/  graph  (~(get by follow-graph.state) [%urbit our.bowl])
+    =/  follows  ?~  graph  (silt ~[user])  (~(put in u.graph) user)
+    =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] follows)
+    state
+  ::
+  =/  =res:comms  ['' %fols fr]
+  =/  =fact:ui      [%fols %new user now.bowl fr]
+  :: =/  n=notif:noti  [%res [user now.bowl res]]
+  :: =/  hark-card  (send-hark:harklib n bowl)
+  =/  ui-card    (update-ui:cards:lib fact)
+  :_  state
+  :~
+     :: hark-card
+      ui-card
   ==
+
 ++  handle-refollow  |=  sip=@p
   :_  state  :_   ~
   :: (urbit-watch sip)
   [%pass /follow %agent [sip dap.bowl] %watch /follow]
-
-++  handle-follow-ok  |=  [=user:sur =fc:feed profile=(unit user-meta:nsur)]
-  ^-  (quip card:agent:gall _state)
-  =.  following.state   (~(put by following.state) user feed.fc)
-  =.  following2.state  (add-new-feed:feedlib following2.state feed.fc)
-  =/  graph  (~(get by follow-graph.state) [%urbit our.bowl])
-  =/  follows  ?~  graph  (silt ~[user])  (~(put in u.graph) user)
-  =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] follows)
-  =.  profiles.state  ?~  profile  profiles.state  (~(put by profiles.state) user u.profile)
-  :_  state
-    =/  =fact:ui  [%fols %new [%urbit src.bowl] fc profile]
-    =/  c  (update-ui:cards:lib fact)  :~(c)
     
 
 ++  handle-kick-nack  |=  p=@p

@@ -1,6 +1,22 @@
 /-  tp=trill-post, md=markdown
 /+  sr=sortug, mdlib=markdown
 |%
+
+++  get-ref
+  |=  p=post:tp
+  ^-  (unit [ship @da])
+  =/  refs=(list block:tp)
+    %-  zing
+    %+  turn  (tap:corm:tp contents.p)
+    |=  [t=time cl=content-list:tp]
+    %+  skim  cl
+    |=(b=block:tp =(%ref -.b)) 
+  ?~  refs  ~
+  =/  ref  (head refs)
+  ?.  ?=([%ref @ ship=@ path=*] ref)  ~
+  ?~  ref-id=(slaw:sr %ud (head path.ref))  ~
+  `[ship.ref u.ref-id]
+
 ++  build-sp
   |=  [host=@p author=@p input=@t parent=(unit @) thread=(unit @)]
   ^-  sent-post:tp
