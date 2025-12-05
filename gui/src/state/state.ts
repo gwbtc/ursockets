@@ -5,10 +5,12 @@ import type { ComposerData } from "@/types/ui";
 import { create } from "zustand";
 import type { Fact, Relays, UserProfile } from "@/types/nostrill";
 import type { Event } from "@/types/nostr";
-import type { FC, Poast } from "@/types/trill";
+import type { FC, Gate, Poast } from "@/types/trill";
 import type { Notification } from "@/types/notifications";
 import { useShallow } from "zustand/shallow";
+import type { HarkAction, Skein } from "@/types/hark";
 import { skeinToNote } from "@/logic/notifications";
+import { defaultGate } from "@/logic/bunts";
 // TODO handle airlock connection issues
 // the SSE pipeline has a "status-update" event FWIW
 // type AirlockState = "connecting" | "connected" | "failed";
@@ -32,8 +34,8 @@ export type LocalState = {
   // Notifications
   notifications: Notification[];
   setNotifications: (n: Notification[]) => void;
-  dismissNotification: (n: string) => void;
   lastFact: Fact | null;
+  feedPerms: Gate;
 };
 
 const creator = create<LocalState>();
@@ -55,25 +57,25 @@ export const useStore = creator((set, get) => ({
         set({ notifications });
       }
     });
-    // api.subscribeHark((data: HarkAction) => {
-    //   console.log("hark data", data);
-    //   if ("add-yarn" in data) {
-    //     if (data["add-yarn"].yarn.rope.desk !== "nostrill") return;
-    //     const nots = get().notifications;
-    //     const yarn = data["add-yarn"].yarn;
-    //     const skein: Skein = {
-    //       top: yarn,
-    //       time: yarn.time,
-    //       "ship-count": 0,
-    //       unread: true,
-    //       count: 0,
-    //     };
-    //     const note = skeinToNote(skein);
-    //     if ("error" in note) return;
-    //     const notifications = [...nots, note.ok];
-    //     set({ notifications });
-    //   }
-    // });
+    api.subscribeHark((data: HarkAction) => {
+      console.log("hark data", data);
+      if ("add-yarn" in data) {
+        if (data["add-yarn"].yarn.rope.desk !== "nostrill") return;
+        const nots = get().notifications;
+        const yarn = data["add-yarn"].yarn;
+        const skein: Skein = {
+          top: yarn,
+          time: yarn.time,
+          "ship-count": 0,
+          unread: true,
+          count: 0,
+        };
+        const note = skeinToNote(skein);
+        if ("error" in note) return;
+        const notifications = [...nots, note.ok];
+        set({ notifications });
+      }
+    });
     await api.subscribeStore((data) => {
       if ("state" in data) {
         console.log("state", data.state);
@@ -95,7 +97,7 @@ export const useStore = creator((set, get) => ({
         if ("fols" in fact) {
           const { following, profiles } = get();
           if ("new" in fact.fols) {
-            const { user, ts, data } = fact.fols.new;
+            const { user, data } = fact.fols.new;
             if (data.data === "maybe") return;
             if (data.data) {
               const { feed, profile } = data.data;
@@ -172,11 +174,7 @@ export const useStore = creator((set, get) => ({
   setNotifications: (notifications) => {
     set({ notifications });
   },
-  dismissNotification: (id) => {
-    const nots = get().notifications;
-    const notifications = nots.filter((n) => n.id !== id);
-    set({ notifications });
-  },
+  feedPerms: defaultGate,
 }));
 
 const useShallowStore = <T extends (state: LocalState) => any>(
