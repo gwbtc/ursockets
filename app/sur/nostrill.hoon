@@ -1,4 +1,5 @@
-/-  nostr, trill=trill-feed, tp=trill-post, gate=trill-gate
+/-  *wrap, nostr, comms=nostrill-comms,
+    trill=trill-feed, tp=trill-post, gate=trill-gate
 |%
 +$  state  state-0
 +$  state-0
@@ -19,7 +20,9 @@
       following2=global-feed
       =global-feed
       follow-graph=(map user (set user))
-
+      ::  Save incoming requests and responses to handle async
+      =requests
+      =responses
   ==
 
 +$  global-feed  ((mop upid post:tp) ugth)
@@ -34,4 +37,16 @@
 +$  user  $%([%urbit p=@p] [%nostr p=@ux])
 
 +$  follow  [pubkey=@ux name=@t relay=(unit @t)]
+::  request handling
+:: 
++$  requests    ((mop @da req:comms) gth)
++$  responses   ((mop @da ruling) gth)
+++  orq         ((on @da req:comms) gth)
+++  ors         ((on @da ruling) gth)
++$  ruling  ::  my responses to received requests
+  $:  req=(enbowl req:comms)
+      =gate:gate
+      =decision
+  ==
++$  decision  [time=@da approved=? manual=? msg=@t]
 --
