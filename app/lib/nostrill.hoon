@@ -1,4 +1,4 @@
-/-  post=trill-post, nsur=nostr, sur=nostrill, gate=trill-gate, comms=nostrill-comms
+/-  post=trill-post, nsur=nostr, sur=nostrill, gate=trill-gate, comms=nostrill-comms, ui=nostrill-ui
 /+  trill=trill-post, nostr-keys, sr=sortug, jsonlib=json-nostrill,
     ws=websockets
 |%
@@ -54,7 +54,7 @@
     :~  relay-binding
         ui-binding
     ==
-  ++  update-ui  |=  =fact:ui:sur  ^-  card:agent:gall
+  ++  update-ui  |=  =fact:ui  ^-  card:agent:gall
     =/  jon  (fact:en:jsonlib fact)
     [%give %fact ~[/ui] %json !>(jon)]
   :: ++  update-followers  |=  =fact:comms  ^-  card:agent:gall

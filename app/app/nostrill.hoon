@@ -1,4 +1,5 @@
-/-  sur=nostrill, nsur=nostr, tf=trill-feed, tp=trill-post, comms=nostrill-comms, hark
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
+    tf=trill-feed, tp=trill-post, hark
 /+  lib=nostrill, nostr-keys, sr=sortug, scri,
     ws=websockets,
     bip-b173,
@@ -151,7 +152,7 @@
   ::
   ++  on-ui
     =/  jon=json  !<(json vase)
-    =/  upoke=(unit poke:ui:sur)  (ui:de:jsonlib jon)
+    =/  upoke=(unit poke:ui)  (ui:de:jsonlib jon)
     ?~  upoke  ~&  bad-ui-poke=jon  `this
     ?-  -.u.upoke
       %keys  handle-cycle-keys
@@ -171,7 +172,7 @@
         ~&  new-keys=keys
         `this
 
-  ++  handle-begs  |=  poke=begs-poke:ui:sur
+  ++  handle-begs  |=  poke=begs-poke:ui
   ?-  -.poke
     %feed
       =/  cs  ~
@@ -180,7 +181,7 @@
       =/  cs  ~
       [cs this]
   ==
-  ++  handle-fols  |=  poke=fols-poke:ui:sur
+  ++  handle-fols  |=  poke=fols-poke:ui
     =^  cs  state
       ?-  -.poke
         %add  (handle-add:fols +.poke)
@@ -189,7 +190,7 @@
       ==
       [cs this]
 
-  ++  handle-prof  |=  poke=prof-poke:ui:sur
+  ++  handle-prof  |=  poke=prof-poke:ui
     ?-  -.poke
       %add
         =.  profiles  (~(put by profiles) [%urbit our.bowl] +.poke)
@@ -201,7 +202,7 @@
         ::  TODO
         `this
     ==
-  ++  handle-rela  |=  poke=relay-poke:ui:sur
+  ++  handle-rela  |=  poke=relay-poke:ui
     ::  TODO fix this somehow
     =^  cs  state
     ?+  -.poke  (handle-rela:mutan poke)
@@ -579,7 +580,7 @@
       %http
       `this
       %ui
-        =/  =fact:ui:sur  [%post %add *post-wrapper:sur]
+        =/  =fact:ui  [%post %add *post-wrapper:sur]
         =/  card     (update-ui:cards fact)
         :_  this  :~(card)
       %kick

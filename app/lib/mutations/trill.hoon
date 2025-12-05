@@ -1,4 +1,4 @@
-/-  sur=nostrill, nsur=nostr, comms=nostrill-comms,
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
     post=trill-post, gate=trill-gate, feed=trill-feed
     
 /+  appjs=json-nostrill,
@@ -61,7 +61,7 @@
     
   
 ++  headsup-poke
-  |=  [poke=post-poke:ui:sur p=post:post]  ^-  engagement:comms
+  |=  [poke=post-poke:ui p=post:post]  ^-  engagement:comms
   ?-  -.poke
     %add  !!
     %del       [%del-reply id.poke id.p]
@@ -71,7 +71,7 @@
     %reaction  [%reaction id.poke reaction.poke]
   ==
 ::
-++  handle-post  |=  poke=post-poke:ui:sur
+++  handle-post  |=  poke=post-poke:ui
   ^-  (quip card _state)
   |^
   ~&  handle-post-ui=poke
@@ -92,7 +92,7 @@
           =/  pw  [p (some pubkey) ~ ~ profile]
           =/  eng-cards=(list card)  
             (del-parent-cards children.p id.p)
-          =/  jfact=fact:ui:sur  [%post %del pw]
+          =/  jfact=fact:ui  [%post %del pw]
           =/  =fact:comms  [%post %del id.poke]
           =/  upd-fol-cards
             %+  turn  ~(tap in children.p)
@@ -159,7 +159,7 @@
           (build-post:trill now.bowl pubkey sp)
         =.  state  (add-to-feed p)
         =/  pw  [p (some pubkey) ~ ~ profile]
-        =/  jfact=fact:ui:sur  [%post %add pw]
+        =/  jfact=fact:ui  [%post %add pw]
         =/  ui-card    (update-ui:cards:lib jfact)
         :_  state
           =/  =fact:comms  [%post %add p]
@@ -176,7 +176,7 @@
           (build-post:trill now.bowl pubkey sp)
         =.  state  (add-to-feed p)
         =/  pw  [p (some pubkey) ~ ~ profile]
-        =/  jfact=fact:ui:sur  [%post %add pw]
+        =/  jfact=fact:ui  [%post %add pw]
         =/  ui-card    (update-ui:cards:lib jfact)
         =/  eng-poke  [%eng (headsup-poke poke p)]
         =/  eng-card  (poke-host:crds host.p eng-poke)
@@ -209,7 +209,7 @@
           (build-post:trill now.bowl pubkey sp)
         =.  state  (add-reply p)
         =/  pw  [p (some pubkey) ~ ~ profile]
-        =/  jfact=fact:ui:sur  [%post %add pw]
+        =/  jfact=fact:ui  [%post %add pw]
         =/  ui-card    (update-ui:cards:lib jfact)
         =/  eng-poke  [%eng (headsup-poke poke p)]
         =/  eng-card  (poke-host:crds host.p eng-poke)
@@ -229,7 +229,7 @@
           (build-post:trill now.bowl pubkey sp)
         =.  state  (add-to-feed p)
         =/  pw  [p (some pubkey) ~ ~ profile]
-        =/  jfact=fact:ui:sur  [%post %add pw]
+        =/  jfact=fact:ui  [%post %add pw]
         =/  ui-card    (update-ui:cards:lib jfact)
         =/  eng-poke  [%eng (headsup-poke poke p)]
         =/  eng-card  (poke-host:crds host.p eng-poke)
@@ -248,7 +248,7 @@
             our.bowl  [reaction.poke *signature:post]
           =.  state  (add-to-feed p)
           =/  pw  [p (some pubkey) ~ ~ profile]
-          =/  jfact=fact:ui:sur  [%post %add pw]
+          =/  jfact=fact:ui  [%post %add pw]
           =/  ui-card    (update-ui:cards:lib jfact)
           =/  eng-poke  [%eng (headsup-poke poke p)]
           =/  eng-card  (poke-host:crds host eng-poke)
@@ -274,7 +274,7 @@
               our.bowl  [reaction.poke *signature:post]
             =.  state  (add-to-feed p)
             =/  pw  [p (some pubkey) ~ ~ profile]
-            =/  jfact=fact:ui:sur  [%post %add pw]
+            =/  jfact=fact:ui  [%post %add pw]
             =/  ui-card    (update-ui:cards:lib jfact)
             =/  eng-poke  [%eng (headsup-poke poke p)]
             =/  eng-card  (poke-host:crds host.p eng-poke)
@@ -333,7 +333,7 @@
     :_  state
     =/  profile  (~(get by profiles.state) user)
     =/  pubkey  0  :: TODO
-    =/  jfact=fact:ui:sur
+    =/  jfact=fact:ui
       ?:  ?=(%del -.pf)
         =/  p  *post:post
         =/  p  p(host src.bowl, id id.pf)

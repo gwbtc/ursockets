@@ -1,4 +1,4 @@
-/-  sur=nostrill, nsur=nostr, comms=nostrill-comms,
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui
     post=trill-post, gate=trill-gate, feed=trill-feed
     
 /+  appjs=json-nostrill,
@@ -306,7 +306,7 @@
       %keys  `state
       :: TODO really need a way to keep track of everyone's pubkeys
     ==
-  ++  handle-rela  |=  rh=relay-handling:ui:sur
+  ++  handle-rela  |=  rh=relay-handling:ui
     ^-  (quip card _state)
     =/  rl  get-relay
     ?~  rl  ~&  >>>  "no relay!!!!"  `state

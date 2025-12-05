@@ -1,4 +1,5 @@
-/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, feed=trill-feed
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
+    feed=trill-feed
 /+  lib=nostrill, js=json-nostr, nostr-client, sr=sortug, constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill, mutations-nostr
 |_  [=state:sur =bowl:gall]
 ++  handle-add  |=  =user:sur
@@ -30,7 +31,7 @@
   =/  nset  (~(del in u.graph) user)
   =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] nset)
   :_  state
-    =/  =fact:ui:sur  [%fols %quit user]
+    =/  =fact:ui  [%fols %quit user]
     =/  c1  (update-ui:cards:lib fact)
     ?.  ?=(%urbit -.user)  :~(c1)
     ~&  >>  leaving=user
@@ -41,7 +42,7 @@
   ?-  -.res
     %ng   
           :_  state
-          =/  =fact:ui:sur  [%hark %fols [%urbit src.bowl] .n msg.res]
+          =/  =fact:ui  [%hark %fols [%urbit src.bowl] .n msg.res]
           =/  c  (update-ui:cards:lib fact)  :~(c)
     %ok
       ?-  -.p.res
@@ -63,7 +64,7 @@
   =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] follows)
   =.  profiles.state  ?~  profile  profiles.state  (~(put by profiles.state) user u.profile)
   :_  state
-    =/  =fact:ui:sur  [%fols %new [%urbit src.bowl] fc profile]
+    =/  =fact:ui  [%fols %new [%urbit src.bowl] fc profile]
     =/  c  (update-ui:cards:lib fact)  :~(c)
     
 
@@ -75,7 +76,7 @@
   =/  ngraph  (~(del in u.graph) [%urbit p])
   =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] ngraph)
   :_  state
-    =/  =fact:ui:sur  [%fols %quit %urbit src.bowl]
+    =/  =fact:ui  [%fols %quit %urbit src.bowl]
     =/  c  (update-ui:cards:lib fact)  :~(c)
 
 

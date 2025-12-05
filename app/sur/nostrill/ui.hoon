@@ -1,3 +1,4 @@
+/-  *wrap, sur=nostrill, nsur=nostr, comms=nostrill-comms
 |%
 +$  poke
   $%  [%fols fols-poke]
@@ -14,21 +15,21 @@
   ==
 +$  post-poke
   $%  [%add content=@t]
-      [%reply content=@t host=user id=@da thread=@da]
-      [%quote content=@t host=user id=@da]
-      [%rp host=user id=@da]  :: NIP-18
-      [%reaction host=user id=@da reaction=@t]
+      [%reply content=@t host=user:sur id=@da thread=@da]
+      [%quote content=@t host=user:sur id=@da]
+      [%rp host=user:sur id=@da]  :: NIP-18
+      [%reaction host=user:sur id=@da reaction=@t]
       :: [%rt id=@ux pubkey=@ux relay=@t]  :: NIP-18
-      [%del host=user id=@da]
+      [%del host=user:sur id=@da]
   ==
 +$  fols-poke
-  $%  [%add =user]
-      [%del =user]
+  $%  [%add =user:sur]
+      [%del =user:sur]
   ==
 +$  prof-poke
-  $%  [%add meta=user-meta:nostr]
+  $%  [%add meta=user-meta:nsur]
       [%del ~]
-      [%fetch p=(list user)]
+      [%fetch p=(list user:sur)]
   ==
 +$  relay-poke
   $%  [%add p=@t]
@@ -47,25 +48,22 @@
 :: facts
 +$  fact
   $%  [%nostr nostr-fact]
-      [%post post-fact]
-      [%prof (map user user-meta:nostr)]
-      [%enga p=post-wrapper reaction=*]
+      [%post post-fact:comms]
       [%fols fols-fact]
-      [%hark =notif]
-  ==
-+$  nostr-fact
-  $%  [%feed feed=nostr-feed]
-      [%user feed=nostr-feed]
-      [%thread feed=nostr-feed]
-      [%event event:nostr]
-      [%relays (map @ relay-stats:nostr)]
-  ==
-+$  post-fact
-  $%  [%add post-wrapper]
-      [%del post-wrapper]
+      [%prof (map user:sur user-meta:nsur)]
+      :: our own keys!
+      [%keys pub=@ux]
   ==
 +$  fols-fact
-  $%  [%new =user =fc:trill meta=(unit user-meta:nostr)]
-      [%quit =user]
+  $%  [%new (enbowl fols-res:comms)]
+      ::  UI feedback that the backend handled the click
+      [%quit =user:sur]
+  ==
++$  nostr-fact
+  $%  [%feed feed=nostr-feed:sur]
+      [%user feed=nostr-feed:sur]
+      [%thread feed=nostr-feed:sur]
+      [%event event:nsur]
+      [%relays (map @ relay-stats:nsur)]
   ==
 --

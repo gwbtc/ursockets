@@ -1,4 +1,4 @@
-/-  sur=nostrill, nsur=nostr, feed=trill-feed, comms=nostrill-comms
+/-  sur=nostrill, nsur=nostr, feed=trill-feed, comms=nostrill-comms, ui=nostrill-ui
 /+  sr=sortug, common=json-common, trill=json-trill, nostr=json-nostr
 |%
 ++  en
@@ -76,7 +76,7 @@
       %nostr  (hex:en:common +.u)
     ==
   ::  ui facts
-  ++  fact  |=  f=fact:ui:sur  ^-  json
+  ++  fact  |=  f=fact:ui  ^-  json
     %+  frond  %fact
     %+  frond  -.f
     ?-  -.f
@@ -87,7 +87,7 @@
       %fols    (fols +.f)
       %hark    (hark +.f)
     ==
-  ++  en-nostr  |=  nf=nostr-fact:ui:sur  ^-  json
+  ++  en-nostr  |=  nf=nostr-fact:ui  ^-  json
     %+  frond  -.nf
     ?-  -.nf
       %feed    (en-nostr-feed +.nf)
@@ -96,7 +96,7 @@
       %event   (event:en:nostr +.nf)
       %relays  (en-relays +.nf)
     ==
-  ++  fols  |=  ff=fols-fact:ui:sur  ^-  json
+  ++  fols  |=  ff=fols-fact:ui  ^-  json
     %+  frond  -.ff
     ?-  -.ff
       %quit  (user +.ff)
@@ -107,10 +107,10 @@
             ~
         ==
     ==
-  ++  tedfact  |=  pf=post-fact:ui:sur  ^-  json
+  ++  tedfact  |=  pf=post-fact:ui  ^-  json
     %+  frond  -.pf
     (post-wrapper +.pf)
-  ++  postfact  |=  pf=post-fact:ui:sur  ^-  json
+  ++  postfact  |=  pf=post-fact:ui  ^-  json
     %+  frond  -.pf
     (post-wrapper +.pf)
 
@@ -135,7 +135,7 @@
   ::   :~  user+(user u)
   ::       profile+(user-meta:en:nostr prof)
   ::   ==
-  :: ++  beg-notif  |=  [beg=begs-poke:ui:sur accepted=? msg=@t]
+  :: ++  beg-notif  |=  [beg=begs-poke:ui accepted=? msg=@t]
   ::   ^-  json
   ::   %+  frond  -.beg
   ::   %-  pairs
