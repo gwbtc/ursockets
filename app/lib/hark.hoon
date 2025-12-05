@@ -1,5 +1,5 @@
 /-  wrap, hark, noti=nostrill-notif, comms=nostrill-comms
-/+  lib=nostrill
+/+  lib=nostrill, sr=sortug
 |%
 ++  to-hark
   |=  [n=notif:noti =bowl:gall]  ^-  yarn:hark
@@ -20,18 +20,18 @@
                   'He left the following request message: '
                    msg.p.n
               ==
-              /req/fans/(scot %p ship)/pending
+              /req/fols/(scot %p ship)/maybe
         ::
         ?.  approved.u.solved.n
           :-  :~  ship-token
                   'Tried to follow you but you rejected his request'
               ==
-              /req/fans/(scot %p ship)/ng
+              /req/fols/(scot %p ship)/ng
         ::
           :-  :~  ship-token
                   'Followed you'
               ==
-              /req/fans/(scot %p ship)/ok
+              /req/fols/(scot %p ship)/ok
       ::  begs
       =/  beg=beg-type:comms  +.req
       ?@  beg  ::  %feed
@@ -41,7 +41,7 @@
                   'He left the following request message: '
                    msg.p.n
               ==
-              /req/begs/feed/(scot %p ship)/pending
+              /req/begs/feed/(scot %p ship)/maybe
         ::
           ?.  approved.u.solved.n
             :-  :~  ship-token
@@ -63,7 +63,7 @@
                   'He left the following request message: '
                    msg.p.n
               ==
-              /req/begs/thread/[ids]/(scot %p ship)/pending
+              /req/begs/thread/(scot %p ship)/[ids]/maybe
         ::
           ?.  approved.u.solved.n
             :-  :~  ship-token
@@ -71,13 +71,13 @@
                     ids
                     ', but you rejected his request'
                 ==
-                /req/begs/thread/[ids]/(scot %p ship)/ng
+                /req/begs/thread/(scot %p ship)/[ids]/ng
           ::
             :-  :~  ship-token
                     'Requested and was granted one-time access to your thread with id: '
                     ids
                 ==
-                /req/begs/thread/[ids]/(scot %p ship)/ok
+                /req/begs/thread/(scot %p ship)/[ids]/ok
 
     %fol-res
       =/  ship  (user-to-atom:lib user.n)
@@ -121,28 +121,25 @@
                 /res/begs/feed/(scot %p ship)/ng
         %thread
           =/  ids  (scot %ud `@ud`id.res)
-      ::     =/  dt=(deferred:wrap thread-data:comms)  +>.res
-          :: ?@  dt
-          ::   :-  :~  ship-token
-          ::           ' received your request to access his thread of id: '
-          ::           ids
-          ::           ' but hasn\'t responded yet.'
-          ::       ==
-          ::       /res/begs/feed/(scot %p ship)/maybe
-          :: =/  at=(deferred:wrap thread-data:comms)  +.p.dt
-          :: ?^  dt
-          ::   :-  :~  ship-token
-          ::           ' accepted your request to access his thread of id:'
-          ::           ids
-          ::       ==
-          ::       /res/begs/thread/[ids]/(scot %p ship)/ok
-          :: ::
-          ::   :-  :~  ship-token
-          ::           ' rejected your request to access his thread of id:'
-          ::           ids
-          ::       ==
-          ::       /res/begs/thread/[ids]/(scot %p ship)/ng
-        [~ /]
+         ?@  p.+.res
+         :-  :~  ship-token
+                 ' received your request to access his thread of id: '
+                 ids
+                 ' but hasn\'t responded yet.'
+             ==
+             /res/begs/feed/(scot %p ship)/maybe
+       ?^  +.p.+.res
+         :-  :~  ship-token
+                 ' accepted your request to access his thread of id:'
+                 ids
+             ==
+             /res/begs/thread/(scot %p ship)/[ids]/ok
+       :: ::
+         :-  :~  ship-token
+                 ' rejected your request to access his thread of id:'
+                 ids
+             ==
+             /res/begs/thread/(scot %p ship)/[ids]/ng
         ==
     %post
       =/  ship  (user-to-atom:lib user.n)
@@ -228,6 +225,14 @@
           %new-relay
           :-  :~('A new relay has become available: ' url.n 'Try it out some time. You can add it to the settings page.')
             /nostr/new-relay/[url.n]
+          %keys
+          =/  ship  (user-to-atom:lib user.n)
+          =/  ship-token  [%ship ship]
+          :-  :~  ship-token
+                 ' has changed his Nostr pubkey. The new value is: '
+                  (crip (scow:sr %ux pubkey.n))
+              ==
+              /nostr/keys/(scot %p ship)
         ==
       
   ==
@@ -245,6 +250,13 @@
   |=  [n=notif:noti =bowl:gall]  ^-  card:agent:gall
   =/  y  (to-hark n bowl)
   (poke-hark y bowl)
+
+  
+++  clear-hark  |=  =bowl:gall
+  =/  h=action:hark  [%saw-seam %desk %nostrill]
+  [%pass /harrk %agent [our.bowl %hark] %poke %hark-action !>(h)]
+  
+
 :: |=  f=engagement:hark
 :: =/  id      (end 7 (shas %trill-hark eny.bowl))
 :: =/  pat-id  /[-.f]/(scot %da now.bowl)

@@ -16,5 +16,6 @@
 +$  nostr-notif
 $%   [%relay-down url=@t]
      [%new-relay url=@t]  ::  TODO
+     [%keys =user:sur pubkey=@ux]
 ==
 --

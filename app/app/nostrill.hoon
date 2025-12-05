@@ -14,6 +14,7 @@
     jsonlib=json-nostrill,
     feedlib=trill-feed, postlib=trill-post,
     seed,
+    harklib=hark,
     followlib=nostrill-follows
 /=  web  /web/router
 |%
@@ -211,6 +212,10 @@
   ::
   ++  debug  |=  noun=*
     ?+  noun  `this
+      %hark-c
+      :_  this
+      :~  (clear-hark:harklib bowl)
+      ==
       %perms
       ~&  >  perms=feed-perms
       `this
