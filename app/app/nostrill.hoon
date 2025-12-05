@@ -294,8 +294,8 @@
           :: ::     ::
               $(nests (dec nests))
             $(l t.l)
-       !!
-      :: `this
+       :: !!
+      `this
       %seed-thread
         =/  eny  (scow %p (end 5 eny.bowl))
         =/  content=@t  %-  crip  "THREAD OP \0a{eny}"
