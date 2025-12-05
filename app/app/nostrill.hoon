@@ -1,5 +1,5 @@
 /-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
-    tf=trill-feed, tp=trill-post, hark
+    tf=trill-feed, tp=trill-post
 /+  lib=nostrill, nostr-keys, sr=sortug, scri,
     ws=websockets,
     bip-b173,
@@ -10,11 +10,11 @@
     evlib=nostr-events,
     mutations-nostr,
     mutations-trill,
+    mutations-req,
     jsonlib=json-nostrill,
     feedlib=trill-feed, postlib=trill-post,
     seed,
-    harklib=hark,
-    comslib=nostrill-comms, followlib=nostrill-follows
+    followlib=nostrill-follows
 /=  web  /web/router
 |%
 +$  versioned-state  $%(state-0:sur)
@@ -29,8 +29,8 @@
     cards  ~(. cards:lib bowl)
     mutan  ~(. mutations-nostr [state bowl])
     mutat  ~(. mutations-trill [state bowl])
+    mutar  ~(. mutations-req [state bowl])
     scry   ~(. scri [state bowl])
-    coms   ~(. comslib [state bowl])
     fols   ~(. followlib [state bowl])
 ++  on-init
   ^-  (quip card:agent:gall agent:gall)
@@ -148,6 +148,7 @@
   ++  on-ui
     =/  jon=json  !<(json vase)
     =/  upoke=(unit poke:ui)  (ui:de:jsonlib jon)
+    ~&  upoke=upoke
     ?~  upoke  ~&  bad-ui-poke=jon  `this
     ?-  -.u.upoke
       %keys  handle-cycle-keys
@@ -210,14 +211,6 @@
   ::
   ++  debug  |=  noun=*
     ?+  noun  `this
-      %hark
-        =/  content=(list content:hark)
-          :~  'Lol hi'
-          ==
-        =/  n=notif:sur  [%fans [%urbit ~sorreg-namtyv] 'uhmmm uhhh basically... i followed you']
-        =/  =yarn:hark  (to-hark:harklib n bowl)
-        =/  c  (poke-hark:harklib yarn bowl)
-        :_  this  :~(c)
       %seed-threads
         ~&  >>  "seeding threads"
         =/  pubkey  pub.i.keys
@@ -574,10 +567,6 @@
       `this
       %http
       `this
-      %ui
-        =/  =fact:ui  [%post %add *post-wrapper:sur]
-        =/  card     (update-ui:cards fact)
-        :_  this  :~(card)
       %kick
         :_  this   =/  subs  ~(tap by sup.bowl)
           %+  turn  subs  |=  [* p=@p pat=path]
@@ -643,18 +632,18 @@
   ::
   [%follow rest=*]
     =/  msg  ?~  rest.pole  ''  -.rest.pole
-    =^  cs  state  (handle-req:coms [msg %fols] pole)
+    =^  cs  state  (handle-req:mutar [msg %fols] pole)
     [cs this]
   [%beg %feed rest=*]
     =/  msg  ?~  rest.pole  ''  -.rest.pole
-    =^  cs  state  (handle-req:coms [msg %begs %feed] pole)
+    =^  cs  state  (handle-req:mutar [msg %begs %feed] pole)
     [cs this]
 
   [%beg %thread ids=@t rest=*]
     =/  id  (slaw:sr %uw ids.pole)
     ?~  id  ~&  error-parsing-ted-id=pole  `this
     =/  msg  ?~  rest.pole  ''  -.rest.pole
-    =^  cs  state  (handle-req:coms [msg %begs %thread u.id] pole)
+    =^  cs  state  (handle-req:mutar [msg %begs %thread u.id] pole)
     [cs this]
   ::
   ==
@@ -683,7 +672,7 @@
   ~&  on-agent=[wire -.sign]
   ::  if p.sign  is  not ~ here that means it's intentional
   ?+  wire  `this
-    [%follow ~]
+    [%follow rest=*]
       ?:  ?=(%watch-ack -.sign) 
         ?~  p.sign  `this
         =^  cs  state  (handle-kick-nack:fols src.bowl)  [cs this]
@@ -695,7 +684,6 @@
         =/  =fact:comms  ;;  fact:comms  q.q.cage.sign
         =^  cs  state  
           ?-  -.fact
-            %init  (handle-follow-res:fols +.fact)
             %post  (handle-post-fact:mutat +.fact)
             %prof  (handle-prof-fact:mutan +.fact)
           ==
