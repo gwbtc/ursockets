@@ -1,21 +1,26 @@
 |%
 +$  gate
 $:  =lock
-    begs=(set @p)          :: follow requests
-    post-begs=(set post-beg)   :: read requests for specific posts
-    :: TODO include whole thread?
+    manual=_|  ::  whether we want to store the requests in state and look at them manually later instead of allowing/refusing outright
+    begs=(map @p (list [time=@da msg=@t]))
     mute=lock      :: mute list to prevent request spamming
     backlog=$~(50 @)       :: size of backlog sent to followers by default
 ==
-+$  post-beg  [=ship id=@da]
 
 +$  lock
-$:  rank=[caveats=(set rank:title) locked=_| public=?]
-    luk=[caveats=(set ship) locked=_| public=?]
-    ship=[caveats=(set ship) locked=_| public=?]
-    tags=[caveats=(set @t) locked=_| public=?]
+$:  rank=(sublock rank:title)
+    luk=(sublock ship)
+    ship=(sublock ship)
+    tags=(sublock @t)
+    pass=(unit @)  ::  hashed password
     custom=[fn=(unit $-(@p ?)) public=?]
 ==
+++  sublock
+|$  t
+  $:  caveats=(set t)
+      locked=_|
+      public=?
+  ==
 +$  change
 $%  [%set-rank set=(set rank:title) locked=? public=?] 
     [%set-luk set=(set ship) locked=? public=?] 

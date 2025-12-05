@@ -159,8 +159,7 @@
       parent=~
       children=~
       contents=cm
-      read=*lock:gate
-      write=*lock:gate
+      perms=*perms:post
       *engagement:post
       `@`id.event
       *signature:post
