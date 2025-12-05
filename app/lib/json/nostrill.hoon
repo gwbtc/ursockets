@@ -1,4 +1,6 @@
-/-  sur=nostrill, nsur=nostr, feed=trill-feed, comms=nostrill-comms, ui=nostrill-ui
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
+    feed=trill-feed,
+    wrap
 /+  sr=sortug, common=json-common, trill=json-trill, nostr=json-nostr
 |%
 ++  en
@@ -83,9 +85,8 @@
       %nostr   (en-nostr +.f)
       %post    (postfact +.f)
       %prof    (en-profiles +.f)
-      %enga    (enga +.f)
       %fols    (fols +.f)
-      %hark    (hark +.f)
+      %keys    (hex:en:common +.f)
     ==
   ++  en-nostr  |=  nf=nostr-fact:ui  ^-  json
     %+  frond  -.nf
@@ -96,109 +97,6 @@
       %event   (event:en:nostr +.nf)
       %relays  (en-relays +.nf)
     ==
-  ++  fols  |=  ff=fols-fact:ui  ^-  json
-    %+  frond  -.ff
-    ?-  -.ff
-      %quit  (user +.ff)
-      %new  %:  pairs
-              user+(user user.ff)
-              feed+(feed-with-cursor:en:trill fc.ff)
-              :-  'profile'  ?~  meta.ff  ~  (user-meta:en:nostr u.meta.ff)
-            ~
-        ==
-    ==
-  ++  tedfact  |=  pf=post-fact:ui  ^-  json
-    %+  frond  -.pf
-    (post-wrapper +.pf)
-  ++  postfact  |=  pf=post-fact:ui  ^-  json
-    %+  frond  -.pf
-    (post-wrapper +.pf)
-
-  ++  enga  |=  [pw=post-wrapper:sur reaction=*]
-     :: TODO
-    ^-  json
-    ~
-  ++  hark  |=  =notif:sur
-    ^-  json
-    ::  TODO remove as we're using %hark instead
-    ~
-  ::   %+  frond  -.notif
-  ::   ?-  -.notif
-  ::     %prof  (prof-notif +.notif)
-  ::     %fols  (pairs :~(['user' (user user.notif)] ['accepted' %b accepted.notif] ['msg' %s msg.notif]))
-  ::     %fans  (pairs :~(['user' (user user.notif)] ['msg' %s msg.notif]))
-  ::     %beg   (beg-notif +.notif)
-  ::     %post  (post-notif +.notif)
-  ::   ==
-  :: ++  prof-notif  |=  [u=user:sur prof=user-meta:nsur]
-  ::   %-  pairs
-  ::   :~  user+(user u)
-  ::       profile+(user-meta:en:nostr prof)
-  ::   ==
-  :: ++  beg-notif  |=  [beg=begs-poke:ui accepted=? msg=@t]
-  ::   ^-  json
-  ::   %+  frond  -.beg
-  ::   %-  pairs
-  ::     :~  ['accepted' %b accepted]
-  ::         ['msg' %s msg]
-  ::       ?-  -.beg
-  ::         %feed    ['ship' %s (scot %p +.beg)]
-  ::         %thread  ['post' (pid:en:trill +.beg)]
-  ::       ==
-  ::     ==
-
-  :: ++  post-notif  |=  [pid=[@p @da] u=user:sur p=post-notif:sur]
-  ::   ^-  json
-  ::   %-  pairs
-  ::     :~  ['post' (pid:en:trill pid)]
-  ::         ['user' (user u)]
-  ::         :-  -.p
-  ::         ?-  -.p
-  ::           %reply  (poast:en:trill +.p)
-  ::           %quote  (poast:en:trill +.p)
-  ::           %reaction  [%s +.p]
-  ::           %rp    ~
-  ::           %del   ~
-  ::         ==
-  ::     ==
-  ++  post-wrapper  |=  p=post-wrapper:sur
-    %-  pairs
-    :~  post+(poast:en:trill post.p)
-        ['nostrMeta' (nostr-meta nostr-meta.p)]
-    ==
-  ++  nostr-meta  |=  p=nostr-meta:sur
-    =|  l=(list [@t json])
-    =.  l  ?~  pub.p    l  :_  l  ['pubkey' (hex:en:common u.pub.p)]
-    =.  l  ?~  ev-id.p  l  :_  l  ['eventId' (hex:en:common u.ev-id.p)]
-    =.  l  ?~  relay.p  l  :_  l  ['relay' %s u.relay.p]
-    =.  l  ?~  pr.p     l  :_  l  ['profile' (user-meta:en:nostr u.pr.p)]
-    %-  pairs  l
-
-  ++  beg-res  |=  =res:comms  ^-  json
-    %+  frond  %begs  %+  frond  -.res
-    ?-  -.res
-      %ok  (resd +.res)
-      %ng  (resn +.res)
-    ==
-  ++  resd  |=  [rd=res-data:comms msg=@t]  ^-  json
-    %-  pairs
-      :~  :-  'msg'  [%s msg]
-          :-  'data'  ?-  -.rd
-            %feed     (user-data +.rd)
-            :: TODO wrap it for nostr shit
-            %thread   (frond -.rd (thread:en:trill +.rd))
-          ==
-    ==
-  ++  resn  |=  [=req:comms res-msg=@t]  ^-  json
-    %-  pairs
-      :~  :-  'msg'  [%s res-msg]
-          :-  'req'
-            ?-  -.req
-              %feed     [%s msg.req]
-              :: TODO wrap it for nostr shit
-              %thread   %-  pairs  :~([%msg %s msg.req] [%id (ud:en:common id.req)])
-            ==
-          ==
   ++  user-data
     |=  ud=[=fc:feed profile=(unit user-meta:nsur)]
     %:  pairs
@@ -206,6 +104,63 @@
       :-  %profile  ?~  profile.ud  ~  (user-meta:en:nostr u.profile.ud)
       ~
     ==
+::  en-CMMS
+::  TODO abstract serialization of wrappers
+
+  ++  res  |=  =res:comms  ^-  json
+    %+  frond  %res
+      %-  pairs
+    :~  :-  %msg  [%s msg.res]
+        :-  -.p.res
+          ?-  -.p.res
+           %begs  (en-begs +.p.res)
+           %fols  (en-fols +.p.res)
+         ==
+    ==
+  ++  en-begs   |=  p=beg-res:comms  ^-  json
+    %+  frond  -.p
+    ?-  -.p
+      %feed     ?@  +.p  ~  (feed-data data.p)  
+      %thread   %-  pairs
+        :~  ['id' (ud:en:common id.p)]
+            :-  %data  ?@  +>.p  ~  (thread:en:trill data.p)
+        ==
+    ==
+  ++  en-fols  |=  p=fols-res:comms  ^-  json
+    ?@  p  ~  (feed-data data.p)
+
+  ++  fols  |=  a=(enbowl:wrap fols-res:comms)  ^-  json
+    %-  pairs
+    :~  user+(user user.a)
+        :-  %data  (en-fols p.a)
+    ==
+
+  ++  postfact  |=  pf=post-fact:comms  ^-  json
+    %+  frond  -.pf
+    (post-wrapper +.pf)
+
+  ++  feed-data
+    |=  fd=feed-data:comms
+    %:  pairs
+      feed+(feed-with-cursor:en:trill fc.fd)
+      :-  %profile  ?~  profile.fd  ~  (user-meta:en:nostr u.profile.fd)
+      ~
+    ==
+
+  ++  post-wrapper  |=  p=post-wrapper:comms
+    %-  pairs
+    :~  post+(poast:en:trill post.p)
+        ['nostrMeta' (nostr-meta nostr-meta.p)]
+    ==
+  ++  nostr-meta  |=  p=nostr-meta:comms  ^-  json
+    %-  pairs
+    :~  ['pubkey' (hex:en:common pub.p)]
+        :-  'profile'  ?~  prof.p  ~  (user-meta:en:nostr u.prof.p)
+        :-  'eventId'  ?~  ev-id.p  ~  (hex:en:common u.ev-id.p)
+        :+  'relay'  %a  %+  turn  relays.p  cord:en:common
+    ==
+    
+::  /en-COMMS
   --
 ++  de
 =,  dejs-soft:format
