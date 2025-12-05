@@ -127,7 +127,7 @@
                  ids
                  ' but hasn\'t responded yet.'
              ==
-             /res/begs/feed/(scot %p ship)/maybe
+             /res/begs/thread/(scot %p ship)/[ids]/maybe
        ?^  +.p.+.res
          :-  :~  ship-token
                  ' accepted your request to access his thread of id:'
@@ -228,11 +228,12 @@
           %keys
           =/  ship  (user-to-atom:lib user.n)
           =/  ship-token  [%ship ship]
+          =/  pubkey  (crip (scow:sr %ux pubkey.n))
           :-  :~  ship-token
                  ' has changed his Nostr pubkey. The new value is: '
-                  (crip (scow:sr %ux pubkey.n))
+                pubkey
               ==
-              /nostr/keys/(scot %p ship)
+              /nostr/keys/(scot %p ship)/[pubkey]
         ==
       
   ==

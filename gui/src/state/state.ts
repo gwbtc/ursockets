@@ -8,7 +8,6 @@ import type { Event } from "@/types/nostr";
 import type { FC, Poast } from "@/types/trill";
 import type { Notification } from "@/types/notifications";
 import { useShallow } from "zustand/shallow";
-import type { HarkAction, Skein, Yarn } from "@/logic/hark";
 import { skeinToNote } from "@/logic/notifications";
 // TODO handle airlock connection issues
 // the SSE pipeline has a "status-update" event FWIW
@@ -45,17 +44,17 @@ export const useStore = creator((set, get) => ({
     const airlock = await start();
     const api = new IO(airlock);
     console.log({ api });
-    // api.scryHark().then((r) => {
-    //   console.log("hark scry res", r);
-    //   if ("ok" in r) {
-    //     const notifications = r.ok.reduce((acc: Notification[], sk) => {
-    //       const note = skeinToNote(sk);
-    //       if ("ok" in note) return [...acc, note.ok];
-    //       else return acc;
-    //     }, []);
-    //     set({ notifications });
-    //   }
-    // });
+    api.scryHark().then((r) => {
+      console.log("hark scry res", r);
+      if ("ok" in r) {
+        const notifications = r.ok.reduce((acc: Notification[], sk) => {
+          const note = skeinToNote(sk);
+          if ("ok" in note) return [...acc, note.ok];
+          else return acc;
+        }, []);
+        set({ notifications });
+      }
+    });
     // api.subscribeHark((data: HarkAction) => {
     //   console.log("hark data", data);
     //   if ("add-yarn" in data) {

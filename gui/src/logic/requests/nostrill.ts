@@ -28,11 +28,13 @@ export default class IO {
       threadName,
     });
   }
-  private async poke(json: any) {
+  private async poke(json: any, agent?: string, marc?: string) {
+    const app = agent ? agent : "nostrill";
+    const mark = marc ? marc : "json";
     try {
       const res = await this.airlock.poke({
-        app: "nostrill",
-        mark: "json",
+        app,
+        mark,
         json,
       });
       return { ok: res };
@@ -121,18 +123,18 @@ export default class IO {
   }
   // async scryHark(): AsyncRes<Skein[]> {
   async scryHark(): AsyncRes<Skein[]> {
-    const path3 = "/all/skeins";
-    const path4 = "/all/latest";
+    // const path3 = "/all/skeins";
+    // const path4 = "/all/latest";
     const path = "/desk/nostrill/skeins";
     // const path2 = "/desk/nostrill/latest";
     // this returns Carpet
     const res = await this.scry(path, "hark");
-    const res3 = await this.scry(path3, "hark");
-    const res4 = await this.scry(path4, "hark");
+    // const res3 = await this.scry(path3, "hark");
+    // const res4 = await this.scry(path4, "hark");
     // const res2 = await this.scry(path2, "hark");
     console.log("hark scry", res);
-    console.log("hark all skeins", res3);
-    console.log("hark all latest", res4);
+    // console.log("hark all skeins", res3);
+    // console.log("hark all latest", res4);
     return res;
   }
 
@@ -189,6 +191,13 @@ export default class IO {
 
     return this.poke({ post: json });
   }
+
+  //
+  async dismissAllNotifications() {
+    const json = { "saw-seam": { desk: "nostrill" } };
+    return this.poke(json, "hark", "hark-action-1");
+  }
+  //
 
   //  follows
   async follow(user: UserType) {
