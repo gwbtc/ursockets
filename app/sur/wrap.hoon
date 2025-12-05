@@ -5,13 +5,13 @@
   |$  t
   $:  msg=@t
   $=  p
-  $^  [%done (approval t)]
-      %thinking
+  $@  %thinking
+      [%done (approval t)]
   ==
 ++  approval
   |$  t
-  $^  [%ok data=t]
-       %ng
+  $@  %ng
+      [%ok data=t]
 ::  +enbowl adds bowl information (source, timestamp) to a type
 ::  Useful to pass around data received on pokes on different context,
 :: helps avoid defining duplicate types for essentially the same data
