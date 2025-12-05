@@ -85,8 +85,14 @@
       %nostr   (en-nostr +.f)
       %post    (postfact +.f)
       %prof    (en-profiles +.f)
-      %fols    (fols +.f)
+      %fols    (folsfact +.f)
       %keys    (hex:en:common +.f)
+    ==
+  ++  folsfact  |=  f=fols-fact:ui  ^-  json
+    %+  frond  -.f
+    ?-  -.f
+      %new   (fols +.f)
+      %quit  (user +.f)
     ==
   ++  en-nostr  |=  nf=nostr-fact:ui  ^-  json
     %+  frond  -.nf
