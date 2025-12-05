@@ -35,8 +35,8 @@
       [%begs beg-type]
 ==
 +$  beg-type
-  $^  [%thread id=@da]
-      %feed
+  $@  %feed
+      [%thread id=@da]
 ::  Responses to requsts
 ::  %begs  responses are sent directly to the frontend
 ::  %fols  responses are sent to on-agent of the requester as an %fols fact
