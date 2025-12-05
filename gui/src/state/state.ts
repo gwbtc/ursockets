@@ -45,36 +45,36 @@ export const useStore = creator((set, get) => ({
     const airlock = await start();
     const api = new IO(airlock);
     console.log({ api });
-    api.scryHark().then((r) => {
-      console.log("hark scry res", r);
-      if ("ok" in r) {
-        const notifications = r.ok.reduce((acc: Notification[], sk) => {
-          const note = skeinToNote(sk);
-          if ("ok" in note) return [...acc, note.ok];
-          else return acc;
-        }, []);
-        set({ notifications });
-      }
-    });
-    api.subscribeHark((data: HarkAction) => {
-      console.log("hark data", data);
-      if ("add-yarn" in data) {
-        if (data["add-yarn"].yarn.rope.desk !== "nostrill") return;
-        const nots = get().notifications;
-        const yarn = data["add-yarn"].yarn;
-        const skein: Skein = {
-          top: yarn,
-          time: yarn.time,
-          "ship-count": 0,
-          unread: true,
-          count: 0,
-        };
-        const note = skeinToNote(skein);
-        if ("error" in note) return;
-        const notifications = [...nots, note.ok];
-        set({ notifications });
-      }
-    });
+    // api.scryHark().then((r) => {
+    //   console.log("hark scry res", r);
+    //   if ("ok" in r) {
+    //     const notifications = r.ok.reduce((acc: Notification[], sk) => {
+    //       const note = skeinToNote(sk);
+    //       if ("ok" in note) return [...acc, note.ok];
+    //       else return acc;
+    //     }, []);
+    //     set({ notifications });
+    //   }
+    // });
+    // api.subscribeHark((data: HarkAction) => {
+    //   console.log("hark data", data);
+    //   if ("add-yarn" in data) {
+    //     if (data["add-yarn"].yarn.rope.desk !== "nostrill") return;
+    //     const nots = get().notifications;
+    //     const yarn = data["add-yarn"].yarn;
+    //     const skein: Skein = {
+    //       top: yarn,
+    //       time: yarn.time,
+    //       "ship-count": 0,
+    //       unread: true,
+    //       count: 0,
+    //     };
+    //     const note = skeinToNote(skein);
+    //     if ("error" in note) return;
+    //     const notifications = [...nots, note.ok];
+    //     set({ notifications });
+    //   }
+    // });
     await api.subscribeStore((data) => {
       if ("state" in data) {
         console.log("state", data.state);
@@ -96,10 +96,14 @@ export const useStore = creator((set, get) => ({
         if ("fols" in fact) {
           const { following, profiles } = get();
           if ("new" in fact.fols) {
-            const { user, feed, profile } = fact.fols.new;
-            following.set(user, feed);
-            if (profile) profiles.set(user, profile);
-            set({ following, profiles });
+            const { user, ts, data } = fact.fols.new;
+            if (data.data === "maybe") return;
+            if (data.data) {
+              const { feed, profile } = data.data;
+              following.set(user, feed);
+              if (profile) profiles.set(user, profile);
+              set({ following, profiles });
+            }
           }
           if ("quit" in fact.fols) {
             following.delete(fact.fols.quit);

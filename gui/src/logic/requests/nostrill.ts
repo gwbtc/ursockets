@@ -1,8 +1,14 @@
 import type Urbit from "urbit-api";
-import type { Cursor, FC, FullNode, PostID } from "@/types/trill";
+import type { Cursor, FullNode, PostID } from "@/types/trill";
 import type { Ship } from "@/types/urbit";
 import { FeedPostCount } from "../constants";
-import type { UserProfile, UserType } from "@/types/nostrill";
+import type {
+  PeekFeedRes,
+  PeekRes,
+  PeekThreadRes,
+  UserProfile,
+  UserType,
+} from "@/types/nostrill";
 import type { AsyncRes } from "@/types/ui";
 import type { Skein } from "../hark";
 
@@ -230,30 +236,24 @@ export default class IO {
   }
   // threads
   //
-  async peekFeed(
-    host: string,
-  ): AsyncRes<{ feed: FC; profile: UserProfile | null }> {
+  async peekFeed(host: string): AsyncRes<PeekFeedRes> {
     try {
       const json = { begs: { feed: host } };
-      const res: any = await this.thread("beg", json);
+      const res = (await this.thread("beg", json)) as PeekRes;
       console.log("peeking feed", res);
-      if (!("begs" in res)) return { error: "wrong request" };
-      if ("ng" in res.begs) return { error: res.begs.ng };
-      if (!("feed" in res.begs.ok)) return { error: "wrong request" };
-      else return { ok: res.begs.ok };
+      if (!("feed" in res)) return { error: "request error" };
+      else return { ok: res.feed };
     } catch (e) {
       return { error: `${e}` };
     }
   }
-  async peekThread(host: string, id: string): AsyncRes<FullNode> {
+  async peekThread(host: string, id: string): AsyncRes<PeekThreadRes> {
     try {
       const json = { begs: { thread: { host, id } } };
-      const res: any = await this.thread("beg", json);
-      console.log("peeking feed", res);
-      if (!("begs" in res)) return { error: "wrong request" };
-      if ("ng" in res.begs) return { error: res.begs.ng };
-      if (!("thread" in res.begs.ok)) return { error: "wrong request" };
-      else return { ok: res.begs.ok.thread };
+      const res = (await this.thread("beg", json)) as PeekRes;
+      console.log("peeking thread", res);
+      if (!("thread" in res)) return { error: "request error" };
+      else return { ok: res.thread };
     } catch (e) {
       return { error: `${e}` };
     }
