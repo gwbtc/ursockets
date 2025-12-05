@@ -1,4 +1,4 @@
-/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
     post=trill-post, gate=trill-gate, feed=trill-feed
     
 /+  appjs=json-nostrill,
