@@ -1,6 +1,11 @@
 /-  *wrap, nsur=nostr, tf=trill-feed, tp=trill-post
 ::  Communication between Urbit Ships
 |%
+::  TODO find a better place for these
++$  upid  [=user id=@da]
++$  user  $%([%urbit p=@p] [%nostr p=@ux])
+
+
 ::  Pokes are used to notify solely users of engagement. There is no data requests through pokes
 
 +$  poke
@@ -10,13 +15,13 @@
   ==
 +$  engagement
   $%  [%reply parent=@da child=post:tp]
-      [%mention =post:tp]
       [%quote src=@da =post:tp]
-      [%del-quote src=@da quote=@da]
-      [%del-reply parent=@da child=@da]
-      [%del-parent parent=@da child=@da]
-      [%rp src=@da target=@da]
-      [%reaction post=@da reaction=@t]
+      [%del-quote src=upid quote=@da]
+      [%del-reply parent=upid child=@da]
+      [%del-parent parent=upid child=@da]
+      [%rp src=upid target=@da]
+      [%reaction pid=upid reaction=@t]
+      [%mention =post:tp]
   ==
 ::  Data requests is done through subscriptions.
 ::  Requests can be proper subscriptions %fols i.e. following someone and expecting updates
