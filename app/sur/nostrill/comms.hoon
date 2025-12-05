@@ -1,45 +1,74 @@
-/-  sur=nostrill, nsur=nostr, feed=trill-feed, post=trill-post
+/-  *wrap, nsur=nostr, tf=trill-feed, tp=trill-post
+::  Communication between Urbit Ships
 |%
-::  TODO have requests and responses carry messages
+::  Pokes are used to notify solely users of engagement. There is no data requests through pokes
+
 +$  poke
-  $%  [%req req]
-      [%res res]
+  $%
       [%eng engagement]
       [%dbug *]
   ==
 +$  engagement
-  $%  [%reply parent=@da child=post:post]
+  $%  [%reply parent=@da child=post:tp]
       [%del-reply parent=@da child=@da]
       [%del-parent parent=@da child=@da]
-      [%quote src=@da =post:post]
+      [%quote src=@da =post:tp]
       [%del-quote src=@da quote=@da]
       [%rp src=@da rt=@da]
       [%reaction post=@da reaction=@t]
   ==
+::  Data requests is done through subscriptions.
+::  Requests can be proper subscriptions %fols i.e. following someone and expecting updates
+::  Or one-off requests %begs These are also done as subscriptions, through threads called by the frontend.
+::  Both are handled by the %gate permission system
 +$  req
-  $%  [%feed msg=@t]
-      [%thread id=@da msg=@t]
-  ==
+  $:  msg=@t  :: Users can add a custom message to their requests. "Let me in bro"
+  $=  p
+  $^  [%begs beg-type]
+      %fols
+==
++$  beg-type
+  $^  [%thread id=@da]
+      %feed
+::  Responses to requsts
 +$  res
-  $%  [%ok p=res-data msg=@t]
-      [%ng =req msg=@t]
+  $:  msg=@t  ::  Users can add a custom message  to their response 
+  $=  p
+  $%  [%begs beg-res]
+      [%fols fols-res]
   ==
-+$  res-data
-  $%  [%feed =fc:feed profile=(unit user-meta:nsur)]
-      [%thread p=full-node:post q=(list full-node:post)]
+==
++$  beg-res
+  $%  [%feed (approval feed-data)]
+      [%thread id=@da (approval thread-data)]
   ==
-:: TODO there's some overlap between what we send to the UI and we send to our followers
-:: but it's not exactly the same
++$  fols-res  (approval feed-data)
+
++$  feed-data  [=fc:tf profile=(unit user-meta:nsur)]
++$  thread-data
+  $:  node=full-node:tp
+      thread=(list full-node:tp)  ::  list of all the users consecutive posts, as in long form thread
+  ==
+ ::  Updates sent to followers who are subscribed to us
 +$  fact
   $%  [%post post-fact]
       [%prof prof-fact]
-      [%init res]
   ==
+::  We wrap posts on nostr metadata if the post was also published to Nostr   
++$  post-wrapper  [=post:tp =nostr-meta]
++$  nostr-meta
+$:  pub=@ux
+    prof=(unit user-meta:nsur)
+    ev-id=(unit @ux)
+    relays=(list @t)
+==
+::  Updates whether there's a new post in the feed, a change to some post in the feed, or some post deleted
 +$  post-fact
-  $%  [%add p=post:post]
-      [%del id=@da]
-      [%changes p=post:post]
+  $%  [%add post-wrapper]
+      [%upd post-wrapper]
+      [%del post-wrapper]
   ==
+::  Updates on your user profile, or if Nostr keys have changed
 +$  prof-fact
   $%  [%prof =user-meta:nsur]
       [%keys pub=@ux]

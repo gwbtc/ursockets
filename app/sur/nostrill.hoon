@@ -23,14 +23,6 @@
 +$  nostr-feed  ((mop @ud event:nostr) gth)
 ++  norm        ((on @ud event:nostr) gth)
 +$  nfc         [feed=nostr-feed start=cursor:trill end=cursor:trill]
-
-+$  post-wrapper  [=post:tp nostr-meta=nostr-meta]
-+$  nostr-meta
-$:  pub=(unit @ux)
-    ev-id=(unit @ux)
-    relay=(unit @t)
-    pr=(unit user-meta:nostr)
-==
 +$  user  $%([%urbit p=@p] [%nostr p=@ux])
 
 +$  follow  [pubkey=@ux name=@t relay=(unit @t)]
