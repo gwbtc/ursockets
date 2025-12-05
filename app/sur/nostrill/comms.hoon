@@ -10,11 +10,12 @@
   ==
 +$  engagement
   $%  [%reply parent=@da child=post:tp]
-      [%del-reply parent=@da child=@da]
-      [%del-parent parent=@da child=@da]
+      [%mention =post:tp]
       [%quote src=@da =post:tp]
       [%del-quote src=@da quote=@da]
-      [%rp src=@da rt=@da]
+      [%del-reply parent=@da child=@da]
+      [%del-parent parent=@da child=@da]
+      [%rp src=@da target=@da]
       [%reaction post=@da reaction=@t]
   ==
 ::  Data requests is done through subscriptions.
