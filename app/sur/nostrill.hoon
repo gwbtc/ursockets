@@ -16,10 +16,18 @@
       ::  profiles
       profiles=(map user user-meta:nostr)
       following=(map user =feed:trill)
-      following2=feed:trill
+      following2=global-feed
+      =global-feed
       follow-graph=(map user (set user))
 
   ==
+
++$  global-feed  ((mop upid post:tp) ugth)
+++  uorm         ((on upid post:tp) ugth)
+::
++$  upid  [=user id=@da]
+++  ugth        |=  [a=[[* id=@] =time] b=[[* id=@] =time]]  ?:  .=(time.a time.b)  (gth id.a id.b)  (gth time.a time.b)
+
 +$  nostr-feed  ((mop @ud event:nostr) gth)
 ++  norm        ((on @ud event:nostr) gth)
 +$  nfc         [feed=nostr-feed start=cursor:trill end=cursor:trill]
