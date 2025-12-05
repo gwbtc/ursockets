@@ -1,19 +1,19 @@
-/-  sur=nostrill, nsur=nostr, tp=trill-post
+/-  *wrap, sur=nostrill, nsur=nostr, comms=nostrill-comms, tp=trill-post
 |%
 +$  notif
-  $%  [%prof =user prof=user-meta:nostr]              :: profile change
-      [%fans =user:sur msg=@t]                            :: someone folowed me
-      [%fols =user:sur accepted=? msg=@t]                 :: follow response 
-      :: [%beg-req =user beg=begs-poke:ui msg=@t]        :: feed/post data request request
-      :: [%beg-res beg=begs-poke:ui accepted=? msg=@t]   :: feed/post data request response
-      [%post =pid:tp =user action=post-notif]         :: someone replied, reacted etc.
+::   profile change
+  $%  [%prof =user:sur prof=user-meta:nsur]               
+::  requests received  
+      [%req (enbowl req:comms) solved=(unit decision:sur)]  
+::  responses received to our requests
+      [%res (enbowl res:comms)]
+:: someone replied, reacted etc.
+      [%post (enbowl engagement:comms)]
+      ::
+      [%nostr nostr-notif]
   ==
-+$  post-notif
-$%   [%reply p=post:tp]
-     [%quote p=post:tp]
-     [%reaction reaction=@t]
-     :: [%rt id=@ux pubkey=@ux relay=@t]  :: NIP-18
-     [%rp ~]  :: NIP-18
-     [%del ~]
++$  nostr-notif
+$%   [%relay-down url=@t]
+     [%new-relay url=@t]  ::  TODO
 ==
 --
