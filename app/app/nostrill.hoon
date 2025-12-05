@@ -10,7 +10,7 @@
     evlib=nostr-events,
     mutations-nostr,
     mutations-trill,
-    mutations-req,
+    mutations-reqs,
     jsonlib=json-nostrill,
     feedlib=trill-feed, postlib=trill-post,
     seed,
@@ -29,7 +29,7 @@
     cards  ~(. cards:lib bowl)
     mutan  ~(. mutations-nostr [state bowl])
     mutat  ~(. mutations-trill [state bowl])
-    mutar  ~(. mutations-req [state bowl])
+    mutar  ~(. mutations-reqs [state bowl])
     scry   ~(. scri [state bowl])
     fols   ~(. followlib [state bowl])
 ++  on-init
@@ -212,7 +212,23 @@
   ++  debug  |=  noun=*
     ?+  noun  `this
       %perms
+      ~&  >  perms=feed-perms
+      `this
+      %perms-manual
       ~&  perms=feed-perms
+      =.  feed-perms  feed-perms(manual !manual.feed-perms)
+      ~&  >  perms=feed-perms
+      `this
+      %perms-lock
+      ~&  perms=feed-perms
+      =.  lock.feed-perms
+        %=  lock.feed-perms
+          rank  rank.lock.feed-perms(locked !locked.rank.lock.feed-perms)
+          luk  luk.lock.feed-perms(locked !locked.luk.lock.feed-perms)
+          ship  ship.lock.feed-perms(locked !locked.ship.lock.feed-perms)
+          tags  tags.lock.feed-perms(locked !locked.tags.lock.feed-perms)
+        ==
+      ~&  >  perms=feed-perms
       `this
       %seed-threads
         ~&  >>  "seeding threads"
@@ -620,7 +636,7 @@
 ::
 ++  on-watch
 |=  =(pole knot)  
-  ~&  on-watch=`path`pole
+  ~&  on-watch=[src.bowl `path`pole]
   ?+  pole  !!
   [%http-response *]  `this
   [%websocket-client wids=@t ~]
@@ -672,7 +688,7 @@
 ++  on-agent
   |~  [wire=(pole knot) =sign:agent:gall]
   ^-  (quip card:agent:gall agent:gall)
-  ~&  on-agent=[wire -.sign]
+  ~&  on-agent=[src.bowl wire -.sign]
   ::  if p.sign  is  not ~ here that means it's intentional
   ?+  wire  `this
     [%follow rest=*]
@@ -684,6 +700,7 @@
         [cs this]
       ?.  ?=(%fact -.sign)  `this
         ~&  "got fact"
+        ~&  fact=(@t -.q.q.cage.sign)
 
         =/  =fact:comms  ;;  fact:comms  q.q.cage.sign
         =^  cs  state  

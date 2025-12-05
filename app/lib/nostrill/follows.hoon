@@ -43,6 +43,7 @@
 
 ++  handle-res  |=  fr=fols-res:comms
   ^-  (quip card:agent:gall _state)
+  ~&  >>  handling-follow-res=fr
   =/  =user:sur  [%urbit src.bowl]
   =/  enfr  [user now.bowl fr]
   =/  n=notif:notif  [%fol-res enfr]
@@ -69,8 +70,11 @@
   ==
 
 ++  handle-refollow  |=  sip=@p
-  :_  state  :_   ~
-  (urbit-watch sip)
+  :_  state
+  ::  TODO man this API sucks
+  :: :~  (urbit-watch sip)
+  :: ==
+  ~
     
 
 ++  handle-kick-nack  |=  p=@p

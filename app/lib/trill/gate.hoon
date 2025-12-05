@@ -11,8 +11,9 @@
   ==
 ++  can-access
 |=  [=ship =gate:gate msg=@t =bowl:gall]  ^-  ?
-  =/  is-muted  (check-lock ship mute.gate '' bowl)
-  ?:  is-muted  .n
+  ::  TODO
+  :: =/  is-muted  (check-lock ship mute.gate '' bowl)
+  :: ?:  is-muted  .n
   (check-lock ship lock.gate msg bowl)
 
 ++  check-lock
