@@ -89,11 +89,11 @@
   |=  [poke=post-poke:ui p=post:post]  ^-  engagement:comms
   ?-  -.poke
     %add  !!
-    %del       [%del-reply id.poke id.p]
-    %quote     [%quote id.poke p]
     %reply     [%reply id.poke p]
-    %rp        [%rp id.poke id.p]
-    %reaction  [%reaction id.poke reaction.poke]
+    %quote     [%quote id.poke p]
+    %rp        [%rp [host.poke id.poke] id.p]
+    %del       [%del-reply [host.poke id.poke] id.p]
+    %reaction  [%reaction [host.poke id.poke] reaction.poke]
   ==
 ::
 ++  handle-post  |=  poke=post-poke:ui
@@ -107,6 +107,7 @@
     ?-  -.poke
       %del  
         ?-  -.host.poke  
+            :: TODO
             %nostr  `state
             ::
             %urbit
@@ -116,7 +117,7 @@
           =.  feed.state  (delete-children:feedlib feed.state p)
           =/  pw  (wrap-post p)
           =/  eng-cards=(list card)  
-            (del-parent-cards children.p id.p)
+            (del-parent-cards host.poke children.p id.p)
           =/  fact  [%post %del pw]
           :: IMPORTANT  no need to send one card per children, just have followers handle that logic
           :: =/  upd-fol-cards
@@ -149,14 +150,14 @@
                 (update-followers:cards:lib [%post %upd (wrap-post u.poast)])
               ::  case:  delete reply to our post
               ::  send %del-parent to deleted reply 
-              =/  eng-poke=engagement:comms  [%del-parent u.parent.p id.p]
+              =/  eng-poke=engagement:comms  [%del-parent [host.poke u.parent.p] id.p]
               %+  welp  cards
               :~
                 (poke-host:crds author.p [%eng eng-poke])
                 (update-followers:cards:lib [%post %upd (wrap-post u.poast)])
               ==
             =/  ref  u.is-ref
-            =/  eng-poke  [%eng [%del-quote +.ref id.p]]
+            =/  eng-poke  [%eng [%del-quote [host.poke +.ref] id.p]]
             ::  case: delete quote
             :_  state
             %+  snoc  cards
@@ -304,7 +305,7 @@
     ==
   ::
   ++  del-parent-cards
-    |=  [children=(set id:post) parent=@da]
+    |=  [host=user:sur children=(set id:post) parent=@da]
     =/  c  ~(tap in children)
     =/  crds  ~(. cards:lib bowl)
     |-  ^-  (list card)
@@ -312,7 +313,7 @@
     =/  child=(unit post:post)  (get:orm:feed feed.state i.c)
     ?~  child  $(c t.c)
     :_  $(c t.c)
-    =/  eng-poke=engagement:comms  [%del-parent parent id.u.child]
+    =/  eng-poke=engagement:comms  [%del-parent [host parent] id.u.child]
     =/  host=@p  author.u.child
     (poke-host:crds host [%eng eng-poke])
   --

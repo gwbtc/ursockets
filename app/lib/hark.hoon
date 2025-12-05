@@ -134,13 +134,6 @@
       :: =/  hosts  (scot %p ship.pid.n)
       :: =/  pids  %-  spat  /[hosts]/[ids]
       ?-  -.a
-        %reply
-          =/  host  host.child.a
-          =/  parents  (scot %ud `@`parent.a)
-          =/  ids    (scot %ud `@`id.child.a)
-          =/  hosts  (scot %p host)
-          =/  parent-pids  (spat /[hosts]/[parents])
-          :-  :~(ship-token 'Replied to post:' parent-pids)     /post/reply/(scot %p ship)/[hosts]/[parents]/[ids]
         %mention
           =/  host  host.post.a
           =/  ids    (scot %ud `@`id.post.a)
@@ -148,6 +141,13 @@
           =/  pids  (spat /[hosts]/[ids])
           :: TODO show some text of the mention
           :-  :~(ship-token 'Mentioned you in post:' pids)     /post/mention/(scot %p ship)/[hosts]/[ids]
+        %reply
+          =/  host  host.child.a
+          =/  parents  (scot %ud `@`parent.a)
+          =/  ids    (scot %ud `@`id.child.a)
+          =/  hosts  (scot %p host)
+          =/  parent-pids  (spat /[hosts]/[parents])
+          :-  :~(ship-token 'Replied to post:' parent-pids)     /post/reply/(scot %p ship)/[hosts]/[parents]/[ids]
         %quote
           =/  host  host.post.a
           =/  parents  (scot %ud `@`src.a)
@@ -157,24 +157,49 @@
           :: TODO show some text of the quote 
           :-  :~([%ship ship] 'Quoted the post:' parent-pids)     /post/quote/(scot %p ship)/[parents]/[hosts]/[ids]
         %rp
-          =/  parents  (scot %ud `@`src.a)
+          =/  hostpath=path  (user-to-path:lib -.src.a)
+          =/  sid    (scot %ud `@`+.src.a)
           =/  ids    (scot %ud `@`target.a)
-          :-  :~([%ship ship] 'Reposted the post:' ids)   /post/rp/(scot %p ship)/[parents]/[ids]
-        %reaction
-          =/  ids    (scot %ud `@`post.a)
-          :-  :~([%ship ship] 'Reacted to post:' ids reaction.a)   /post/react/(scot %p ship)/[ids]
+          =/  pat  (weld hostpath /[sid]/[ids])
+          =/  pidpath=path  (weld hostpath /[sid])
+          =/  pids  (spat pidpath)
+          :-  :~([%ship ship] 'Reposted the post:' pids)
+              (weld /post/rp/(scot %p ship) pat)
         %del-reply
-          =/  parents  (scot %ud `@`parent.a)
+          =/  hostpath=path  (user-to-path:lib -.parent.a)
+          =/  sid    (scot %ud `@`+.parent.a)
+          =/  pidpath=path  (weld hostpath /[sid])
+          =/  parents  (spat pidpath)
           =/  ids    (scot %ud `@`child.a)
-          :-  :~([%ship ship] 'Deleted his reply on:' parents)    /post/del-reply/(scot %p ship)/[parents]/[ids]
+          =/  pat  (weld hostpath /[sid]/[ids])
+          :-  :~([%ship ship] 'Deleted his reply on:' parents)
+              (weld /post/del-reply/(scot %p ship) pat)
         %del-parent
-          =/  parents  (scot %ud `@`parent.a)
+          =/  hostpath=path  (user-to-path:lib -.parent.a)
+          =/  sid    (scot %ud `@`+.parent.a)
           =/  ids    (scot %ud `@`child.a)
-          :-  :~([%ship ship] 'Deleted the parent to the post on:' parents)    /post/del-parent/(scot %p ship)/[parents]/[ids]
+          =/  pidpath=path  (weld hostpath /[sid])
+          =/  parents  (spat pidpath)
+
+          =/  pat  (weld hostpath /[sid]/[ids])
+          :-  :~([%ship ship] 'Deleted the parent to the post on:' parents)
+              (weld /post/del-parent/(scot %p ship) pat)
         %del-quote
-          =/  parents  (scot %ud `@`src.a)
+          =/  hostpath=path  (user-to-path:lib -.src.a)
+          =/  sid    (scot %ud `@`+.src.a)
           =/  ids    (scot %ud `@`quote.a)
-          :-  :~([%ship ship] 'Deleted his quote of:' parents)    /post/del-quote/(scot %p ship)/[parents]/[ids]
+          =/  pidpath=path  (weld hostpath /[sid])
+          =/  parents  (spat pidpath)
+          =/  pat  (weld hostpath /[sid]/[ids])
+          :-  :~([%ship ship] 'Deleted his quote of:' parents)
+              (weld /post/del-quote/(scot %p ship)/[parents] pat)
+        %reaction
+          =/  hostpath=path  (user-to-path:lib -.pid.a)
+          =/  sid    (scot %ud `@`+.pid.a)
+          =/  pat  (weld hostpath /[sid])
+          =/  pids  (spat pat)
+          :-  :~([%ship ship] 'Reacted to post:' pids reaction.a)
+              (weld /post/react/(scot %p ship) pat)
       ==
       %nostr
         ?-  +<.n
