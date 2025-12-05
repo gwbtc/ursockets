@@ -30,8 +30,9 @@
 +$  req
   $:  msg=@t  :: Users can add a custom message to their requests. "Let me in bro"
   $=  p
-  $^  [%begs beg-type]
-      %fols
+  :: WTF  why did this crash (on runtime!)  if it was defined as $^ instead
+  $@  %fols
+      [%begs beg-type]
 ==
 +$  beg-type
   $^  [%thread id=@da]
