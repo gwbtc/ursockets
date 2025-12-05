@@ -3,7 +3,6 @@ import "@/styles/feed.css";
 import PostList from "@/components/feed/PostList";
 import useLocalState from "@/state/state";
 import { useParams } from "wouter";
-import spinner from "@/assets/triangles.svg";
 import { useState } from "react";
 import Composer from "@/components/composer/Composer";
 import { ErrorPage } from "@/pages/Error";
@@ -79,9 +78,3 @@ function Following() {
 }
 
 export default Loader;
-// TODO
-type MixFeed = any;
-
-function Inner({ data, refetch }: { data: MixFeed; refetch: Function }) {
-  return <PostList data={data.mix.fc} refetch={refetch} />;
-}

@@ -245,7 +245,7 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
 
   const selectUser = (user: { id: string }) => {
     if (!mentionState) return;
-    const { start, query, type } = mentionState;
+    const { start, query } = mentionState;
     // For now, always insert the ship name (ID)
     // If using Nostr, maybe npub? But system uses internal IDs mostly.
     // Let's use the ID (ship or pubkey).
@@ -271,6 +271,7 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    console.log("handling keydown");
     if (mentionState && filteredUsers.length > 0) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
@@ -285,6 +286,7 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
         selectUser(filteredUsers[mentionIndex]);
       } else if (e.key === "Escape") {
         setMentionState(null);
+        if (isMaximized) setIsMaximized(false);
       }
     }
   };
@@ -434,6 +436,7 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
         // This is a best-effort attempt to link
         if (our) {
           const res = await api.scryFeed(our, null, null, true, false);
+          console.log("scryed feed", res);
           if ("ok" in res) {
             // Assuming first one is latest
             const latest = Object.values(res.ok.feed.feed)[0]; // Might need sorting
@@ -501,7 +504,8 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
           : "";
     const thread =
       "trill" in composerData.post
-        ? (composerData.post as any).trill.thread || (composerData.post as any).trill.id
+        ? (composerData.post as any).trill.thread ||
+          (composerData.post as any).trill.id
         : "nostr" in composerData.post
           ? composerData.post.nostr.eventId
           : "";
@@ -670,6 +674,7 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
               {threadParts.map((part, i) => (
                 <div key={i} style={{ display: "flex", gap: "8px" }}>
                   <textarea
+                    id="composer-input"
                     value={part}
                     onChange={(e) => updateThreadPart(i, e.target.value)}
                     placeholder={`Part ${i + 1}`}

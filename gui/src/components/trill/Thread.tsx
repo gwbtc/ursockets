@@ -2,7 +2,7 @@ import useLocalState from "@/state/state";
 import Icon from "@/components/Icon";
 import spinner from "@/assets/triangles.svg";
 import Post from "@/components/post/Post";
-import { extractThread, toFlat } from "@/logic/trill/helpers";
+import { toFlat } from "@/logic/trill/helpers";
 import type { FC, FullNode, Poast } from "@/types/trill";
 import type { UserProfile } from "@/types/nostrill";
 import type { Ship } from "@/types/urbit";

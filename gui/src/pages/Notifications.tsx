@@ -8,12 +8,10 @@ import "@/styles/NotificationCenter.css";
 
 const NotificationsPage = () => {
   const [_, navigate] = useLocation();
-  const { notifications, dismissNotification } = useLocalState(
-    (s) => ({
-      notifications: s.notifications,
-      dismissNotification: s.dismissNotification,
-    }),
-  );
+  const { notifications, dismissNotification } = useLocalState((s) => ({
+    notifications: s.notifications,
+    dismissNotification: s.dismissNotification,
+  }));
   console.log({ notifications });
 
   const [filter, setFilter] = useState<"all" | "unread">("all");

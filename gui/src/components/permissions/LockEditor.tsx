@@ -1,5 +1,4 @@
 import type { Lock, Rank } from "@/types/trill";
-import { useState } from "react";
 
 interface LockEditorProps {
   lock: Lock;
@@ -43,18 +42,29 @@ export default function LockEditor({ lock, onChange, label }: LockEditorProps) {
       tags: { ...lock.tags, caveats: tags },
     });
   };
-  
-  const toggleLocked = (type: "rank" | "ship" | "luk" | "tags", val: boolean) => {
-      onChange({
-          ...lock,
-          [type]: { ...lock[type as keyof Lock], locked: val }
-      })
-  }
+
+  const toggleLocked = (
+    type: "rank" | "ship" | "luk" | "tags",
+    val: boolean,
+  ) => {
+    onChange({
+      ...lock,
+      [type]: { ...lock[type as keyof Lock], locked: val },
+    });
+  };
 
   return (
-    <div className="lock-editor" style={{ border: "1px solid #333", padding: "10px", marginBottom: "10px", borderRadius: "4px" }}>
+    <div
+      className="lock-editor"
+      style={{
+        border: "1px solid #333",
+        padding: "10px",
+        marginBottom: "10px",
+        borderRadius: "4px",
+      }}
+    >
       <h4>{label}</h4>
-      
+
       <div className="lock-section">
         <label>
           <input
@@ -82,45 +92,55 @@ export default function LockEditor({ lock, onChange, label }: LockEditorProps) {
 
       <div className="lock-section" style={{ marginTop: "10px" }}>
         <label>
-            <input
-                type="checkbox"
-                checked={lock.ship.locked}
-                onChange={(e) => toggleLocked("ship", e.target.checked)}
-            />
-            Restrict by Ship (Whitelist)
+          <input
+            type="checkbox"
+            checked={lock.ship.locked}
+            onChange={(e) => toggleLocked("ship", e.target.checked)}
+          />
+          Restrict by Ship (Whitelist)
         </label>
         {lock.ship.locked && (
-            <div style={{ marginLeft: "20px" }}>
-                <textarea
-                    value={lock.ship.caveats.join("\n")}
-                    onChange={(e) => updateShips(e.target.value)}
-                    placeholder="~zod\n~bus"
-                    rows={3}
-                    style={{ width: "100%", background: "#222", color: "#fff", border: "1px solid #444" }}
-                />
-            </div>
+          <div style={{ marginLeft: "20px" }}>
+            <textarea
+              value={lock.ship.caveats.join("\n")}
+              onChange={(e) => updateShips(e.target.value)}
+              placeholder="~zod\n~bus"
+              rows={3}
+              style={{
+                width: "100%",
+                background: "#222",
+                color: "#fff",
+                border: "1px solid #444",
+              }}
+            />
+          </div>
         )}
       </div>
 
       <div className="lock-section" style={{ marginTop: "10px" }}>
         <label>
-            <input
-                type="checkbox"
-                checked={lock.tags.locked}
-                onChange={(e) => toggleLocked("tags", e.target.checked)}
-            />
-            Restrict by Tags (Whitelist)
+          <input
+            type="checkbox"
+            checked={lock.tags.locked}
+            onChange={(e) => toggleLocked("tags", e.target.checked)}
+          />
+          Restrict by Tags (Whitelist)
         </label>
         {lock.tags.locked && (
-            <div style={{ marginLeft: "20px" }}>
-                <textarea
-                    value={lock.tags.caveats.join("\n")}
-                    onChange={(e) => updateTags(e.target.value)}
-                    placeholder="politics\nnsfw"
-                    rows={3}
-                    style={{ width: "100%", background: "#222", color: "#fff", border: "1px solid #444" }}
-                />
-            </div>
+          <div style={{ marginLeft: "20px" }}>
+            <textarea
+              value={lock.tags.caveats.join("\n")}
+              onChange={(e) => updateTags(e.target.value)}
+              placeholder="politics\nnsfw"
+              rows={3}
+              style={{
+                width: "100%",
+                background: "#222",
+                color: "#fff",
+                border: "1px solid #444",
+              }}
+            />
+          </div>
         )}
       </div>
     </div>

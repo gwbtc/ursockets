@@ -1,4 +1,4 @@
-import type { FullNode, Poast } from "@/types/trill";
+import type { Poast } from "@/types/trill";
 import { date_diff } from "@/logic/utils";
 import { useLocation } from "wouter";
 import Body from "./Body";
@@ -55,7 +55,12 @@ function Quote({
         </div>
         <span>{date_diff(data.time, "short")}</span>
       </header>
-      <Body poast={data} nest={nest} refetch={refetch!} user={{ urbit: data.author }} />
+      <Body
+        poast={data}
+        nest={nest}
+        refetch={refetch!}
+        user={{ urbit: data.author }}
+      />
     </div>
   );
 }

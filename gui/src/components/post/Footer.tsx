@@ -10,7 +10,7 @@ import NostrIcon from "./wrappers/NostrIcon";
 import type { SPID } from "@/types/ui";
 // TODO abstract this somehow
 
-function Footer({ user, poast, thread, refetch }: PostProps) {
+function Footer({ user, poast, thread }: PostProps) {
   const [_showMenu, setShowMenu] = useState(false);
   const [location, navigate] = useLocation();
   const [reposting, _setReposting] = useState(false);

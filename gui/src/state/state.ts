@@ -9,7 +9,7 @@ import type { Event } from "@/types/nostr";
 import type { FC, Gate, Poast } from "@/types/trill";
 import type { Notification } from "@/types/notifications";
 import { useShallow } from "zustand/shallow";
-import type { HarkAction, Skein, Yarn } from "@/logic/hark";
+import type { HarkAction, Skein } from "@/logic/hark";
 import { skeinToNote } from "@/logic/notifications";
 import { defaultGate } from "@/logic/bunts";
 
@@ -76,9 +76,9 @@ export const useStore = creator((set, get) => ({
     });
     api.scryStorage().then((r) => {
       console.log("storage scry res", r);
-        if ("ok" in r) {
-            set({ s3: r.ok });
-        }
+      if ("ok" in r) {
+        set({ s3: r.ok });
+      }
     });
     api.scryHark().then((r) => {
       console.log("hark scry res", r);

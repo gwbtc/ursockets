@@ -1,5 +1,4 @@
 import type { Ship } from "./urbit";
-import type { Content as TrillContent } from "@/types/trill";
 
 export interface APITweet {
   core: APITweetCore;
@@ -326,11 +325,11 @@ export type TwatterSearchResOK = {
   search: {
     query: string;
     data: string;
-  }
-}
+  };
+};
 export type TwatterNotification = {
   type: string;
   user: string;
   post?: string;
   text: string;
-}
+};

@@ -94,7 +94,7 @@ export default class IO {
     desc = true,
 
     replies = false,
-  ) {
+  ): AsyncRes<FC> {
     const order = desc ? 1 : 0;
     const rp = replies ? 1 : 0;
 

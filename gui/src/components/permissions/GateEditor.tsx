@@ -1,6 +1,5 @@
 import type { Gate, Lock } from "@/types/trill";
 import LockEditor from "./LockEditor";
-import { useState } from "react";
 
 interface GateEditorProps {
   gate: Gate;
@@ -18,22 +17,38 @@ export default function GateEditor({ gate, onChange, label }: GateEditorProps) {
   };
 
   return (
-    <div className="gate-editor" style={{ padding: "10px", border: "1px solid #444", borderRadius: "8px", margin: "10px 0" }}>
+    <div
+      className="gate-editor"
+      style={{
+        padding: "10px",
+        border: "1px solid #444",
+        borderRadius: "8px",
+        margin: "10px 0",
+      }}
+    >
       {label && <h3>{label}</h3>}
-      
-      <LockEditor 
-        lock={gate.lock} 
-        onChange={handleLockChange} 
-        label="Access Policy (Who can view)" 
-      />
-      
-      <LockEditor 
-        lock={gate.mute} 
-        onChange={handleMuteChange} 
-        label="Write/Mute Policy (Who is restricted)" 
+
+      <LockEditor
+        lock={gate.lock}
+        onChange={handleLockChange}
+        label="Access Policy (Who can view)"
       />
 
-      <div className="gate-options" style={{ marginTop: "10px", display: "flex", gap: "20px", alignItems: "center" }}>
+      <LockEditor
+        lock={gate.mute}
+        onChange={handleMuteChange}
+        label="Write/Mute Policy (Who is restricted)"
+      />
+
+      <div
+        className="gate-options"
+        style={{
+          marginTop: "10px",
+          display: "flex",
+          gap: "20px",
+          alignItems: "center",
+        }}
+      >
         <label>
           <input
             type="checkbox"
@@ -44,13 +59,15 @@ export default function GateEditor({ gate, onChange, label }: GateEditorProps) {
         </label>
 
         <label>
-            Backlog Size:
-            <input
-                type="number"
-                value={gate.backlog}
-                onChange={(e) => onChange({ ...gate, backlog: parseInt(e.target.value) || 0 })}
-                style={{ width: "60px", marginLeft: "8px" }}
-            />
+          Backlog Size:
+          <input
+            type="number"
+            value={gate.backlog}
+            onChange={(e) =>
+              onChange({ ...gate, backlog: parseInt(e.target.value) || 0 })
+            }
+            style={{ width: "60px", marginLeft: "8px" }}
+          />
         </label>
       </div>
     </div>
