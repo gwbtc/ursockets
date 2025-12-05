@@ -1,4 +1,5 @@
-/-  post=trill-post, nsur=nostr, sur=nostrill, gate=trill-gate, comms=nostrill-comms, ui=nostrill-ui
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
+    post=trill-post, gate=trill-gate
 /+  trill=trill-post, nostr-keys, sr=sortug, jsonlib=json-nostrill,
     ws=websockets
 |%
@@ -33,6 +34,11 @@
   :~  (give-ws-payload-server:ws wid res-event)
   ==
 
+++  user-to-path  |=  u=user:sur  ^-  path
+  ?-  -.u
+    %urbit  /urbit/(scot %p +.u)
+    %nostr  /nostr/(crip (scow:sr %ux +.u))
+  ==
 ++  user-to-atom  |=  u=user:sur  ^-  @
   ?-  -.u
     %urbit  +.u

@@ -142,12 +142,7 @@
   ++  handle-comms
     =/  pok  (cast-poke:coms q.vase)
     ?:  ?=(%dbug -.pok)  (debug +.pok)
-    =^  cs  state
-      ?-  -.pok
-        %req  (handle-req:coms +.pok)
-        %res  (handle-res:coms +.pok)
-        %eng  (handle-eng:coms +.pok)
-      ==
+    =^  cs  state  (handle-eng:mutat +.pok)
     [cs this]
   ::
   ++  on-ui

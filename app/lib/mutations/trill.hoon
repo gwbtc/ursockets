@@ -1,8 +1,9 @@
-/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui, notif=nostrill-notif,
     post=trill-post, gate=trill-gate, feed=trill-feed
     
 /+  appjs=json-nostrill,
     lib=nostrill,
+    harklib=hark,
     feedlib=trill-feed,
     postlib=trill-post,
     njs=json-nostr,
@@ -317,6 +318,114 @@
     =/  host=@p  author.u.child
     (poke-host:crds host [%eng eng-poke])
   --
+
+
+  ++  handle-eng
+    |=  e=engagement:comms
+    ^-  (quip card:agent:gall _state)
+    =/  user  [%urbit src.bowl]
+    =/  n=notif:notif  [%post [user now.bowl e]]
+    =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
+    =/  cards  :~(hark-card)
+    ::  We send the notification always.
+    ::  Only update state if we are the host. Else we wait for the fact from the actual host
+    ?-  -.e
+      %mention  [cards state]
+      %reply
+        =/  poast  (get:orm:feed feed.state parent.e)
+        ?~  poast  ~&  "parent of reply doesnt exist"  [cards state]
+        =.  state  (add-reply child.e)
+        ::  now the parent should be updated 
+        =/  poast  (get:orm:feed feed.state parent.e)
+        ?~  poast  ~&  "parent of reply doesnt exist"  [cards state]
+        =/  f=fact:comms   [%post %add (wrap-post child.e)]
+        =/  f2=fact:comms  [%post %upd (wrap-post u.poast)]
+        :_  state
+        :~  (update-followers:cards:lib f)
+            (update-followers:cards:lib f2)
+            hark-card
+        ==
+      %quote
+        =/  poast  (get:orm:feed feed.state src.e)
+        ?~  poast  [cards state]
+        ::
+        =/  pid  [our.bowl src.e]
+        =/  spid  [*signature:post src.bowl id.post.e]
+        =.  quoted.engagement.u.poast  (~(put in quoted.engagement.u.poast) spid)
+        =.  state  (add-to-feed u.poast)
+        =/  f=fact:comms  [%post %upd (wrap-post u.poast)]
+        :_  state
+        :~  (update-followers:cards:lib f)
+            hark-card
+        ==
+      %rp
+        =/  poast  (get:orm:feed feed.state id.src.e)
+        ?~  poast  [cards state]
+        =/  pid  [our.bowl src.e]
+        =/  spid  [*signature:post src.bowl target.e]
+        =.  shared.engagement.u.poast  
+          ?:  (~(has in shared.engagement.u.poast) spid)
+            (~(del in shared.engagement.u.poast) spid)
+          (~(put in shared.engagement.u.poast) spid)
+        =.  state  (add-to-feed u.poast)
+        =/  f=fact:comms  [%post %upd (wrap-post u.poast)]
+        :_  state
+        :~  (update-followers:cards:lib f)
+             hark-card
+        ==
+      %reaction
+        =/  poast  (get:orm:feed feed.state id.pid.e)
+        ?~  poast  [cards state]
+        :: TODO signatures et al.
+        =/  pid  [our.bowl id.pid.e]
+        =/  sign  *signature:post
+        =.  q.sign  src.bowl
+        =.  reacts.engagement.u.poast  (~(put by reacts.engagement.u.poast) src.bowl [reaction.e sign])
+        =.  state  (add-to-feed u.poast)
+        =/  f=fact:comms  [%post %upd (wrap-post u.poast)]
+        :_  state
+        :~  (update-followers:cards:lib f)
+            hark-card
+        ==
+      %del-reply 
+        ?~  p=(get:orm:feed feed.state child.e)  [cards state]
+        =/  parent  (get:orm:feed feed.state id.parent.e)
+        ?~  parent  [cards state]
+        ::
+        =/  pid  [our.bowl id.parent.e]
+        =.  state  (del-from-feed u.p)
+        ::  get the updated parent
+        =/  parent  (get:orm:feed feed.state id.parent.e)
+        ?~  parent  ~&  "parent failed to update!!"  [cards state]
+        :_  state
+        :~  (update-followers:cards:lib [%post %upd (wrap-post u.parent)])
+            (update-followers:cards:lib [%post %del (wrap-post u.p)])
+            hark-card
+        ==
+      
+      %del-parent  ::  this is always going to be external
+        [cards state]
+      %del-quote
+        =/  poast  (get:orm:feed feed.state id.src.e)
+        ?~  poast  [cards state]
+        ::
+        =/  pid  [our.bowl src.e]
+
+        =/  spid  [*signature:post src.bowl quote.e]
+        =.  quoted.engagement.u.poast  (~(del in quoted.engagement.u.poast) spid)
+        =.  state  (add-to-feed u.poast)
+        =/  f=fact:comms  [%post %upd (wrap-post u.poast)]
+        :_  state
+        :~  (update-followers:cards:lib f)
+            hark-card
+        ==
+    ==
+
+
+
+
+
+
 
 ++  handle-post-fact  |=  pf=post-fact:comms
   ^-  (quip card _state)
