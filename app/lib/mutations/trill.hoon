@@ -1,4 +1,4 @@
-/-  sur=nostrill, nsur=nostr, comms=nostrill-comms,
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
     post=trill-post, gate=trill-gate, feed=trill-feed
     
 /+  appjs=json-nostrill,
@@ -65,8 +65,9 @@
     
   
 ++  headsup-poke
-  |=  [poke=post-poke:ui:sur p=post:post]  ^-  engagement:comms
+  |=  [poke=post-poke:ui p=post:post]  ^-  engagement:comms
   ?-  -.poke
+    :: TODO  find mentions etc
     %add  !!
     %del  !!
     %quote     [%quote id.poke p]
@@ -74,9 +75,10 @@
     %reply     [%reply id.poke p]
     %rp        [%rp id.poke id.p]
     %reaction  [%reaction id.poke reaction.poke]
+    %perms  !!
   ==
   
-++  handle-post  |=  poke=post-poke:ui:sur
+++  handle-post  |=  poke=post-poke:ui
   ^-  (quip card _state)
   ~&  handle-post-ui=poke
   =/  profile  (~(get by profiles.state) [%urbit our.bowl])
@@ -91,12 +93,11 @@
             =/  host  (user-to-atom:lib host.poke)
             =/  p  p(id id.poke, host host)
             =/  pw  [p (some pubkey) ~ ~ profile]
-            =/  jfact=fact:ui:sur  [%post %del pw]
-            =/  ui-card    (update-ui:cards:lib jfact)
+            =/  fact       [%post %del pw]
+            =/  ui-card    (update-ui:cards:lib fact)
+            =/  fact-card  (update-followers:cards:lib fact)
             :_  state
             ?:  .=(our.bowl host.p)
-              =/  =fact:comms  [%post %del id.poke]
-              =/  fact-card  (update-followers:cards:lib fact)
               :~  ui-card
                   fact-card
               ==
@@ -110,11 +111,10 @@
           (build-post:trill now.bowl pubkey sp)
         =.  state  (add-to-feed p)
         =/  pw  [p (some pubkey) ~ ~ profile]
-        =/  jfact=fact:ui:sur  [%post %add pw]
-        =/  ui-card    (update-ui:cards:lib jfact)
+        =/  fact  [%post %add pw]
+        =/  ui-card    (update-ui:cards:lib fact)
+        =/  fact-card  (update-followers:cards:lib fact)
         :_  state
-          =/  =fact:comms  [%post %add p]
-          =/  fact-card  (update-followers:cards:lib fact)
           :~  ui-card
               fact-card
           ==
@@ -127,13 +127,12 @@
           (build-post:trill now.bowl pubkey sp)
         =.  state  (add-to-feed p)
         =/  pw  [p (some pubkey) ~ ~ profile]
-        =/  jfact=fact:ui:sur  [%post %add pw]
-        =/  ui-card    (update-ui:cards:lib jfact)
-        =/  eng-poke  [%eng (headsup-poke poke p)]
+        =/  fact  [%post %add pw]
+        =/  ui-card    (update-ui:cards:lib fact)
+        =/  fact-card  (update-followers:cards:lib fact)
+        =/  eng-poke=poke:comms  [%eng (headsup-poke poke p)]
         =/  eng-card  (poke-host:crds host.p eng-poke)
         :_  state
-          =/  =fact:comms  [%post %add p]
-          =/  fact-card  (update-followers:cards:lib fact)
           :~  ui-card
               fact-card
               eng-card
@@ -160,13 +159,12 @@
           (build-post:trill now.bowl pubkey sp)
         =.  state  (add-reply p)
         =/  pw  [p (some pubkey) ~ ~ profile]
-        =/  jfact=fact:ui:sur  [%post %add pw]
-        =/  ui-card    (update-ui:cards:lib jfact)
-        =/  eng-poke  [%eng (headsup-poke poke p)]
+        =/  fact  [%post %add pw]
+        =/  ui-card    (update-ui:cards:lib fact)
+        =/  fact-card  (update-followers:cards:lib fact)
+        =/  eng-poke=poke:comms  [%eng (headsup-poke poke p)]
         =/  eng-card  (poke-host:crds host.p eng-poke)
         :_  state
-          =/  =fact:comms  [%post %add p]
-          =/  fact-card  (update-followers:cards:lib fact)
           :~  ui-card
               fact-card
               eng-card
@@ -180,13 +178,12 @@
           (build-post:trill now.bowl pubkey sp)
         =.  state  (add-to-feed p)
         =/  pw  [p (some pubkey) ~ ~ profile]
-        =/  jfact=fact:ui:sur  [%post %add pw]
-        =/  ui-card    (update-ui:cards:lib jfact)
-        =/  eng-poke  [%eng (headsup-poke poke p)]
+        =/  fact  [%post %add pw]
+        =/  ui-card    (update-ui:cards:lib fact)
+        =/  fact-card  (update-followers:cards:lib fact)
+        =/  eng-poke=poke:comms  [%eng (headsup-poke poke p)]
         =/  eng-card  (poke-host:crds host.p eng-poke)
         :_  state
-          =/  =fact:comms  [%post %add p]
-          =/  fact-card  (update-followers:cards:lib fact)
           :~  ui-card
               fact-card
               eng-card
@@ -199,14 +196,13 @@
             our.bowl  [reaction.poke *signature:post]
           =.  state  (add-to-feed p)
           =/  pw  [p (some pubkey) ~ ~ profile]
-          =/  jfact=fact:ui:sur  [%post %add pw]
-          =/  ui-card    (update-ui:cards:lib jfact)
-          =/  eng-poke  [%eng (headsup-poke poke p)]
+          =/  fact  [%post %add pw]
+          =/  fact-card  (update-followers:cards:lib fact)
+          =/  ui-card    (update-ui:cards:lib fact)
+          =/  eng-poke=poke:comms  [%eng (headsup-poke poke p)]
           =/  eng-card  (poke-host:crds host eng-poke)
 
           :_  state
-            =/  =fact:comms  [%post %add p]
-            =/  fact-card  (update-followers:cards:lib fact)
             :~  ui-card
                 fact-card
                 eng-card
@@ -225,14 +221,30 @@
               our.bowl  [reaction.poke *signature:post]
             =.  state  (add-to-feed p)
             =/  pw  [p (some pubkey) ~ ~ profile]
-            =/  jfact=fact:ui:sur  [%post %add pw]
-            =/  ui-card    (update-ui:cards:lib jfact)
-            =/  eng-poke  [%eng (headsup-poke poke p)]
+            =/  fact  [%post %add pw]
+            =/  ui-card    (update-ui:cards:lib fact)
+            =/  eng-poke=poke:comms  [%eng (headsup-poke poke p)]
             =/  eng-card  (poke-host:crds host.p eng-poke)
             :_  state
               :~  ui-card
                   eng-card
               ==
+    %perms
+      :: TODO
+      ?.  .=(our.bowl ship.pid.poke)  `state
+      =/  up  (get:orm:feed feed.state id.pid.poke)
+      ?~  up  `state
+      =/  p  u.up
+      =.  perms.p  perms.poke
+      =.  feed.state  (put:orm:feed feed.state id.p p)
+      =/  pw  [p (some pubkey) ~ ~ profile]
+      =/  fact  [%post %add pw]
+      =/  ui-card    (update-ui:cards:lib fact)
+      =/  fact-card  (update-followers:cards:lib fact)
+      :_  state
+      :~  ui-card
+          fact-card
+      ==
     ==
 
 ++  handle-post-fact  |=  pf=post-fact:comms
@@ -243,30 +255,30 @@
   ?~  fed  ~&  "emmm not following ya"  `state
     =/  nf=feed:feed
     ?:  ?=(%del -.pf)
-          =<  +  (del:orm:feed u.fed id.pf)
+          =<  +  (del:orm:feed u.fed id.post.pf)
       ::mmm people aren't supposed to update if its not their own feeds
       :: =/  =user:nsur  [%urbit host.p.pdf]
-      (put:orm:feed u.fed id.p.pf p.pf)
+      (put:orm:feed u.fed id.post.pf post.pf)
   =.  following.state  (~(put by following.state) user nf)
   =.  following2.state
   
     ?:  ?=(%del -.pf)
-    =/  =upid:sur  [[%urbit src.bowl] id.pf]
+    =/  =upid:sur  [[%urbit src.bowl] id.post.pf]
     =<  +  (del:uorm:sur following2.state upid)
-    (insert-to-global:trill-feed following2.state p.pf)
+    (insert-to-global:trill-feed following2.state post.pf)
     :: TODO update the ui with the changes 
     :_  state
     =/  profile  (~(get by profiles.state) user)
     =/  pubkey  0  :: TODO
-    =/  jfact=fact:ui:sur
+    =/  fact
       ?:  ?=(%del -.pf)
         =/  p  *post:post
-        =/  p  p(host src.bowl, id id.pf)
+        =/  p  p(host src.bowl, id id.post.pf)
         =/  pw  [p ~ ~ ~ profile]
         [%post %del pw]
-        =/  pw  [p.pf ~ ~ ~ profile]
+        =/  pw  [post.pf ~ ~ ~ profile]
         [%post %add pw]
-    =/  ui-card  (update-ui:cards:lib jfact)
+    =/  ui-card  (update-ui:cards:lib fact)
     :~  ui-card
     ==
 --

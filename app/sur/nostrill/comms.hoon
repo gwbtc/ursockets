@@ -1,10 +1,8 @@
 /-  sur=nostrill, nsur=nostr, feed=trill-feed, post=trill-post
 |%
-::  TODO have requests and responses carry messages
+::  Pokes are used to notify users of engagement. There is no data requests through pokes
 +$  poke
-  $%  [%req =req:sur]
-      [%res res]
-      [%eng engagement]
+  $%  [%eng engagement]
       [%dbug *]
   ==
 +$  engagement
@@ -17,38 +15,49 @@
       [%rp src=@da target=@da]
       [%reaction post=@da reaction=@t]
   ==
+::  Data requests is done through subscriptions
 +$  res
-  $:  msg=@t
-      res=res-type
+  $:  req-msg=@t
+      p=res-type
   ==
 +$  res-type
-  $%  [%begs beg-type]
-      [%fols (approval:sur feed-data)]
+$%  [%begs beg-res]
+    [%fols fols-res]
+==
++$  beg-res
+  $:  msg=@t
+  $=  p
+  $%  [%feed p=(approval:sur feed-data)]
+      [%thread id=@da p=(approval:sur thread-data)]
   ==
-+$  beg-type
-  $%  [%feed (approval:sur feed-data)]
-      [%thread id=@da (approval:sur thread-data)]
   ==
 
 +$  thread-data
   $:  node=full-node:post
       thread=(list full-node:post)  ::  list of all the users consecutive posts, as in long form thread
   ==
+
 +$  feed-data  [=fc:feed profile=(unit user-meta:nsur)]
-:: TODO there's some overlap between what we send to the UI and we send to our followers
-:: but it's not exactly the same
+::  Only follow results are given as proper facts to be handled in the backend
+::  Begs are requested by threads, and passed directly as json to be sent to the frontend
++$  fols-res  [msg=@t p=(approval:sur feed-data)]
+
+::  Sent to followers when we update stuff
 +$  fact
-  $%  [%post post-fact]
-      [%prof prof-fact]
-      [%init res]
+  $%  [%prof prof-fact]
+      [%post post-fact]
   ==
+
 +$  post-fact
-  $%  [%add p=post:post]
-      [%del id=@da]
-      [%changes p=post:post]
-  ==
-+$  prof-fact
-  $%  [%prof =user-meta:nsur]
-      [%keys pub=@ux]
-  ==
+$%  [%add post-wrapper:sur]
+    [%del post-wrapper:sur]
+    [%changes post-wrapper:sur]
+==
+:: +$  fols-fact
+:: $%  [%new =user:sur =fc:tf meta=(unit user-meta:nostr)]
+::     [%quit =user:sur]
+:: ==
++$  prof-fact  user-meta:nsur
+
+
 --

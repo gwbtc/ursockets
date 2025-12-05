@@ -108,12 +108,13 @@
     %req
       =/  ship  (user-to-atom:lib user.n)
       =/  ship-token  [%ship ship]
-      ?@  req.n  ::  follow
+      =/  req  req.p.n
+      ?@  req  ::  follow
         ?~  solved.n
           :-  :~  ship-token
                   'tried to follow you. Your decision is pending'
                   'He left the following request message: '
-                   msg.n
+                   msg.p.n
               ==
               /req/fans/(scot %p ship)/pending
         ::
@@ -128,12 +129,12 @@
               ==
               /req/fans/(scot %p ship)/ok
       ::  begs
-      ?@  p.req.n  ::  %feed
+      ?@  p.req  ::  %feed
         ?~  solved.n
           :-  :~  ship-token
                   'Requested access to your feed. Your decision is pending.'
                   'He left the following request message: '
-                   msg.n
+                   msg.p.n
               ==
               /req/begs/feed/(scot %p ship)/pending
         ::
@@ -148,14 +149,14 @@
               ==
               /req/begs/feed/(scot %p ship)/ok
       ::  %thread
-        =/  ids  (scot %ud `@`+.p.req.n)
+        =/  ids  (scot %ud `@`+.p.req)
         ?~  solved.n
           :-  :~  ship-token
                   'Requested access to your thread with id: '
                   ids
                   'Your decision is pending.'
                   'He left the following request message: '
-                   msg.n
+                   msg.p.n
               ==
               /req/begs/thread/[ids]/(scot %p ship)/pending
         ::
@@ -176,9 +177,10 @@
     %res
       =/  ship  (user-to-atom:lib user.n)
       =/  ship-token  [%ship ship]
-      ?-  -.res.n
+      =/  res  p.p.n
+      ?-  -.res
         %fols  
-          ?^  +.res.n  ::  approved
+          ?^  p.res  ::  approved
             :-  :~  ship-token
                   ' accepted your follow request.'
                 ==
@@ -189,9 +191,10 @@
                 ==
                 /res/fols/(scot %p ship)/ng
         %begs
-          ?-  +<.res.n
+          =/  =beg-res:comms  +.res
+          ?-  -.p.beg-res
             %feed
-              ?^  +>.res.n
+              ?^  p.p.beg-res
                 :-  :~  ship-token
                         ' accepted your request to access his feed'
                     ==
@@ -202,9 +205,8 @@
                     ==
                     /res/begs/feed/(scot %p ship)/ng
             %thread
-              =/  ids  (scot %ud `@ud`id.res.n)
-              =/  mt=(approval:sur thread-data:comms)  +>+.res.n
-              ?^  mt
+              =/  ids  (scot %ud `@ud`id.p.beg-res)
+              ?^  p.p.beg-res
                 :-  :~  ship-token
                         ' accepted your request to access his thread of id:'
                         ids

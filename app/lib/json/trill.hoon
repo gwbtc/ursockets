@@ -1,4 +1,4 @@
-/-  feed=trill-feed, post=trill-post, sur=nostrill
+/-  feed=trill-feed, post=trill-post, sur=nostrill, tg=trill-gate
 /+  common=json-common, sr=sortug
 |%
 ++  en
@@ -14,6 +14,40 @@
     ==
   ++  cursor  |=  c=(unit @da)
     ?~  c  ~  (time u.c)
+  ++  perms  |=  [read=gate:tg write=gate:tg]  ^-  json
+    %-  pairs
+    :~  :-  %read   (gate read)
+        :-  %write  (gate write)
+    ==
+  ++  gate  |=  g=gate:tg  ^-  json
+  %-  pairs
+  :~  lock+(lock lock.g)
+      mute+(lock mute.g)
+      manual+b+manual.g
+      begs+(gate-begs begs.g)
+      backlog+n+backlog.g
+  ==
+  ++  lock  |=  l=lock:tg
+  %-  pairs
+  :~  :-  %rank   %-  pairs
+        :~  [%locked %b locked.rank.l]  [%public %b public.rank.l]  :+  %caveats  %a
+          %+  turn  ~(tap in caveats.rank.l)  |=  a=rank:title  [%s `@t`a]  ==
+      :-  %luk    %-  pairs
+        :~  [%locked %b locked.luk.l]   [%public %b public.luk.l]   :+  %caveats  %a
+          %+  turn  ~(tap in caveats.luk.l)  |=  a=@p  [%s (scot %p a)]  ==
+      :-  %ship   %-  pairs
+        :~  [%locked %b locked.ship.l]  [%public %b public.ship.l]  :+  %caveats  %a
+          %+  turn  ~(tap in caveats.ship.l)  |=  a=@p  [%s (scot %p a)]  ==
+      :-  %tags   %-  pairs
+        :~  [%locked %b locked.tags.l]  [%public %b public.tags.l]  :+  %caveats  %a
+          %+  turn  ~(tap in caveats.tags.l)  |=  a=@t   [%s a]     ==
+      :-  %pass  ?~  pass.l  ~  [%s (crip (scow:sr %uw u.pass.l))]
+      :-  %custom  ~
+  ==
+  ++  gate-begs  |=  bm=(map @p (list [@da @t]))
+  %-  pairs  %+  turn  ~(tap by bm)  |=  [key=@p val=(list [@da @t])]
+    :+  (scot %p key)  %a  %+  turn  val
+      |=  [ts=@da msg=@t]   %-  pairs  :~([%time (time ts)] [%msg %s msg])
   ++  feed
     |=  f=feed:^feed  ^-  json
       %-  pairs
@@ -40,12 +74,14 @@
           author+(user (branch-user author.p))
           thread+(ud:en:common thread.p)
           parent+?~(parent.p ~ (ud:en:common u.parent.p))
-          contents+(content contents.p)
-          :: hash+(b64:en:common hash.p)
-          hash+(hex:en:common `@ux`hash.p)
-          engagement+(engagement engagement.p)
           children+a+(turn ~(tap in children.p) ud:en:common)
+          contents+(content contents.p)
+          perms+(perms perms.p)
+          :: hash+(b64:en:common hash.p)
+          engagement+(engagement engagement.p)
+          hash+(hex:en:common `@ux`hash.p)
           time+(time id.p)
+          :+  %tags  %a  %+  turn  ~(tap in tags.p)  cord:en:common 
       ==
 
     ++  content
@@ -232,4 +268,74 @@
           (full-node fn)
     ::
   --
+  ++  de
+  =,  dejs-soft:format
+    |%
+    ++  perms 
+      %-  ot
+      :~  read+gate
+          write+gate
+      ==
+    ++  gate  ^-  fist
+      %-  ot
+      :~  lock+lock
+          manual+bo
+          begs+begs
+          mute+lock
+          backlog+ni
+      ==
+    ++  lock  ^-  fist
+      %-  ot
+      :~  rank+(sublock rank)
+          luk+(sublock (se:de:common %p))
+          ship+(sublock (se:de:common %p))
+          tags+(sublock so)
+          pass+so
+          custom+custom
+      ==
+    ++  custom  ^-  fist  |=  j=json
+      %-  some  :-  ~  .n  
+    ++  sublock  |*  wit=fist  ^-  fist
+      %-  ot  :~
+        caveats+(as-soft:parsing:sr wit)
+        locked+bo
+        public+bo
+      ==
+    :: ++  as
+    ::   |*  a=fist
+    ::   %+  cu
+    ::   ~(gas in *(set _$:a))
+    ::   (ar a)
+
+
+:: ++  ar
+::   |*  wit=fist
+::   |=  jon=json  ^-  (list _(wit *json))
+::   ?>  ?=([%a *] jon)
+::   (turn p.jon wit)
+
+::       ++  ar
+::       |*  wit=fist
+::       |=  jon=json
+::       ?.  ?=([%a *] jon)  ~
+::       %-  zl
+::       |-
+::       ?~  p.jon  ~
+::       [i=(wit i.p.jon) t=$(p.jon t.p.jon)]    
+:: 
+    ++  rank  ^-  fist
+    %-  su  ;~  pose
+    %+  cold  %czar  (jest 'czar')
+    %+  cold  %king  (jest 'king')
+    %+  cold  %duke  (jest 'duke')
+    %+  cold  %earl  (jest 'earl')
+    %+  cold  %pawn  (jest 'pawn')
+    ==
+    :: ++  rank  |=  j=json  ^-  (unit rank:title)
+    ::   ?.  ?=(%s -.j)  ~
+    ::   ?.  ?=(rank:title p.j)  ~
+    ::   (some `rank:title`p.j)
+    ++  begs
+    %-  om  %-  ar  %-  ot  :~([%time di] [%msg so])
+    --
 --

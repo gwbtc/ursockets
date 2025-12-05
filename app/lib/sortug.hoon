@@ -81,6 +81,15 @@
   $(a t.a, b nb, i +(i))
 ++  parsing
   |%
+  ++  as-soft  |*  wit=fist:dejs-soft:format  ^-  fist:dejs-soft:format
+    |=  jon=json
+    =/  res  %-  (ar:dejs-soft:format wit)  jon
+    ?~  res  ~  `(silt u.res)
+  ++  as-soft2
+    =,  dejs-soft:format
+    |*  wit=fist
+    %+  cu  ~(gas in *(set _$:wit))  (ar wit)
+
   ++  link  auri:de-purl:html
   ++  para
     |%

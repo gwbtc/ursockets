@@ -1,5 +1,5 @@
-/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, feed=trill-feed
-/+  lib=nostrill, js=json-nostr, nostr-client, sr=sortug, constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill, mutations-nostr
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, feed=trill-feed, ui=nostrill-ui, noti=nostrill-noti
+/+  lib=nostrill, js=json-nostr, nostr-client, sr=sortug, constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill, mutations-nostr, harklib=hark
 |_  [=state:sur =bowl:gall]
 ++  handle-add  |=  =user:sur
   ^-  (quip card:agent:gall _state)
@@ -30,45 +30,42 @@
   =/  nset  (~(del in u.graph) user)
   =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] nset)
   :_  state
-    =/  =fact:ui:sur  [%fols %quit user]
-    =/  c1  (update-ui:cards:lib fact)
-    ?.  ?=(%urbit -.user)  :~(c1)
+    :: =/  =fact:ui  [%fols %quit user]
+    :: =/  c1  (update-ui:cards:lib fact)
+    :: ?.  ?=(%urbit -.user)  :~(c1)
     ~&  >>  leaving=user
-    =/  c2   (urbit-leave +.user)
-    :~(c1 c2)
+    =/  ship  (user-to-atom:lib user)
+    =/  c2   (urbit-leave ship)
+    :: :~(c1 c2)
+    :~(c2)
 
-++  handle-follow-res  |=  =res:comms
-  ::  TODO URGENT
-  :: ?-  -.res.res
-  ::   %fols   
-  ::         :_  state
-  ::         :: =/  =fact:ui:sur  [%hark %fols [%urbit src.bowl] .n msg.res]
-  ::         :: =/  c  (update-ui:cards:lib fact)  :~(c)
-  ::   %begs
-  ::     ?-  +<.res.res
-  ::       %feed
-  ::         :: (handle-follow-ok [%urbit src.bowl] fc.+.p.res profile.+.p.res)
-  ::         `state
-  ::       %thread  `state
-  ::     ==
-  :: ==
-  `state
+:: follow-responses
+++  handle-follow-res  |=  fr=fols-res:comms
+  ^-  (quip card:agent:gall _state)
+  =/  =user:sur  [%urbit src.bowl]
+  =?  state  ?=(^ p.fr)
+    =.  following.state   (~(put by following.state) user feed.fc.p.p.fr)
+    =.  following2.state  (add-new-feed:feedlib following2.state feed.fc.p.p.fr)
+    =?  profiles.state  ?=(^ profile.p.p.fr)  (~(put by profiles.state) user u.profile.p.p.fr)
+    =/  graph  (~(get by follow-graph.state) [%urbit our.bowl])
+    =/  follows  ?~  graph  (silt ~[user])  (~(put in u.graph) user)
+    =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] follows)
+    state
+  ::
+  =/  =res:comms  ['' %fols fr]
+  =/  =fact:ui    [%fols user now.bowl fr]
+  =/  n=notif:noti  [%res [user now.bowl res]]
+  =/  hark-card  (send-hark:harklib n bowl)
+  =/  ui-card    (update-ui:cards:lib fact)
+  :_  state
+  :~  hark-card
+      ui-card
+  ==
+
 ++  handle-refollow  |=  sip=@p
   :_  state  :_   ~
   :: (urbit-watch sip)
   [%pass /follow %agent [sip dap.bowl] %watch /follow]
-
-++  handle-follow-ok  |=  [=user:sur =fc:feed profile=(unit user-meta:nsur)]
-  ^-  (quip card:agent:gall _state)
-  =.  following.state   (~(put by following.state) user feed.fc)
-  =.  following2.state  (add-new-feed:feedlib following2.state feed.fc)
-  =/  graph  (~(get by follow-graph.state) [%urbit our.bowl])
-  =/  follows  ?~  graph  (silt ~[user])  (~(put in u.graph) user)
-  =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] follows)
-  =.  profiles.state  ?~  profile  profiles.state  (~(put by profiles.state) user u.profile)
-  :_  state
-    =/  =fact:ui:sur  [%fols %new [%urbit src.bowl] fc profile]
-    =/  c  (update-ui:cards:lib fact)  :~(c)
     
 
 ++  handle-kick-nack  |=  p=@p
@@ -79,25 +76,17 @@
   =/  ngraph  (~(del in u.graph) [%urbit p])
   =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] ngraph)
   :_  state
-    =/  =fact:ui:sur  [%fols %quit %urbit src.bowl]
-    =/  c  (update-ui:cards:lib fact)  :~(c)
+  ~
+  :: TODO quit or not to quit
+    :: =/  =fact:ui  [%fols %quit %urbit src.bowl]
+    :: =/  c  (update-ui:cards:lib fact)  :~(c)
 
 
+:: TODO pass actual path, may vary
 ++  urbit-leave  |=  sip=@p   ^-  card:agent:gall
   [%pass /follow %agent [sip dap.bowl] %leave ~]
   
 ++  urbit-watch  |=  sip=@p   ^-  card:agent:gall
   [%pass /follow %agent [sip dap.bowl] %watch /follow]
-
-:: ++  res-fact  |=  =res:comms   ^-  (list card:agent:gall)
-::   =/  paths  ~[/beg/feed]
-::   =/  =poke:comms  [%res res]
-::   ~&  >  giving-res-fact=res
-::   =/  jon  (beg-res:en:jsonlib res)
-::   =/  cage  [%json !>(jon)]
-::   :~
-::     [%give %fact paths cage]
-::     [%give %kick paths ~]
-::   ==
 
 --

@@ -1,4 +1,4 @@
-/-  sur=nostrill, nsur=nostr, tf=trill-feed, tp=trill-post, comms=nostrill-comms, hark, noti=nostrill-noti
+/-  sur=nostrill, nsur=nostr, tf=trill-feed, tp=trill-post, comms=nostrill-comms, hark, noti=nostrill-noti, ui=nostrill-ui
 /+  lib=nostrill, nostr-keys, sr=sortug, scri,
     ws=websockets,
     bip-b173,
@@ -139,19 +139,14 @@
       [cs this]
   --
   ++  handle-comms
-    =/  pok  (cast-poke:coms q.vase)
+    =/  pok  !<(poke:comms vase)
     ?:  ?=(%dbug -.pok)  (debug +.pok)
-    =^  cs  state
-      ?-  -.pok
-        %req  (handle-req:coms +.pok ~)
-        %res  (handle-res:coms +.pok)
-        %eng  (handle-eng:coms +.pok)
-      ==
+    =^  cs  state  (handle-eng:coms +.pok)
     [cs this]
   ::
   ++  on-ui
     =/  jon=json  !<(json vase)
-    =/  upoke=(unit poke:ui:sur)  (ui:de:jsonlib jon)
+    =/  upoke=(unit poke:ui)  (ui:de:jsonlib jon)
     ?~  upoke  ~&  bad-ui-poke=jon  `this
     ?-  -.u.upoke
       %keys  handle-cycle-keys
@@ -173,7 +168,7 @@
         ~&  new-keys=keys
         `this
 
-  ++  handle-begs  |=  poke=begs-poke:ui:sur
+  ++  handle-begs  |=  poke=begs-poke:ui
   ?-  -.poke
     %feed
       =/  cs  ~
@@ -182,7 +177,7 @@
       =/  cs  ~
       [cs this]
   ==
-  ++  handle-fols  |=  poke=fols-poke:ui:sur
+  ++  handle-fols  |=  poke=fols-poke:ui
     =^  cs  state
       ?-  -.poke
         %add  (handle-add:fols +.poke)
@@ -191,7 +186,7 @@
       ==
       [cs this]
 
-  ++  handle-prof  |=  poke=prof-poke:ui:sur
+  ++  handle-prof  |=  poke=prof-poke:ui
     ?-  -.poke
       %add
         =.  profiles  (~(put by profiles) [%urbit our.bowl] +.poke)
@@ -203,7 +198,7 @@
         ::  TODO
         `this
     ==
-  ++  handle-rela  |=  poke=relay-poke:ui:sur
+  ++  handle-rela  |=  poke=relay-poke:ui
     ::  TODO fix this somehow
     =^  cs  state
     ?+  -.poke  (handle-rela:mutan poke)
@@ -583,7 +578,7 @@
       %http
       `this
       %ui
-        =/  =fact:ui:sur  [%post %add *post-wrapper:sur]
+        =/  =fact:ui  [%post %add *post-wrapper:sur]
         =/  card     (update-ui:cards fact)
         :_  this  :~(card)
       %kick
@@ -643,17 +638,20 @@
     =^  cs  state  (set-relay:mutan (slav %ud wids.pole))
     [cs this]
   [%websocket-server *]  `this
-  [%follow msg=@ ~]
-    =^  cs  state  (handle-req:coms [msg.pole %fans] `pole)
+  [%follow rest=*]
+    =/  msg  ?~  rest.pole  ''  -.rest.pole
+    =^  cs  state  (handle-req:coms [msg %fans] pole)
     [cs this]
-  [%beg %feed msg=@ ~]
-    =^  cs  state  (handle-req:coms [msg.pole %beg %feed] `pole)
+  [%beg %feed rest=*]
+    =/  msg  ?~  rest.pole  ''  -.rest.pole
+    =^  cs  state  (handle-req:coms [msg %beg %feed] pole)
     [cs this]
 
-  [%beg %thread ids=@t msg=@ ~]
+  [%beg %thread ids=@t rest=*]
     =/  id  (slaw:sr %uw ids.pole)
     ?~  id  ~&  error-parsing-ted-id=pole  `this
-    =^  cs  state  (handle-req:coms [msg.pole %beg %thread u.id] `pole)
+    =/  msg  ?~  rest.pole  ''  -.rest.pole
+    =^  cs  state  (handle-req:coms [msg %beg %thread u.id] pole)
     [cs this]
 
   [%ui ~]
@@ -696,13 +694,10 @@
         [cs this]
       ?.  ?=(%fact -.sign)  `this
 
-        =/  =fact:comms  ;;  fact:comms  q.q.cage.sign
-        =^  cs  state  
-          ?-  -.fact
-            %init  (handle-follow-res:fols +.fact)
-            %post  (handle-post-fact:mutat +.fact)
-            %prof  (handle-prof-fact:mutan +.fact)
-          ==
+        ::  TODO why won't it unvase come on
+        :: =/  =fact:comms  ;;  fact:comms  q.q.cage.sign
+        =/  fact  !<([%fols fols-res:comms] q.cage.sign)
+        =^  cs  state  (handle-follow-res:fols +.fact)
         [cs this]
         
   ==

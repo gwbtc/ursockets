@@ -1,4 +1,4 @@
-/-  sur=nostrill, nsur=nostr, feed=trill-feed, post=trill-post, comms=nostrill-comms, noti=nostrill-noti
+/-  sur=nostrill, nsur=nostr, feed=trill-feed, post=trill-post, comms=nostrill-comms, noti=nostrill-noti, ui=nostrill-ui
 /+  sr=sortug, common=json-common, trill=json-trill, nostr=json-nostr
 |%
 ++  en
@@ -13,6 +13,7 @@
     profiles+(en-profiles profiles)
     :: TODO proper cursors
     feed+(feed-with-cursor:en:trill feed ~ ~)
+    perms+(gate:en:trill feed-perms)
     nostr+(en-nostr-feed nostr-feed)
     following+(enfollowing following)
     following2+(global-with-cursor following2 ~ ~)
@@ -92,17 +93,17 @@
       %nostr  (hex:en:common +.u)
     ==
   ::  ui facts
-  ++  fact  |=  f=fact:ui:sur  ^-  json
+  ++  fact  |=  f=fact:ui  ^-  json
     %+  frond  %fact
     %+  frond  -.f
     ?-  -.f
       %nostr   (en-nostr +.f)
       %post    (postfact +.f)
       %prof    (en-profiles +.f)
-      %enga    (enga +.f)
       %fols    (fols +.f)
+      %keys    (hex:en:common +.f)
     ==
-  ++  en-nostr  |=  nf=nostr-fact:ui:sur  ^-  json
+  ++  en-nostr  |=  nf=nostr-fact:ui  ^-  json
     %+  frond  -.nf
     ?-  -.nf
       %feed    (en-nostr-feed +.nf)
@@ -111,28 +112,16 @@
       %event   (event:en:nostr +.nf)
       %relays  (en-relays +.nf)
     ==
-  ++  fols  |=  ff=fols-fact:ui:sur  ^-  json
-    %+  frond  -.ff
-    ?-  -.ff
-      %quit  (user +.ff)
-      %new  %:  pairs
-              user+(user user.ff)
-              feed+(feed-with-cursor:en:trill fc.ff)
-              :-  'profile'  ?~  meta.ff  ~  (user-meta:en:nostr u.meta.ff)
-            ~
-        ==
+  ++  fols  |=  a=(enbowl:sur fols-res:comms)  ^-  json
+    %-  pairs
+    :~  user+(user user.a)
+        :-  %data  (en-fols p.a)
     ==
-  ++  tedfact  |=  pf=post-fact:ui:sur  ^-  json
-    %+  frond  -.pf
-    (post-wrapper +.pf)
-  ++  postfact  |=  pf=post-fact:ui:sur  ^-  json
+
+  ++  postfact  |=  pf=post-fact:comms  ^-  json
     %+  frond  -.pf
     (post-wrapper +.pf)
 
-  ++  enga  |=  [pw=post-wrapper:sur reaction=*]
-     :: TODO
-    ^-  json
-    ~
   ++  hark  |=  =notif:noti
     ^-  json
     ::  TODO remove as we're using %hark instead
@@ -150,7 +139,7 @@
   ::   :~  user+(user u)
   ::       profile+(user-meta:en:nostr prof)
   ::   ==
-  :: ++  beg-notif  |=  [beg=begs-poke:ui:sur accepted=? msg=@t]
+  :: ++  beg-notif  |=  [beg=begs-poke:ui accepted=? msg=@t]
   ::   ^-  json
   ::   %+  frond  -.beg
   ::   %-  pairs
@@ -191,22 +180,30 @@
 
   ++  res  |=  =res:comms  ^-  json
     %+  frond  %res  %-  pairs
-    :~  :-  %msg  [%s msg.res]
-        :-  -.res.res  ?-  -.res.res
-                         %begs  (en-beg +.res.res)
-                         %fols  (en-fols +.res.res)
+    :~  :-  %req-msg  [%s req-msg.res]
+        :-  -.p.res  ?-  -.p.res
+                         %begs  (en-beg +.p.res)
+                         %fols  (en-fols +.p.res)
                        ==
     ==
-  ++  en-fols  |=  p=(approval:sur feed-data:comms)  ^-  json
-    ?@  p  ~  (feed-data data.p)
-  ++  en-beg   |=  p=beg-type:comms  ^-  json
-    ?-  -.p
-      %feed     ?@  +.p  (frond -.p ~)  (feed-data data.+.p)  
-      %thread   %+  frond  -.p
-        %-  pairs
-        :~  ['id' (ud:en:common id.p)]
-            :-  %data  ?@  +>.p  ~  (thread:en:trill data.p)
-        ==
+
+  ++  en-fols  |=  p=fols-res:comms  ^-  json
+    %-  pairs
+    :~  msg+s+msg.p
+        :-  %data  ?@  p.p  ~  (feed-data p.p.p)
+    ==
+  ++  en-beg   |=  p=beg-res:comms  ^-  json
+    %-  pairs
+    :~  msg+s+msg.p
+       :-  %data  ?-  -.p.p
+                    %feed     ?@  p.p.p  (frond -.p.p ~)  (feed-data p.p.p.p)  
+                    %thread   %+  frond  -.p.p
+                      %-  pairs
+                      :~  ['id' (ud:en:common id.p.p)]
+                          :-  %data  ?@  p.p.p  ~  (thread:en:trill p.p.p.p)
+                      ==
+
+                ==
     ==
 
   ++  feed-data
@@ -228,12 +225,24 @@
   :: ui
 ++  ui
   %-  of  :~
-    keys+ul
     fols+ui-fols
     begs+ui-begs
     prof+ui-prof
+    keys+ul
     post+ui-post
     rela+ui-relay
+    reqs+ui-reqs
+  ==
+++  ui-reqs
+%-  of  :~
+  handle+ui-req-handle
+  del+de-atom-id
+  ==
+++  ui-req-handle
+%-  ot  :~
+  id+de-atom-id
+  approve+bo
+  msg+so
   ==
 ++  ui-fols
   %-  of  :~
@@ -266,14 +275,21 @@
 ++  other-meta  |=  jon=json
   ?.  ?=(%o -.jon)  ~  (some p.jon)
 ++  ui-post
-  %-  of  :~
-    add+postadd
-    reply+reply
-    quote+quote
-    rp+pid
-    :: rt+de-rt
-    reaction+reaction
-    del+pid
+|=  j=json   ~ 
+  :: %-  of  :~
+  ::   add+postadd
+  ::   reply+reply
+  ::   quote+quote
+  ::   rp+upid
+  ::   :: rt+de-rt
+  ::   reaction+reaction
+  ::   del+upid
+  ::   perms+perms-poke
+  :: ==
+++  perms-poke
+  %-  ot  :~
+    pid+de-pid
+    perms+perms:de:trill
   ==
 ++  postadd
   %-  ot  :~
@@ -292,7 +308,7 @@
     host+user
     id+de-post-id
   ==
-++  pid
+++  upid
   %-  ot  :~
     host+user
     id+de-atom-id

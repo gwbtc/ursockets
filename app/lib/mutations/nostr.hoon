@@ -1,4 +1,4 @@
-/-  sur=nostrill, nsur=nostr, comms=nostrill-comms,
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
     post=trill-post, gate=trill-gate, feed=trill-feed
     
 /+  appjs=json-nostrill,
@@ -299,14 +299,12 @@
   ++  handle-prof-fact  |=  pf=prof-fact:comms
     ^-  (quip card _state)
     =/  =user:sur  [%urbit src.bowl]
-    ?-  -.pf
-      %prof  =.  profiles.state  (~(put by profiles.state) user +.pf)
-             :: TODO kinda wanna send it to the UI
-             `state
-      %keys  `state
-      :: TODO really need a way to keep track of everyone's pubkeys
-    ==
-  ++  handle-rela  |=  rh=relay-handling:ui:sur
+    =.  profiles.state  (~(put by profiles.state) user pf)
+    =/  ui-card  (update-ui:cardslib [%prof profiles.state])
+    :_  state  :~  ui-card
+               ==
+  
+  ++  handle-rela  |=  rh=relay-handling:ui
     ^-  (quip card _state)
     =/  rl  get-relay
     ?~  rl  ~&  >>>  "no relay!!!!"  `state
