@@ -1,246 +1,109 @@
-/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, feed=trill-feed, post=trill-post
+/-  *wrap, sur=nostrill, nsur=nostr, comms=nostrill-comms, feed=trill-feed, post=trill-post, notif=nostrill-notif
 /+  js=json-nostr, sr=sortug,constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill, lib=nostrill, mutations-trill, harklib=hark
 |_  [=state:sur =bowl:gall]
-++  cast-poke
-  |=  raw=*  ^-  poke:comms
-  ;;  poke:comms  raw
-::  Req
-++  handle-req  |=  =req:comms
-::  TODO keep this in some inbox, don't respond immediately
-  ?-  -.req
-    %feed    (handle-feed +.req)
-    %thread  (handle-thread +.req)
-  ==
-++  handle-feed  |=  beg-msg=@t
-  =/  n=notif:sur  [%beg-req [%urbit src.bowl] [%feed our.bowl] beg-msg]
-  =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
 
-  =/  can  (can-access:gatelib src.bowl lock.feed-perms.state bowl)  
-  ?.  can
-   :: TODO keep track of the requests at the feed-perms struct
-    =/  crd  (res-poke [%ng [%feed beg-msg] 'not allowed'])
-    :_  state  :~(hark-card crd)
-    ::
-    =/  lp  latest-page:feedlib
-    =/  lp2  lp(count backlog.feed-perms.state)
-    =/  =fc:feed  (lp2 feed.state)
-    =/  prof  (~(get by profiles.state) [%urbit our.bowl])
-    :: TODO
-    =/  msg  ''
-    =/  crd  (res-poke [%ok [%feed fc prof] msg])
-    :_  state  :~(hark-card crd)
+++  handle-req  |=  [=req:comms pat=path]
+  ^-  (quip card:agent:gall _state)
+  =/  =user:sur  [%urbit src.bowl]
+  =/  enreq=(enbowl req:comms)  [user now.bowl req]
+  |^
+  ?@  p.req  ::  %fans
+    (handle-feed-req %follow)
+    ?@  +.p.req
+      (handle-feed-req %beg)
+      (handle-thread-req id.+.p.req)
 
-++  give-feed   
-  |=  pat=path
-  ~&  give-feed=src.bowl
-  =/  user  [%urbit src.bowl]
-  =/  n=notif:sur  [%fans user '']
-  =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
-  :-  hark-card
-  ::  TODO keep this in some inbox?
-  =/  can  (can-access:gatelib src.bowl lock.feed-perms.state bowl)  
-  ?.  can
-   :: TODO keep track of the requests at the feed-perms struct
-    (res-fact [%ng [%feed ''] 'not allowed'] pat)
-    ::
-    =/  lp  latest-page:feedlib
-    =/  lp2  lp(count backlog.feed-perms.state)
-    =/  =fc:feed  (lp2 feed.state)
-    =/  prof  (~(get by profiles.state) [%urbit our.bowl])
-    ::  TODO
-    =/  msg  ''
-    (res-fact [%ok [%feed fc prof] msg] pat)
-
-
-++  give-ted  |=  [id=@ pat=path]
-  =/  ted  (get:orm:feed feed.state id)
-  ?~  ted
-    (res-fact [%ng [%thread id ''] 'no such thread'] pat)
-  =/  can  (can-access:gatelib src.bowl read.u.ted bowl)
-  ?.  can
-    (res-fact [%ng [%thread id ''] 'not allowed'] pat)
-    ::
-    =/  fn  (node-to-full:feedlib u.ted feed.state)
-    (res-fact [%ok [%thread fn ~] ''] pat)
 ::
-++  handle-thread  |=  [id=@da beg-msg=@t]
-  =/  n=notif:sur  [%beg-req [%urbit src.bowl] [%thread our.bowl id] beg-msg]
-  =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
-
+++  handle-thread-req  |=  id=@da
+  ^-  (quip card:agent:gall _state)
   =/  ted  (get:orm:feed feed.state id)
-  ?~  ted
-    =/  crd  (res-poke [%ng [%thread id beg-msg] 'no such thread'])
-    :_  state  :~(hark-card crd)
-  =/  can  (can-access:gatelib src.bowl read.u.ted bowl)
+  ?~  ted  ::  invalid request, no notifications or response recording here  :: TODO do we wanna record spam?
+    =/  =beg-res:comms  [%thread id %ng]
+    =/  =res:comms  ['no such thread' %begs beg-res]
+    :_  state  (send-fact res)
+  ::
+  =/  can  (can-access:gatelib src.bowl read.perms.u.ted msg.req bowl)
+  =/  =decision:sur  ?:  can
+    [now.bowl .y .n 'どうぞ']
+    [now.bowl .n .n 'not allowed']
+  =/  =ruling:sur  [enreq read.perms.u.ted decision]
+  =.  responses.state  (put:ors:sur responses.state now.bowl ruling)
+  ::
+  =/  n=notif:notif  [%req enreq `decision]
+  =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
+  ::
   ?.  can
-    =/  crd  (res-poke [%ng [%thread id beg-msg] 'not allowed'])
-    :_  state  :~(hark-card crd)
+    =/  =beg-res:comms  [%thread id %ng]
+    =/  =res:comms  [msg.decision %begs beg-res]
+    =/  crds  (send-fact res)
+    :_  state  [hark-card crds]
     ::
+    :: 
     =/  fn  (node-to-full:feedlib u.ted feed.state)
-    ::  TODO
-    =/  msg  'どうぞ'
-    =/  crd  (res-poke [%ok [%thread fn ~] msg])
-    :_  state  :~(hark-card crd)
-:: res
-:: TODO URGENT the whole msg thing is a mess I kinda lost track
-++  handle-res  |=  =res:comms
-  =/  n=notif:sur
-    :-  %beg-res
-    ?-  -.res
-      %ok
-        ?-  -.p.res
-          %feed    [[%feed src.bowl] .y msg.res]
-          %thread  [[%thread src.bowl id.p.p.res] .y msg.res]
-        ==
-      %ng
-        ?-  -.req.res
-          %feed    [[%feed src.bowl] .n msg.res]
-          %thread  [[%thread src.bowl id.req.res] .n msg.res]
-        ==
-    ==
-  =/  hark-card  (send-hark:harklib n bowl)
-  :_  state
-  :~  hark-card
-  ==
-::
-++  res-poke  |=  =res:comms   ^-  card:agent:gall
-  =/  =poke:comms  [%res res]
-  =/  cage  [%noun !>(poke)]
-  [%pass /poke %agent [src.bowl dap.bowl] %poke cage]
-
-++  res-fact  |=  [=res:comms pat=path]   ^-  (list card:agent:gall)
-  =/  beg  ?=([%beg *] pat)
-  =/  paths  ~[pat]
-  ~&  >  giving-res-fact=pat
-  ?:  beg  :: for the thread that goes directly to the frontend
+    =/  =beg-res:comms  [%thread id %ok fn ~]
+    =/  =res:comms  [msg.decision %begs beg-res]
+    =/  crds  (send-fact res)
+    :_  state  [hark-card crds]
+:: 
+  ++  handle-feed-req  |=  t=$?(%follow %beg)
+    ^-  (quip card:agent:gall _state)
+    ?:  manual.feed-perms.state  ::  don't decide now, save it in requests and defer
+      defer-ruling
     ::
-    =/  jon  (beg-res:en:jsonlib res)
-    =/  cage  [%json !>(jon)]
-    =/  c1  [%give %fact paths cage]
-    =/  c2  [%give %kick paths ~]
-    :~(c1 c2)
-  ::  for the follow flow
-    =/  cage  [%noun !>([%init res])]
-    =/  c1  [%give %fact paths cage]
-    :~(c1)
 
-::  engagement pokes, heads up when replying etc. to a post on your feed
-++  handle-eng
-  |=  e=engagement:comms
-  =/  user  [%urbit src.bowl]
-  ?-  -.e
-    %reply
-      =/  poast  (get:orm:feed feed.state parent.e)
-      ?~  poast  `state
-      ::
-      =/  pid  [our.bowl parent.e]
-      =/  n=notif:sur  [%post pid user %reply child.e]
-      =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
-      ::
-      =.  children.u.poast  (~(put in children.u.poast) id.child.e)
-      =.  feed.state  (put:orm:feed feed.state parent.e u.poast)
-      =.  feed.state  (put:orm:feed feed.state id.child.e child.e)
-      =/  f=fact:comms  [%post %add child.e]
-      =/  f2=fact:comms  [%post %changes u.poast]
-      :_  state
-      :~  (update-followers:cards:lib f)
-          (update-followers:cards:lib f2)
-          hark-card
-      ==
-    %del-parent
-      ?~  p=(get:orm:feed feed.state child.e)  `state
-      =.  host.u.p  our.bowl  ::  parent already deleted no need to send update to them, handle localy 
-      =.  feed.state  (put:orm:feed feed.state child.e u.p)
-      =/  mutat  ~(. mutations-trill state bowl)
-      (handle-post:mutat [%del urbit+our.bowl child.e])
-    %del-reply 
-      ?~  p=(get:orm:feed feed.state child.e)  `state
-      =/  poast  (get:orm:feed feed.state parent.e)
-      ?~  poast  `state
-      ::
-      =/  pid  [our.bowl parent.e]
-      ::  TODO kinda wrong
-      =/  n=notif:sur  [%post pid user %del ~]
-      =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
-      =.  feed.state  =<  +  (del:orm:feed feed.state child.e)
-      =.  children.u.poast  (~(del in children.u.poast) child.e)
-      =.  feed.state  (put:orm:feed feed.state parent.e u.poast)
-      :_  state
-      :~  (update-followers:cards:lib [%post %changes u.poast])
-          (update-followers:cards:lib [%post %del child.e])
-          hark-card
-      ==
-    :: TODO ideally we want the full quote to display it within the post engagement. So do we change quoted.engagement.post? What if the quoter edits the quote down the line, etc.
-    %quote
-      =/  poast  (get:orm:feed feed.state src.e)
-      ?~  poast  `state
-      ::
-      =/  pid  [our.bowl src.e]
-      =/  n=notif:sur  [%post pid user %quote post.e]
-      =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
-      =/  spid  [*signature:post src.bowl id.post.e]
-      =.  quoted.engagement.u.poast  (~(put in quoted.engagement.u.poast) spid)
-      =.  feed.state  (put:orm:feed feed.state src.e u.poast)
-      =/  f=fact:comms  [%post %changes u.poast]
-      :_  state
-      :~  (update-followers:cards:lib f)
-          hark-card
-      ==
-    %del-quote
-      =/  poast  (get:orm:feed feed.state src.e)
-      ?~  poast  `state
-      ::
-      =/  pid  [our.bowl src.e]
-      =/  n=notif:sur  [%post pid user %del ~]
-      =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
+    =/  can  (can-access:gatelib src.bowl feed-perms.state msg.req bowl)  
+    =/  =decision:sur  ?:  can
+      [now.bowl .y .n 'どうぞ']
+      [now.bowl .n .n 'not allowed']
 
-      =/  spid  [*signature:post src.bowl quote.e]
-      =.  quoted.engagement.u.poast  (~(del in quoted.engagement.u.poast) spid)
-      =.  feed.state  (put:orm:feed feed.state src.e u.poast)
-      =/  f=fact:comms  [%post %changes u.poast]
-      :_  state
-      :~  (update-followers:cards:lib f)
-          hark-card
-      ::  TODO: update %ui card
-      ==
-    %rp
-      =/  poast  (get:orm:feed feed.state src.e)
-      ?~  poast  `state
+    =/  =ruling:sur  [enreq feed-perms.state decision]
+    =.  responses.state  (put:ors:sur responses.state now.bowl ruling)
+    ::
+    =/  n  [%req enreq `decision]
+    =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
+
+    |^
+      ?:  can  give-feed  deny-feed
+  
+      ++  give-feed
       ::
-      =/  pid  [our.bowl src.e]
-      =/  n=notif:sur  [%post pid user %rp ~]
-      =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
-      
-      =/  spid  [*signature:post src.bowl rt.e]
-      =.  shared.engagement.u.poast  
-        ?:  (~(has in shared.engagement.u.poast) spid)
-          (~(del in shared.engagement.u.poast) spid)
-        (~(put in shared.engagement.u.poast) spid)
-      =.  feed.state  (put:orm:feed feed.state src.e u.poast)
-      =/  f=fact:comms  [%post %changes u.poast]
-      :_  state
-      :~  (update-followers:cards:lib f)
-           hark-card
-      ::  TODO: update %ui card
-      ==
-    %reaction
-      =/  poast  (get:orm:feed feed.state post.e)
-      ?~  poast  `state
-      :: TODO signatures et al.
-      =/  pid  [our.bowl post.e]
-      =/  n=notif:sur  [%post pid user %reaction reaction.e]
-      =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
-      =/  sign  *signature:post
-      =.  q.sign  src.bowl
-      =.  reacts.engagement.u.poast  (~(put by reacts.engagement.u.poast) src.bowl [reaction.e sign])
-      =.  feed.state  (put:orm:feed feed.state post.e u.poast)
-      =/  f=fact:comms  [%post %changes u.poast]
-      :_  state
-      :~  (update-followers:cards:lib f)
-          hark-card
-      ::  TODO: update %ui card
-      ==
-  ==
-
-
+        =/  lp  latest-page:feedlib
+        =/  lp2  lp(count backlog.feed-perms.state)
+        =/  =fc:feed  (lp2 feed.state)
+        =/  prof  (~(get by profiles.state) [%urbit our.bowl])
+        =/  =res:comms  :-  msg.decision  ?:  ?=(%follow t)
+          [%fols %ok fc prof]
+          [%begs %feed %ok fc prof]
+        =/  crds  (send-fact res)
+        :_  state  [hark-card crds]
+      ::
+      ++  deny-feed
+        =/  =res:comms  :-  msg.decision  ?:  ?=(%follow t)
+          [%fols %ng]
+          [%begs %feed %ng]
+        
+        =/  crds  (send-fact res)
+        :_  state  [hark-card crds]
+    --
+  
+  ++  send-fact  |=  =res:comms   ^-  (list card:agent:gall)
+    =/  paths  :~(pat)
+    ?:  ?=(%fols -.p.res)
+      =/  f=fols-res:comms  +.p.res
+      =/  cage  [%noun !>([%fols f])]
+      =/  c1  [%give %fact paths cage]
+      :~(c1)
+    ::
+      =/  jon  (res:en:jsonlib res)
+      =/  cage  [%json !>(jon)]
+      =/  c1  [%give %fact paths cage]
+      =/  c2  [%give %kick paths ~]
+      :~(c1 c2)
+  ::
+  ++  defer-ruling
+    =.  requests.state  (put:orq:sur requests.state now.bowl req)
+    =/  n=notif:notif  [%req enreq ~]
+    =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
+    :_  state  :~(hark-card)    
+  --
 --

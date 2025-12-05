@@ -14,7 +14,7 @@
     feedlib=trill-feed, postlib=trill-post,
     seed,
     harklib=hark,
-    commlib=nostrill-comms, followlib=nostrill-follows
+    comslib=nostrill-comms, followlib=nostrill-follows
 /=  web  /web/router
 |%
 +$  versioned-state  $%(state-0:sur)
@@ -30,7 +30,7 @@
     mutan  ~(. mutations-nostr [state bowl])
     mutat  ~(. mutations-trill [state bowl])
     scry   ~(. scri [state bowl])
-    coms   ~(. commlib [state bowl])
+    coms   ~(. comslib [state bowl])
     fols   ~(. followlib [state bowl])
 ++  on-init
   ^-  (quip card:agent:gall agent:gall)
@@ -140,7 +140,7 @@
       [cs this]
   --
   ++  handle-comms
-    =/  pok  (cast-poke:coms q.vase)
+    =/  pok  !<(poke:comms vase)
     ?:  ?=(%dbug -.pok)  (debug +.pok)
     =^  cs  state  (handle-eng:mutat +.pok)
     [cs this]
@@ -635,18 +635,28 @@
     =^  cs  state  (set-relay:mutan (slav %ud wids.pole))
     [cs this]
   [%websocket-server *]  `this
-  [%follow ~]  :_  this  (give-feed:coms pole)
-  [%beg %feed ~]
-    :_  this  (give-feed:coms pole)
-  [%beg %thread ids=@t ~]
-    =/  id  (slaw:sr %uw ids.pole)
-    ?~  id  ~&  error-parsing-ted-id=pole  `this
-    :_  this  (give-ted:coms u.id pole)
   [%ui ~]
     ?>  .=(our.bowl src.bowl)
     :_  this
     =/  jon  (state:en:jsonlib state)
     [%give %fact ~[/ui] [%json !>(jon)]]^~
+  ::
+  [%follow rest=*]
+    =/  msg  ?~  rest.pole  ''  -.rest.pole
+    =^  cs  state  (handle-req:coms [msg %fols] pole)
+    [cs this]
+  [%beg %feed rest=*]
+    =/  msg  ?~  rest.pole  ''  -.rest.pole
+    =^  cs  state  (handle-req:coms [msg %begs %feed] pole)
+    [cs this]
+
+  [%beg %thread ids=@t rest=*]
+    =/  id  (slaw:sr %uw ids.pole)
+    ?~  id  ~&  error-parsing-ted-id=pole  `this
+    =/  msg  ?~  rest.pole  ''  -.rest.pole
+    =^  cs  state  (handle-req:coms [msg %begs %thread u.id] pole)
+    [cs this]
+  ::
   ==
 ::
 ++  on-leave
