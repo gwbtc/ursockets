@@ -6,7 +6,8 @@
 ::  requests received  
       [%req (enbowl req:comms) solved=(unit decision:sur)]  
 ::  responses received to our requests
-      [%res (enbowl res:comms)]
+      [%beg-res (enbowl res:comms)]
+      [%fol-res (enbowl fols-res:comms)]
 :: someone replied, reacted etc.
       [%post (enbowl engagement:comms)]
       ::

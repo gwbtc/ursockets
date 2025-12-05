@@ -1,4 +1,4 @@
-/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui, noti=nostrill-notif,
+/-  wrap, sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui, noti=nostrill-notif,
     tf=trill-feed, tp=trill-post,
     wrap
 /+  sr=sortug, common=json-common, trill=json-trill, nostr=json-nostr
@@ -128,35 +128,38 @@
       ~
     ==
 ::  en-CMMS
-::  TODO abstract serialization of wrappers
+  ++  deferred  |*  [p=(deferred:wrap) fn=$-(* json)]
+    ^-  json
+    %-  pairs  :~  msg+s+msg.p
+      :-  'data'  ?@  p.p  [%s 'maybe']
+                           (approval +.p.p fn)
+    ==
+  ++  approval  |*  [p=(approval:wrap) fn=$-(* json)]
+    ^-  json
+    ?@  p  ~  (fn data.p)
+
+  ++  enbowl  |*  [p=(enbowl:wrap) fn=$-(* json)]
+    ^-  json
+    %-  pairs
+    :~  user+(user user.p)
+        ts+(time ts.p)
+        data+(fn p.p)
+    ==
 
   ++  res  |=  =res:comms  ^-  json
-    %+  frond  %res
-      %-  pairs
-    :~  :-  %msg  [%s msg.res]
-        :-  -.p.res
-          ?-  -.p.res
-           %begs  (en-begs +.p.res)
-           %fols  (en-fols +.p.res)
-         ==
-    ==
-  ++  en-begs   |=  p=beg-res:comms  ^-  json
-    %+  frond  -.p
-    ?-  -.p
-      %feed     ?@  +.p  ~  (feed-data data.p)  
-      %thread   %-  pairs
-        :~  ['id' (ud:en:common id.p)]
-            :-  %data  ?@  +>.p  ~  (thread:en:trill data.p)
+    %+  frond  -.res
+    ?-  -.res
+      %feed  (deferred +.res feed-data)
+      %thread  %-  pairs
+        :~  id+(ud:en:common id.res)
+            data+(deferred +>.res thread:en:trill)
         ==
     ==
   ++  en-fols  |=  p=fols-res:comms  ^-  json
-    ?@  p  ~  (feed-data data.p)
+    (deferred p feed-data)
 
   ++  fols  |=  a=(enbowl:wrap fols-res:comms)  ^-  json
-    %-  pairs
-    :~  user+(user user.a)
-        :-  %data  (en-fols p.a)
-    ==
+    (enbowl a en-fols)
 
   ++  postfact  |=  pf=post-fact:comms  ^-  json
     %+  frond  -.pf

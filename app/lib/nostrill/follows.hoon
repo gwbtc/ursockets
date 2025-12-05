@@ -1,7 +1,10 @@
-/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui, notif=nostrill-notif,
     feed=trill-feed
-/+  lib=nostrill, js=json-nostr, nostr-client, sr=sortug, constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill, mutations-nostr
+/+  lib=nostrill, js=json-nostr, nostr-client, sr=sortug, constants, harklib=hark,
+    gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill,
+    mutations-nostr
 |_  [=state:sur =bowl:gall]
+::
 ++  handle-add  |=  =user:sur
   ^-  (quip card:agent:gall _state)
   ?-  -.user
@@ -38,33 +41,36 @@
     =/  c2   (urbit-leave +.user)
     :~(c1 c2)
 
-++  handle-follow-res  |=  fr=fols-res:comms
+++  handle-res  |=  fr=fols-res:comms
   ^-  (quip card:agent:gall _state)
   =/  =user:sur  [%urbit src.bowl]
-  =?  state  ?=(^ fr)
-    =.  following.state   (~(put by following.state) user feed.fc.data.fr)
-    =.  following2.state  (add-new-feed:feedlib following2.state feed.fc.data.fr)
-    =?  profiles.state  ?=(^ profile.data.fr)  (~(put by profiles.state) user u.profile.data.fr)
+  =/  enfr  [user now.bowl fr]
+  =/  n=notif:notif  [%fol-res enfr]
+  =/  hark-card  (send-hark:harklib n bowl)
+  =.  state
+  ?@  p.fr  state     ::  deferred
+  ?@  +.p.fr  state   ::  approval denied
+    ::  =.  requests.state
+    =/  fd=feed-data:comms  data.p.fr
+    =.  following.state   (~(put by following.state) user feed.fc.fd)
+    =.  following2.state  (add-new-feed:feedlib following2.state feed.fc.fd)
+    =?  profiles.state  ?=(^ profile.fd)  (~(put by profiles.state) user u.profile.fd)
     =/  graph  (~(get by follow-graph.state) [%urbit our.bowl])
     =/  follows  ?~  graph  (silt ~[user])  (~(put in u.graph) user)
     =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] follows)
     state
   ::
-  =/  =res:comms  ['' %fols fr]
-  =/  =fact:ui      [%fols %new user now.bowl fr]
-  :: =/  n=notif:noti  [%res [user now.bowl res]]
-  :: =/  hark-card  (send-hark:harklib n bowl)
-  =/  ui-card    (update-ui:cards:lib fact)
+  =/  =fact:ui  [%fols %new enfr]
+  =/  ui-card   (update-ui:cards:lib fact)
   :_  state
   :~
-     :: hark-card
+      hark-card
       ui-card
   ==
 
 ++  handle-refollow  |=  sip=@p
   :_  state  :_   ~
-  :: (urbit-watch sip)
-  [%pass /follow %agent [sip dap.bowl] %watch /follow]
+  (urbit-watch sip)
     
 
 ++  handle-kick-nack  |=  p=@p
@@ -84,16 +90,5 @@
   
 ++  urbit-watch  |=  sip=@p   ^-  card:agent:gall
   [%pass /follow %agent [sip dap.bowl] %watch /follow]
-
-:: ++  res-fact  |=  =res:comms   ^-  (list card:agent:gall)
-::   =/  paths  ~[/beg/feed]
-::   =/  =poke:comms  [%res res]
-::   ~&  >  giving-res-fact=res
-::   =/  jon  (beg-res:en:jsonlib res)
-::   =/  cage  [%json !>(jon)]
-::   :~
-::     [%give %fact paths cage]
-::     [%give %kick paths ~]
-::   ==
 
 --

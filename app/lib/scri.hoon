@@ -25,24 +25,24 @@
   ^-  res:comms
   =/  host  (slaw %p hs)
   ?~  host
-    :-  'Host is not a @p'  [%begs %thread `@da`0 %ng]
+    =/  msg  'Host is not a @p'  [%thread `@da`0 msg %done %ng]
   :: TODO what about non urbit stuff
   =/  =user:sur  [%urbit u.host]
   =/  fed=(unit feed:feed)
     ?:  .=(u.host our.bowl)  `feed.state  (~(get by following.state) user)
   ?~  fed
-    :-  'Feed not found'
-        [%begs %thread `@da`0 %ng]
+    =/  msg  'Feed not found'
+        [%thread `@da`0 msg %done %ng]
   =/  id  (slaw:sr %ud ids)  ?~  id
-    :-  'Post ID malformed'
-    [%begs %thread `@da`0 %ng]
+    =/  msg  'Post ID malformed'
+    [%thread `@da`0 msg %done %ng]
   =/  node  (get:orm:feed u.fed u.id)
   ?~  node
-    :-  'Post not found in feed'
-        [%begs %thread u.id %ng]
+    =/  msg  'Post not found in feed'
+        [%thread u.id msg %done %ng]
   =/  fn   (node-to-full:feedlib u.node u.fed)
   =/  ted  (extract-thread:feedlib fn)
-  :-  ''  [%begs %thread u.id %ok fn ted]
+  =/  msg  ''  [%thread u.id msg %done %ok fn ted]
 
 ++  sfeed  |=  [hs=@t s=@t e=@t c=@ n=@ r=@]
   ^-  (unit (unit cage))  :-  ~  :-  ~  :-  %json  !>
@@ -50,13 +50,13 @@
   ^-  res:comms
   =/  host  (slaw %p hs)
   ?~  host
-    :-  'Host is not a @p'
-        [%begs %feed %ng]
+    =/  msg  'Host is not a @p'
+        [%feed msg %done %ng]
   =/  =user:sur  [%urbit u.host]
   =/  fed=(unit feed:feed)  ?:  .=(u.host our.bowl)  `feed.state  (~(get by following.state) user)
   ?~  fed
-  :-  'Feed not found'
-        [%begs %feed %ng]
+  =/  msg  'Feed not found'
+        [%feed msg %done %ng]
   =/  start=(unit @da)  (timestamp:sr s)  
   =/  end               (timestamp:sr e) 
   =/  cont  (slaw:sr %ud c)
@@ -86,5 +86,5 @@
   =/  ne=(unit @da)  ?~  tal  ~  (some key.u.tal)
   =/  =fc:feed  [nf ns ne]
   =/  profile  (~(get by profiles.state) user)
-  :-  ''  [%begs %feed %ok fc profile]
+  =/  msg  ''  [%feed msg %done %ok fc profile]
 --

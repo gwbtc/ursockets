@@ -20,8 +20,9 @@
       following2=global-feed
       =global-feed
       follow-graph=(map user (set user))
-      ::  Save incoming requests and responses to handle async
+      ::  Save incoming requests to handle async
       =requests
+      ::  Save our given responses
       =responses
   ==
 
@@ -39,6 +40,8 @@
 +$  follow  [pubkey=@ux name=@t relay=(unit @t)]
 ::  request handling
 :: 
+::  TODO  save responses to requests?
+::  we need to pass request timestamp to responses too
 +$  requests    ((mop @da req:comms) gth)
 +$  responses   ((mop @da ruling) gth)
 ++  orq         ((on @da req:comms) gth)

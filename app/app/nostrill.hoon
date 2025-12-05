@@ -211,6 +211,9 @@
   ::
   ++  debug  |=  noun=*
     ?+  noun  `this
+      %perms
+      ~&  perms=feed-perms
+      `this
       %seed-threads
         ~&  >>  "seeding threads"
         =/  pubkey  pub.i.keys
@@ -680,10 +683,12 @@
         =^  cs  state  (handle-refollow:fols src.bowl)
         [cs this]
       ?.  ?=(%fact -.sign)  `this
+        ~&  "got fact"
 
         =/  =fact:comms  ;;  fact:comms  q.q.cage.sign
         =^  cs  state  
           ?-  -.fact
+            %feed  (handle-res:fols +.fact)
             %post  (handle-post-fact:mutat +.fact)
             %prof  (handle-prof-fact:mutan +.fact)
           ==

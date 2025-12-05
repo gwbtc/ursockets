@@ -1,6 +1,13 @@
 |%
 ::  generic type wrappers
 ::  A Result type of sorts.
+++  deferred
+  |$  t
+  $:  msg=@t
+  $=  p
+  $^  [%done (approval t)]
+      %thinking
+  ==
 ++  approval
   |$  t
   $^  [%ok data=t]

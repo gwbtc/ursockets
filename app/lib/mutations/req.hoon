@@ -18,10 +18,11 @@
   ^-  (quip card:agent:gall _state)
   =/  ted  (get:orm:feed feed.state id)
   ?~  ted  ::  invalid request, no notifications or response recording here  :: TODO do we wanna record spam?
-    =/  =beg-res:comms  [%thread id %ng]
-    =/  =res:comms  ['no such thread' %begs beg-res]
-    :_  state  (send-fact res)
+    =/  =res:comms  [%thread id 'no such thread' %done %ng]
+    :_  state  (send-res res)
   ::
+  ?:  manual.read.perms.u.ted  (defer-ruling [%thread id])
+
   =/  can  (can-access:gatelib src.bowl read.perms.u.ted msg.req bowl)
   =/  =decision:sur  ?:  can
     [now.bowl .y .n 'どうぞ']
@@ -33,22 +34,20 @@
   =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
   ::
   ?.  can
-    =/  =beg-res:comms  [%thread id %ng]
-    =/  =res:comms  [msg.decision %begs beg-res]
-    =/  crds  (send-fact res)
+    =/  =res:comms  [%thread id msg.decision %done %ng]
+    =/  crds  (send-res res)
     :_  state  [hark-card crds]
     ::
     :: 
     =/  fn  (node-to-full:feedlib u.ted feed.state)
-    =/  =beg-res:comms  [%thread id %ok fn ~]
-    =/  =res:comms  [msg.decision %begs beg-res]
-    =/  crds  (send-fact res)
+    =/  =res:comms  [%thread id msg.decision %done %ok fn ~]
+    =/  crds  (send-res res)
     :_  state  [hark-card crds]
 :: 
   ++  handle-feed-req  |=  t=$?(%follow %beg)
     ^-  (quip card:agent:gall _state)
     ?:  manual.feed-perms.state  ::  don't decide now, save it in requests and defer
-      defer-ruling
+      (defer-ruling %feed)
     ::
 
     =/  can  (can-access:gatelib src.bowl feed-perms.state msg.req bowl)  
@@ -71,39 +70,43 @@
         =/  lp2  lp(count backlog.feed-perms.state)
         =/  =fc:feed  (lp2 feed.state)
         =/  prof  (~(get by profiles.state) [%urbit our.bowl])
-        =/  =res:comms  :-  msg.decision  ?:  ?=(%follow t)
-          [%fols %ok fc prof]
-          [%begs %feed %ok fc prof]
-        =/  crds  (send-fact res)
-        :_  state  [hark-card crds]
+        =/  fd=feed-data:comms  [fc prof]
+        =/  fr=fols-res:comms  [msg.decision %done %ok fd]
+        :_  state
+        :-  hark-card
+            ?:  ?=(%follow t)
+              (send-feed fr)
+              (send-res [%feed fr])
       ::
       ++  deny-feed
-        =/  =res:comms  :-  msg.decision  ?:  ?=(%follow t)
-          [%fols %ng]
-          [%begs %feed %ng]
-        
-        =/  crds  (send-fact res)
+        =/  fr=fols-res:comms  [msg.decision %done %ng]        
+        =/  crds  (send-res [%feed fr])
         :_  state  [hark-card crds]
     --
   
-  ++  send-fact  |=  =res:comms   ^-  (list card:agent:gall)
+  ++  send-feed  |=  fr=fols-res:comms   ^-  (list card:agent:gall)
     =/  paths  :~(pat)
-    ?:  ?=(%fols -.p.res)
-      =/  f=fols-res:comms  +.p.res
-      =/  cage  [%noun !>([%fols f])]
-      =/  c1  [%give %fact paths cage]
-      :~(c1)
-    ::
-      =/  jon  (res:en:jsonlib res)
-      =/  cage  [%json !>(jon)]
-      =/  c1  [%give %fact paths cage]
-      =/  c2  [%give %kick paths ~]
-      :~(c1 c2)
+    =/  =fact:comms  [%feed fr]
+    =/  cage  [%noun !>(fact)]
+    =/  c1  [%give %fact paths cage]
+    :~(c1)
+
+  ++  send-res  |=  =res:comms   ^-  (list card:agent:gall)
+    =/  paths  :~(pat)
+    =/  jon  (res:en:jsonlib res)
+    =/  cage  [%json !>(jon)]
+    =/  c1  [%give %fact paths cage]
+    =/  c2  [%give %kick paths ~]
+    :~(c1 c2)
   ::
-  ++  defer-ruling
+  ++  defer-ruling  |=  t=beg-type:comms  ^-  (quip card:agent:gall _state)
     =.  requests.state  (put:orq:sur requests.state now.bowl req)
     =/  n=notif:notif  [%req enreq ~]
     =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
-    :_  state  :~(hark-card)    
+    =/  =res:comms  ?:  ?=(%feed t)
+      [%feed 'thinking' %thinking]
+      [%thread id.t 'thinking' %thinking]
+    =/  fact-cards  (send-res res)
+    :_  state  :-  hark-card  fact-cards
   --
 --

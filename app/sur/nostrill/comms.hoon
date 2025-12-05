@@ -37,18 +37,13 @@
   $^  [%thread id=@da]
       %feed
 ::  Responses to requsts
+::  %begs  responses are sent directly to the frontend
+::  %fols  responses are sent to on-agent of the requester as an %fols fact
 +$  res
-  $:  msg=@t  ::  Users can add a custom message  to their response 
-  $=  p
-  $%  [%begs beg-res]
-      [%fols fols-res]
+  $%  [%feed fols-res]
+      [%thread id=@da (deferred thread-data)]
   ==
-==
-+$  beg-res
-  $%  [%feed (approval feed-data)]
-      [%thread id=@da (approval thread-data)]
-  ==
-+$  fols-res  (approval feed-data)
++$  fols-res  (deferred feed-data)
 
 +$  feed-data  [=fc:tf profile=(unit user-meta:nsur)]
 +$  thread-data
@@ -57,7 +52,8 @@
   ==
  ::  Updates sent to followers who are subscribed to us
 +$  fact
-  $%  [%post post-fact]
+  $%  [%feed fols-res]  ::  response to follow requests
+      [%post post-fact]
       [%prof prof-fact]
   ==
 ::  We wrap posts on nostr metadata if the post was also published to Nostr   

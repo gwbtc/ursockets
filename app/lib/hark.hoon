@@ -1,4 +1,4 @@
-/-  hark, noti=nostrill-notif, comms=nostrill-comms
+/-  wrap, hark, noti=nostrill-notif, comms=nostrill-comms
 /+  lib=nostrill
 |%
 ++  to-hark
@@ -79,52 +79,71 @@
                 ==
                 /req/begs/thread/[ids]/(scot %p ship)/ok
 
-    %res
+    %fol-res
       =/  ship  (user-to-atom:lib user.n)
       =/  ship-token  [%ship ship]
-      =/  res  p.p.n
+      =/  res=fols-res:comms  p.n
+      ?@  p.res  ::  thinking
+        :-  :~  ship-token
+              ' received your follow request, but hasn\'t responded yet.'
+            ==
+            /res/fols/(scot %p ship)/maybe
+      ?^  +.p.res  ::  approved
+        :-  :~  ship-token
+              ' accepted your follow request.'
+            ==
+            /res/fols/(scot %p ship)/ok
+      ::
+        :-  :~  ship-token
+              ' rejected your follow request.'
+            ==
+            /res/fols/(scot %p ship)/ng
+    %beg-res
+      =/  ship  (user-to-atom:lib user.n)
+      =/  ship-token  [%ship ship]
+      =/  res=res:comms  p.n
       ?-  -.res
-        %fols  
-          ?^  +.res  ::  approved
+        %feed
+          ?@  p.+.res
             :-  :~  ship-token
-                  ' accepted your follow request.'
+                    ' received your request to access his feed, but hasn\'t responded yet.'
                 ==
-                /res/fols/(scot %p ship)/ok
+                /res/begs/feed/(scot %p ship)/maybe
+          ?^  +.p.+.res
+            :-  :~  ship-token
+                    ' accepted your request to access his feed'
+                ==
+                /res/begs/feed/(scot %p ship)/ok
           ::
             :-  :~  ship-token
-                  ' rejected your follow request.'
+                    ' rejected your request to access his feed'
                 ==
-                /res/fols/(scot %p ship)/ng
-        %begs
-          =/  =beg-res:comms  +.res
-          ?-  -.beg-res
-            %feed
-              ?^  +.beg-res
-                :-  :~  ship-token
-                        ' accepted your request to access his feed'
-                    ==
-                    /res/begs/feed/(scot %p ship)/ok
-              ::
-                :-  :~  ship-token
-                        ' rejected your request to access his feed'
-                    ==
-                    /res/begs/feed/(scot %p ship)/ng
-            %thread
-              =/  ids  (scot %ud `@ud`id.beg-res)
-              ?^  +>.beg-res
-                :-  :~  ship-token
-                        ' accepted your request to access his thread of id:'
-                        ids
-                    ==
-                    /res/begs/thread/[ids]/(scot %p ship)/ok
-              ::
-                :-  :~  ship-token
-                        ' rejected your request to access his thread of id:'
-                        ids
-                    ==
-                    /res/begs/thread/[ids]/(scot %p ship)/ng
-            ==
-          ==
+                /res/begs/feed/(scot %p ship)/ng
+        %thread
+          =/  ids  (scot %ud `@ud`id.res)
+      ::     =/  dt=(deferred:wrap thread-data:comms)  +>.res
+          :: ?@  dt
+          ::   :-  :~  ship-token
+          ::           ' received your request to access his thread of id: '
+          ::           ids
+          ::           ' but hasn\'t responded yet.'
+          ::       ==
+          ::       /res/begs/feed/(scot %p ship)/maybe
+          :: =/  at=(deferred:wrap thread-data:comms)  +.p.dt
+          :: ?^  dt
+          ::   :-  :~  ship-token
+          ::           ' accepted your request to access his thread of id:'
+          ::           ids
+          ::       ==
+          ::       /res/begs/thread/[ids]/(scot %p ship)/ok
+          :: ::
+          ::   :-  :~  ship-token
+          ::           ' rejected your request to access his thread of id:'
+          ::           ids
+          ::       ==
+          ::       /res/begs/thread/[ids]/(scot %p ship)/ng
+        [~ /]
+        ==
     %post
       =/  ship  (user-to-atom:lib user.n)
       =/  ship-token  [%ship ship]
