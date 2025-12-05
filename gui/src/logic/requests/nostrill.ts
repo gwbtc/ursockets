@@ -1,11 +1,13 @@
 import type Urbit from "urbit-api";
-import type { Cursor, FullNode, PostID } from "@/types/trill";
+import type { Cursor, FullNode, Gate, PostID, PostPerms } from "@/types/trill";
 import type { Ship } from "@/types/urbit";
 import { FeedPostCount } from "../constants";
 import type {
+  Deferred,
   PeekFeedRes,
   PeekRes,
   PeekThreadRes,
+  ThreadData,
   UserProfile,
   UserType,
 } from "@/types/nostrill";
@@ -107,19 +109,17 @@ export default class IO {
     // start: Cursor,
     // end: Cursor,
     // desc = true,
-  ): AsyncRes<{ node: FullNode; thread: FullNode[] }> {
+  ): AsyncRes<PeekThreadRes> {
     // const order = desc ? 1 : 0;
 
     // const path = `/j/thread/${host}/${id}/${start}/${end}/${FeedPostCount}/${order}`;
     const path = `/j/thread/${host}/${id}`;
     const res = await this.scry(path);
+    console.log("scrytherad", res);
     if ("error" in res) return res;
-    if (!("begs" in res.ok)) return { error: "wrong result" };
-    if ("ng" in res.ok.begs) return { error: res.ok.begs.ng };
-    if ("ok" in res.ok.begs) {
-      if (!("thread" in res.ok.begs.ok)) return { error: "wrong result" };
-      else return { ok: res.ok.begs.ok.thread };
-    } else return { error: "wrong result" };
+    const r = res.ok as { thread: PeekThreadRes };
+    if (!("thread" in r)) return { error: "wrong result" };
+    return { ok: r.thread };
   }
   // async scryHark(): AsyncRes<Skein[]> {
   async scryHark(): AsyncRes<Skein[]> {
@@ -189,6 +189,15 @@ export default class IO {
       },
     };
 
+    return this.poke({ post: json });
+  }
+
+  async setFeedPerms(gate: Gate) {
+    return this.poke({ gate });
+  }
+
+  async setPostPerms(id: string, perms: PostPerms) {
+    const json = { perms: { id, perms } };
     return this.poke({ post: json });
   }
 

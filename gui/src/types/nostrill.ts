@@ -33,7 +33,7 @@ export type RelayStats = {
 
 export type PeekRes = { feed: PeekFeedRes } | { thread: PeekThreadRes };
 export type PeekFeedRes = Deferred<FeedData>;
-export type PeekThreadRes = Deferred<ThreadData>;
+export type PeekThreadRes = { id: string; data: Deferred<ThreadData> };
 
 export type ThreadData = { node: FullNode; thread: FullNode[] };
 export type Fact =
