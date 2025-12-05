@@ -116,8 +116,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 
   return (
     <div className="profile-editor">
-      <div className="profile-header">
-        <h2>Edit Profile</h2>
+      <div className="profile-header" style={{ display: 'flex', justifyContent: 'flex-end' }}>
         {!isEditing && (
           <button onClick={() => setIsEditing(true)} className="edit-btn">
             <Icon name="settings" size={16} />

@@ -34,7 +34,7 @@ export default function ({ ship }: { ship: Ship }) {
           />
         </div>
         <div className="buttons f1">
-          <button onClick={() => navigate(`/feed/${ship}`)}>Feed</button>
+          <button onClick={() => navigate(`/u/${ship}`)}>Feed</button>
           <button onClick={() => navigate(`/pals/${ship}`)}>Profile</button>
           {ship !== api!.airlock.our && (
             <>
