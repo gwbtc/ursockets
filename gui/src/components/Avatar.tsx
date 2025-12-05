@@ -22,7 +22,7 @@ export default function ({
 }) {
   const { setModal } = useLocalState((s) => ({ setModal: s.setModal }));
   // TODO revisit this when %whom updates
-  const avatarInner = profile ? (
+  const avatarInner = profile && profile.picture ? (
     <img src={profile.picture} width={size} height={size} />
   ) : "urbit" in user && isValidPatp(user.urbit) ? (
     <Sigil patp={user.urbit} size={size} bg={color} />

@@ -44,7 +44,7 @@ function Quote({
   const [_, navigate] = useLocation();
   function gotoQuote(e: React.MouseEvent) {
     e.stopPropagation();
-    navigate(`/feed/${data.host}/${data.id}`);
+    navigate(`/t/${data.host}/${data.id}`);
   }
   return (
     <div onMouseUp={gotoQuote} className="quote-in-post">

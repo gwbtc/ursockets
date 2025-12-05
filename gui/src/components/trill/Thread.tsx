@@ -9,6 +9,7 @@ import type { Ship } from "@/types/urbit";
 import { useEffect, useState } from "react";
 import Body from "../post/Body";
 import Footer from "../post/Footer";
+import Composer from "@/components/composer/Composer";
 
 export default function Thread({
   host,
@@ -22,6 +23,8 @@ export default function Thread({
   profile?: UserProfile;
 }) {
   const poast = feed?.feed[id];
+  const composerData = useLocalState((s) => s.composerData);
+
   console.log({ poast });
   return (
     <>
@@ -38,12 +41,13 @@ export default function Thread({
         </div>
         <h2>Thread</h2>
         <div className="thread-info">
-          <span className="thread-host">~{host}</span>
+          <span className="thread-host">{host}</span>
           <span className="thread-separator">•</span>
           <span className="thread-id">#{id}</span>
         </div>
       </div>
       <div id="feed-proper">
+        {composerData && <Composer />}
         {poast && poast.children.length === 0 ? (
           <Head poast={poast} profile={profile} />
         ) : (
@@ -69,6 +73,7 @@ function Loader({
   const [ted, setThread] = useState<FullNode[]>([]);
   const [error, setError] = useState("");
   console.log({ data });
+  console.log({ted})
   async function fetchThread() {
     const res = await api!.scryThread(host, id);
     console.log("scried thread", res);
@@ -81,8 +86,6 @@ function Loader({
   useEffect(() => {
     fetchThread();
   }, [host, id]);
-  if (ted.length > 1)
-    return <LongThread thread={ted} node={data} profile={profile} />;
   if (data)
     return (
       <>
@@ -92,6 +95,8 @@ function Loader({
         </div>
       </>
     );
+  if (ted.length > 1)
+    return <LongThread thread={ted} node={data} profile={profile} />;
   if (poast)
     return (
       <>
@@ -131,33 +136,61 @@ function Head({ poast, profile }: { poast: Poast; profile?: UserProfile }) {
 }
 
 function ChildTree({ node }: { node: FullNode }) {
+  const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (postId: string) => {
+    setExpandedPosts((prev) => {
+      const next = new Set(prev);
+      if (next.has(postId)) {
+        next.delete(postId);
+      } else {
+        next.add(postId);
+      }
+      return next;
+    });
+  };
+
+  return <ChildTreeInner node={node} expandedPosts={expandedPosts} toggleExpanded={toggleExpanded} />;
+}
+
+function ChildTreeInner({
+  node,
+  expandedPosts,
+  toggleExpanded
+}: {
+  node: FullNode;
+  expandedPosts: Set<string>;
+  toggleExpanded: (postId: string) => void;
+}) {
   const profiles = useLocalState((s) => s.profiles);
   const kids = Object.values(node.children || {});
   kids.sort((a, b) => b.time - a.time);
+
   return (
     <>
       {kids.map((k) => {
         const profile = profiles.get(k.author);
+        const isExpanded = expandedPosts.has(k.id);
+        const hasChildren = Object.keys(k.children || {}).length > 0;
         return (
           <div key={k.id} className="minithread">
             <Post
               user={{ urbit: k.author }}
               profile={profile}
               poast={toFlat(k)}
+              onToggleReplies={hasChildren ? () => toggleExpanded(k.id) : undefined}
+              repliesExpanded={isExpanded}
             />
-            <Grandchildren node={k} />
+            {isExpanded && hasChildren && (
+              <div className="tail">
+                <ChildTreeInner node={k} expandedPosts={expandedPosts} toggleExpanded={toggleExpanded} />
+              </div>
+            )}
           </div>
         );
       })}
     </>
   );
-  function Grandchildren({ node }: { node: FullNode }) {
-    return (
-      <div className="tail">
-        <ChildTree node={node} />
-      </div>
-    );
-  }
 }
 
 function LongThread({
@@ -168,6 +201,20 @@ function LongThread({
   node?: FullNode;
   profile?: UserProfile;
 }) {
+  const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (postId: string) => {
+    setExpandedPosts((prev) => {
+      const next = new Set(prev);
+      if (next.has(postId)) {
+        next.delete(postId);
+      } else {
+        next.add(postId);
+      }
+      return next;
+    });
+  };
+
   if (thread.length === 0) return <p>wtf</p>;
   const op = thread[0];
   return (
@@ -180,19 +227,30 @@ function LongThread({
           thread={true}
         />
       </div>
-      {thread.slice(1).map((child, i) => (
-        <div className="timeline-post trill-post cp thread-child">
-          <div className="left">{`${i + 2}/${thread.length}`}</div>
-          <div className="right">
-            <Body poast={toFlat(child)} user={{ urbit: child.author }} />
-            <Footer
-              poast={toFlat(child)}
-              user={{ urbit: child.author }}
-              thread={true}
-            />
+      {thread.slice(1).map((child, i) => {
+        const hasChildren = Object.keys(child.children || {}).length > 0;
+        const isExpanded = expandedPosts.has(child.id);
+        return (
+          <div key={child.id} className="timeline-post trill-post cp thread-child">
+            <div className="left">{`${i + 2}/${thread.length}`}</div>
+            <div className="right">
+              <Body poast={toFlat(child)} user={{ urbit: child.author }} />
+              <Footer
+                poast={toFlat(child)}
+                user={{ urbit: child.author }}
+                thread={true}
+                onToggleReplies={hasChildren ? () => toggleExpanded(child.id) : undefined}
+                repliesExpanded={isExpanded}
+              />
+              {isExpanded && hasChildren && (
+                <div className="tail">
+                  <ChildTreeInner node={child} expandedPosts={expandedPosts} toggleExpanded={toggleExpanded} />
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

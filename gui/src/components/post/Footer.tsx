@@ -8,18 +8,18 @@ import { TrillReactModal, stringToReact } from "./Reactions";
 import toast from "react-hot-toast";
 import NostrIcon from "./wrappers/NostrIcon";
 import type { SPID } from "@/types/ui";
+import Modal from "@/components/modals/Modal";
 // TODO abstract this somehow
 
-function Footer({ user, poast, thread }: PostProps) {
+function Footer({ user, poast, thread, onToggleReplies, repliesExpanded }: PostProps) {
   const [_showMenu, setShowMenu] = useState(false);
   const [location, navigate] = useLocation();
   const [reposting, _setReposting] = useState(false);
-  const { api, setComposerData, setModal, addNotification } = useLocalState(
+  const { api, setComposerData, setModal } = useLocalState(
     (s) => ({
       api: s.api,
       setComposerData: s.setComposerData,
-      setModal: s.setModal,
-      addNotification: s.addNotification,
+      setModal: s.setModal
     }),
   );
   const our = api!.airlock.our!;
@@ -77,33 +77,86 @@ function Footer({ user, poast, thread }: PostProps) {
     const modal = <TrillReactModal poast={poast} />;
     setModal(modal);
   }
-  function showReplyCount() {
-    if (poast.children[0]) fetchAndShow(); // Flatpoast
-    // else {
-    //   const authors = Object.keys(poast.children).map(
-    //     (i) => poast.children[i].post.author
-    //   );
-    //   setEngagement({ type: "replies", ships: authors }, poast);
-    // }
-  }
-  async function fetchAndShow() {
-    // let authors = [];
-    // for (let i of poast.children as string[]) {
-    //   const res = await scrypoastFull(poast.host, i);
-    //   if (res)
-    //   authors.push(res.post.author || "deleter");
-    // }
-    // setEngagement({ type: "replies", ships: authors }, poast);
+  function handleReplyCountClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    e.preventDefault();
+    if (onToggleReplies) {
+      onToggleReplies();
+    }
   }
   function showRepostCount() {
     // const ships = poast.engagement.shared.map((entry) => entry.host);
     // setEngagement({ type: "reposts", ships: ships }, poast);
   }
-  function showQuoteCount() {
-    // setEngagement({ type: "quotes", quotes: poast.engagement.quoted }, poast);
+  function showQuoteCount(e: React.MouseEvent) {
+    e.stopPropagation();
+    e.preventDefault();
+    const quotesModal = (
+      <Modal close={() => setModal(null)}>
+        <div>
+          <h3>Quotes</h3>
+          <div>
+            {poast.engagement.quoted.map((quote, i) => {
+              const threadPath = `/apps/nostrill/t/${quote.pid.ship}/${quote.pid.id}`;
+              const routerPath = `/t/${quote.pid.ship}/${quote.pid.id}`;
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span>{quote.pid.ship}</span>
+                  <a
+                    href={threadPath}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigate(routerPath);
+                      setModal(null);
+                    }}
+                    role="link"
+                  >
+                    view quote
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </Modal>
+    );
+    setModal(quotesModal);
   }
-  function showReactCount() {
-    // setEngagement({ type: "reacts", reacts: poast.engagement.reacts }, poast);
+  function showReactCount(e: React.MouseEvent) {
+    e.stopPropagation();
+    e.preventDefault();
+    const reactionsModal = (
+      <Modal close={() => setModal(null)}>
+        <div>
+          <h3>Reactions</h3>
+          <div>
+            {Object.entries(poast.engagement.reacts).map(([ship, emoji]) => {
+              const userPath = `/apps/nostrill/u/${ship}`;
+              const routerPath = `/u/${ship}`;
+              return (
+                <div key={ship} style={{ display: 'flex', gap: '10px' }}>
+                  <span>{emoji}</span>
+                  <a
+                    href={userPath}
+                    role="link"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      navigate(routerPath);
+                      setModal(null);
+                    }}
+                  >
+                    {ship}
+                  </a>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </Modal>
+    );
+    setModal(reactionsModal);
   }
 
   const mostCommonReact = Object.values(poast.engagement.reacts).reduce(
@@ -123,20 +176,24 @@ function Footer({ user, poast, thread }: PostProps) {
   return (
     <div className="footer-wrapper post-footer">
       <footer>
-        {!thread && (
           <div className="icon">
-            <span
-              role="link"
-              onMouseUp={showReplyCount}
-              className="reply-count"
-            >
-              {displayCount(childrenCount)}
-            </span>
+            {onToggleReplies && childrenCount > 0 ? (
+              <span
+                role="link"
+                onMouseUp={handleReplyCountClick}
+                className="reply-count"
+                title={repliesExpanded ? "Collapse replies" : "Expand replies"}
+              > {displayCount(childrenCount)}
+              </span>
+            ) : (
+              <span className="reply-count">
+                {displayCount(childrenCount)}
+              </span>
+            )}
             <div className="icon-wrapper" role="link" onMouseUp={doReply}>
               <Icon name="reply" />
             </div>
           </div>
-        )}
         <div className="icon">
           <span role="link" onMouseUp={showQuoteCount} className="quote-count">
             {displayCount(poast.engagement.quoted.length)}
