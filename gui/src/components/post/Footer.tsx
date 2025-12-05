@@ -8,7 +8,8 @@ import { TrillReactModal, stringToReact } from "./Reactions";
 import toast from "react-hot-toast";
 import NostrIcon from "./wrappers/NostrIcon";
 import type { SPID } from "@/types/ui";
-import Modal from "@/components/modals/Modal";
+import QuoteModal from "@/components/modals/QuoteModal";
+import ReactionsModal from "@/components/modals/ReactionsModal";
 // TODO abstract this somehow
 
 function Footer({ user, poast, thread, onToggleReplies, repliesExpanded }: PostProps) {
@@ -91,72 +92,13 @@ function Footer({ user, poast, thread, onToggleReplies, repliesExpanded }: PostP
   function showQuoteCount(e: React.MouseEvent) {
     e.stopPropagation();
     e.preventDefault();
-    const quotesModal = (
-      <Modal close={() => setModal(null)}>
-        <div>
-          <h3>Quotes</h3>
-          <div>
-            {poast.engagement.quoted.map((quote, i) => {
-              const threadPath = `/apps/nostrill/t/${quote.pid.ship}/${quote.pid.id}`;
-              const routerPath = `/t/${quote.pid.ship}/${quote.pid.id}`;
-              return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span>{quote.pid.ship}</span>
-                  <a
-                    href={threadPath}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      navigate(routerPath);
-                      setModal(null);
-                    }}
-                    role="link"
-                  >
-                    view quote
-                  </a>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </Modal>
-    );
-    setModal(quotesModal);
+    setModal(<QuoteModal poast={poast} onClose={() => setModal(null)} />);
   }
+
   function showReactCount(e: React.MouseEvent) {
     e.stopPropagation();
     e.preventDefault();
-    const reactionsModal = (
-      <Modal close={() => setModal(null)}>
-        <div>
-          <h3>Reactions</h3>
-          <div>
-            {Object.entries(poast.engagement.reacts).map(([ship, emoji]) => {
-              const userPath = `/apps/nostrill/u/${ship}`;
-              const routerPath = `/u/${ship}`;
-              return (
-                <div key={ship} style={{ display: 'flex', gap: '10px' }}>
-                  <span>{emoji}</span>
-                  <a
-                    href={userPath}
-                    role="link"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      navigate(routerPath);
-                      setModal(null);
-                    }}
-                  >
-                    {ship}
-                  </a>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </Modal>
-    );
-    setModal(reactionsModal);
+    setModal(<ReactionsModal poast={poast} onClose={() => setModal(null)} />);
   }
 
   const mostCommonReact = Object.values(poast.engagement.reacts).reduce(
