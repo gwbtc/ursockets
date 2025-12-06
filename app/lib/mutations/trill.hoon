@@ -1,10 +1,11 @@
-/-  sur=nostrill, nsur=nostr, comms=nostrill-comms,
+/-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui, notif=nostrill-notif,
     post=trill-post, gate=trill-gate, feed=trill-feed
     
 /+  appjs=json-nostrill,
     lib=nostrill,
-    trill-feed,
-    trill=trill-post,
+    harklib=hark,
+    feedlib=trill-feed,
+    postlib=trill-post,
     njs=json-nostr,
     postlib=trill-post,
     sr=sortug,
@@ -22,6 +23,12 @@
     ~&  >>  poast=+.i.postlist
     $(postlist t.postlist)
   ~
+++  wrap-post  |=  p=post:post  ^-  post-wrapper:comms
+  =/  pubkey  ?:  .=(author.p our.bowl)  pub.i.keys.state  0x0
+  =/  user  (atom-to-user:lib author.p)
+  =/  profile  (~(get by profiles.state) user)
+  [p pubkey profile ~ ~]
+
   
 :: state
 ++  add-to-feed  |=  p=post:post
@@ -34,7 +41,8 @@
     ?~  uf  state
     =/  nf  (put:orm:feed u.uf id.p p)
     =.  following.state  (~(put by following.state) host nf)
-    =.  following2.state  (put:orm:feed following2.state id.p p)
+    =/  =upid:sur  [host id.p]
+    =.  following2.state  (put:uorm:sur following2.state upid p)
     state
 ++  add-reply  |=  p=post:post  ^+  state
     ?~  parent.p  ~&  ["not a reply!!" p]  !!
@@ -55,23 +63,41 @@
       =/  nf  (put:orm:feed u.uf id.u.parent u.parent)
       =/  nf  (put:orm:feed nf id.p p)
       =.  following.state  (~(put by following.state) host nf)
-      =.  following2.state  (put:orm:feed following2.state id.u.parent u.parent)
-      =.  following2.state  (put:orm:feed following2.state id.p p)
+
+      =/  ppid=upid:sur  [host id.u.parent]      
+      =.  following2.state  (put:uorm:sur following2.state ppid u.parent)
+      =/  =upid:sur  [host id.p]
+      =.  following2.state  (put:uorm:sur following2.state upid p)
       state
+
+++  del-from-feed  |=  p=post:post
+  ?:  .=(our.bowl host.p)
+    =.  feed.state  (delete-with-children:feedlib feed.state p)
+    state
+    ::
+    =/  host  (atom-to-user:lib host.p)
+    =/  uf  (~(get by following.state) host)
+    ?~  uf  state
+    =/  nf  (delete-with-children:feedlib u.uf p)
+    =.  following.state  (~(put by following.state) host nf)
+    =.  following2.state  (delete-from-global:feedlib following2.state p)
+    state
+
+      
     
   
 ++  headsup-poke
-  |=  [poke=post-poke:ui:sur p=post:post]  ^-  engagement:comms
+  |=  [poke=post-poke:ui p=post:post]  ^-  engagement:comms
   ?-  -.poke
     %add  !!
-    %del       [%del-reply id.poke id.p]
-    %quote     [%quote id.poke p]
     %reply     [%reply id.poke p]
-    %rp        [%rp id.poke id.p]
-    %reaction  [%reaction id.poke reaction.poke]
+    %quote     [%quote id.poke p]
+    %rp        [%rp [host.poke id.poke] id.p]
+    %del       [%del-reply [host.poke id.poke] id.p]
+    %reaction  [%reaction [host.poke id.poke] reaction.poke]
   ==
 ::
-++  handle-post  |=  poke=post-poke:ui:sur
+++  handle-post  |=  poke=post-poke:ui
   ^-  (quip card _state)
   |^
   ~&  handle-post-ui=poke
@@ -82,30 +108,30 @@
     ?-  -.poke
       %del  
         ?-  -.host.poke  
+            :: TODO
             %nostr  `state
             ::
             %urbit
           ?~  pos=(get:orm:feed feed.state id.poke)  `state
           =/  p  u.pos
           =.  feed.state  =<  +  (del:orm:feed feed.state id.poke)
-          =.  feed.state  (delete-children:trill-feed feed.state p)
-          =/  pw  [p (some pubkey) ~ ~ profile]
+          =.  feed.state  (delete-children:feedlib feed.state p)
+          =/  pw  (wrap-post p)
           =/  eng-cards=(list card)  
-            (del-parent-cards children.p id.p)
-          =/  jfact=fact:ui:sur  [%post %del pw]
-          =/  =fact:comms  [%post %del id.poke]
-          =/  upd-fol-cards
-            %+  turn  ~(tap in children.p)
-            |=(c=id:post (update-followers:cards:lib [%post %del c]))
+            (del-parent-cards host.poke children.p id.p)
+          =/  fact  [%post %del pw]
+          :: IMPORTANT  no need to send one card per children, just have followers handle that logic
+          :: =/  upd-fol-cards
+          ::   %+  turn  ~(tap in children.p)
+          ::   |=(c=id:post (update-followers:cards:lib [%post %del c]))
           =/  cards=(list card)
             ;:  welp
               eng-cards
-              upd-fol-cards
-              :~  (update-ui:cards:lib jfact)
-                  (update-followers:cards:lib [%post %del id.poke])
+              :~  (update-ui:cards:lib fact)
+                  (update-followers:cards:lib fact)
               ==
             ==
-          =/  is-ref=(unit [ship @da])  (get-ref p)
+          =/  is-ref=(unit [ship @da])  (get-ref:postlib p)
           =/  host=@p  +.host.poke
           ?:  .=(our.bowl host)  
             ?~  is-ref  
@@ -122,17 +148,17 @@
               ?:  .=(our.bowl author.p)
                 ::  case: delete our reply to our post
                 %+  snoc  cards
-                (update-followers:cards:lib [%post %changes u.poast])
+                (update-followers:cards:lib [%post %upd (wrap-post u.poast)])
               ::  case:  delete reply to our post
               ::  send %del-parent to deleted reply 
-              =/  eng-poke=engagement:comms  [%del-parent u.parent.p id.p]
+              =/  eng-poke=engagement:comms  [%del-parent [host.poke u.parent.p] id.p]
               %+  welp  cards
               :~
                 (poke-host:crds author.p [%eng eng-poke])
-                (update-followers:cards:lib [%post %changes u.poast])
+                (update-followers:cards:lib [%post %upd (wrap-post u.poast)])
               ==
             =/  ref  u.is-ref
-            =/  eng-poke  [%eng [%del-quote +.ref id.p]]
+            =/  eng-poke  [%eng [%del-quote [host.poke +.ref] id.p]]
             ::  case: delete quote
             :_  state
             %+  snoc  cards
@@ -154,35 +180,44 @@
           (snoc cards eng-card)
         ==
       %add
-        =/  sp     (build-sp:trill our.bowl our.bowl content.poke ~ ~)
+        =/  sp     (build-sp:postlib our.bowl our.bowl content.poke ~ ~)
         =/  p=post:post
-          (build-post:trill now.bowl pubkey sp)
+          (build-post:postlib now.bowl pubkey sp)
         =.  state  (add-to-feed p)
-        =/  pw  [p (some pubkey) ~ ~ profile]
-        =/  jfact=fact:ui:sur  [%post %add pw]
-        =/  ui-card    (update-ui:cards:lib jfact)
+        =/  pw  (wrap-post p)
+        =/  fact  [%post %add pw]
+        =/  ui-card    (update-ui:cards:lib fact)
+        =/  fact-card  (update-followers:cards:lib fact)
+
+        =/  mentions  (extract-mentions:postlib p)
+        =/  mention-cards  %+  turn  mentions  |=  s=@p
+          %+  poke-host:crds  s  [%eng %mention p]
         :_  state
-          =/  =fact:comms  [%post %add p]
-          =/  fact-card  (update-followers:cards:lib fact)
+          %+  weld  mention-cards
           :~  ui-card
               fact-card
           ==
       %quote
         =/  host  (user-to-atom:lib host.poke)
-        =/  sp     (build-sp:trill our.bowl our.bowl content.poke ~ ~)
+        =/  sp     (build-sp:postlib our.bowl our.bowl content.poke ~ ~)
         =/  quote  [%ref %trill host /(crip (scow:sr %ud id.poke))]
         =.  contents.sp  (snoc contents.sp quote)
         =/  p=post:post
-          (build-post:trill now.bowl pubkey sp)
+          (build-post:postlib now.bowl pubkey sp)
         =.  state  (add-to-feed p)
-        =/  pw  [p (some pubkey) ~ ~ profile]
-        =/  jfact=fact:ui:sur  [%post %add pw]
-        =/  ui-card    (update-ui:cards:lib jfact)
+        =/  pw  (wrap-post p)
+        =/  fact  [%post %add pw]
+        =/  ui-card    (update-ui:cards:lib fact)
+        =/  fact-card  (update-followers:cards:lib fact)
         =/  eng-poke  [%eng (headsup-poke poke p)]
         =/  eng-card  (poke-host:crds host.p eng-poke)
+
+        =/  mentions  (extract-mentions:postlib p)
+        =/  mention-cards  %+  turn  mentions  |=  s=@p
+          %+  poke-host:crds  s  [%eng %mention p]
+        
         :_  state
-          =/  =fact:comms  [%post %add p]
-          =/  fact-card  (update-followers:cards:lib fact)
+          %+  weld  mention-cards
           :~  ui-card
               fact-card
               eng-card
@@ -204,18 +239,23 @@
           ==
         ::
         =/  host  (user-to-atom:lib host.poke)
-        =/  sp     (build-sp:trill host our.bowl content.poke `id.poke `thread.poke)
+        =/  sp     (build-sp:postlib host our.bowl content.poke `id.poke `thread.poke)
         =/  p=post:post
-          (build-post:trill now.bowl pubkey sp)
+          (build-post:postlib now.bowl pubkey sp)
         =.  state  (add-reply p)
-        =/  pw  [p (some pubkey) ~ ~ profile]
-        =/  jfact=fact:ui:sur  [%post %add pw]
-        =/  ui-card    (update-ui:cards:lib jfact)
+        =/  pw  (wrap-post p)
+        =/  fact  [%post %add pw]
+        =/  ui-card    (update-ui:cards:lib fact)
+        =/  fact-card  (update-followers:cards:lib fact)
         =/  eng-poke  [%eng (headsup-poke poke p)]
         =/  eng-card  (poke-host:crds host.p eng-poke)
+
+        =/  mentions  (extract-mentions:postlib p)
+        =/  mention-cards  %+  turn  mentions  |=  s=@p
+          %+  poke-host:crds  s  [%eng %mention p]
+        
         :_  state
-          =/  =fact:comms  [%post %add p]
-          =/  fact-card  (update-followers:cards:lib fact)
+          %+  weld  mention-cards
           :~  ui-card
               fact-card
               eng-card
@@ -223,19 +263,18 @@
       %rp
         =/  host  (user-to-atom:lib host.poke)
         =/  quote  [%ref %trill host /(crip (scow:sr %ud id.poke))]
-        =/  sp     (build-sp:trill host our.bowl '' ~ ~)
+        =/  sp     (build-sp:postlib host our.bowl '' ~ ~)
         =.  contents.sp  ~[quote]
         =/  p=post:post
-          (build-post:trill now.bowl pubkey sp)
+          (build-post:postlib now.bowl pubkey sp)
         =.  state  (add-to-feed p)
-        =/  pw  [p (some pubkey) ~ ~ profile]
-        =/  jfact=fact:ui:sur  [%post %add pw]
-        =/  ui-card    (update-ui:cards:lib jfact)
+        =/  pw  (wrap-post p)
+        =/  fact  [%post %add pw]
+        =/  ui-card    (update-ui:cards:lib fact)
+        =/  fact-card  (update-followers:cards:lib fact)
         =/  eng-poke  [%eng (headsup-poke poke p)]
         =/  eng-card  (poke-host:crds host.p eng-poke)
         :_  state
-          =/  =fact:comms  [%post %add p]
-          =/  fact-card  (update-followers:cards:lib fact)
           :~  ui-card
               fact-card
               eng-card
@@ -247,15 +286,14 @@
           =.  reacts.engagement.p  %+  ~(put by reacts.engagement.p)
             our.bowl  [reaction.poke *signature:post]
           =.  state  (add-to-feed p)
-          =/  pw  [p (some pubkey) ~ ~ profile]
-          =/  jfact=fact:ui:sur  [%post %add pw]
-          =/  ui-card    (update-ui:cards:lib jfact)
+          =/  pw  (wrap-post p)
+          =/  fact  [%post %add pw]
+          =/  fact-card  (update-followers:cards:lib fact)
+          =/  ui-card    (update-ui:cards:lib fact)
           =/  eng-poke  [%eng (headsup-poke poke p)]
           =/  eng-card  (poke-host:crds host eng-poke)
 
           :_  state
-            =/  =fact:comms  [%post %add p]
-            =/  fact-card  (update-followers:cards:lib fact)
             :~  ui-card
                 fact-card
                 eng-card
@@ -273,9 +311,9 @@
             =.  reacts.engagement.p  %+  ~(put by reacts.engagement.p)
               our.bowl  [reaction.poke *signature:post]
             =.  state  (add-to-feed p)
-            =/  pw  [p (some pubkey) ~ ~ profile]
-            =/  jfact=fact:ui:sur  [%post %add pw]
-            =/  ui-card    (update-ui:cards:lib jfact)
+            =/  pw  (wrap-post p)
+            =/  fact  [%post %add pw]
+            =/  ui-card    (update-ui:cards:lib fact)
             =/  eng-poke  [%eng (headsup-poke poke p)]
             =/  eng-card  (poke-host:crds host.p eng-poke)
             :_  state
@@ -284,23 +322,8 @@
               ==
     ==
   ::
-  ++  get-ref
-    |=  p=post:post
-    ^-  (unit [ship @da])
-    =/  refs=(list block:post)
-      %-  zing
-      %+  turn  (tap:corm:post contents.p)
-      |=  [t=time cl=content-list:post]
-      %+  skim  cl
-      |=(b=block:post =(%ref -.b)) 
-    ?~  refs  ~
-    =/  ref  (head refs)
-    ?.  ?=([%ref @ ship=@ path=*] ref)  ~
-    ?~  ref-id=(slaw:sr %ud (head path.ref))  ~
-    `[ship.ref u.ref-id]
-  ::
   ++  del-parent-cards
-    |=  [children=(set id:post) parent=@da]
+    |=  [host=user:sur children=(set id:post) parent=@da]
     =/  c  ~(tap in children)
     =/  crds  ~(. cards:lib bowl)
     |-  ^-  (list card)
@@ -308,40 +331,131 @@
     =/  child=(unit post:post)  (get:orm:feed feed.state i.c)
     ?~  child  $(c t.c)
     :_  $(c t.c)
-    =/  eng-poke=engagement:comms  [%del-parent parent id.u.child]
+    =/  eng-poke=engagement:comms  [%del-parent [host parent] id.u.child]
     =/  host=@p  author.u.child
     (poke-host:crds host [%eng eng-poke])
   --
+
+
+  ++  handle-eng
+    |=  e=engagement:comms
+    ^-  (quip card:agent:gall _state)
+    =/  user  [%urbit src.bowl]
+    =/  n=notif:notif  [%post [user now.bowl e]]
+    =/  hark-card=card:agent:gall  (send-hark:harklib n bowl)
+    =/  cards  :~(hark-card)
+    ::  We send the notification always.
+    ::  Only update state if we are the host. Else we wait for the fact from the actual host
+    ?-  -.e
+      %mention  [cards state]
+      %reply
+        =/  poast  (get:orm:feed feed.state parent.e)
+        ?~  poast  ~&  "parent of reply doesnt exist"  [cards state]
+        =.  state  (add-reply child.e)
+        ::  now the parent should be updated 
+        =/  poast  (get:orm:feed feed.state parent.e)
+        ?~  poast  ~&  "parent of reply doesnt exist"  [cards state]
+        =/  f=fact:comms   [%post %add (wrap-post child.e)]
+        =/  f2=fact:comms  [%post %upd (wrap-post u.poast)]
+        :_  state
+        :~  (update-followers:cards:lib f)
+            (update-followers:cards:lib f2)
+            hark-card
+        ==
+      %quote
+        =/  poast  (get:orm:feed feed.state src.e)
+        ?~  poast  [cards state]
+        ::
+        =/  pid  [our.bowl src.e]
+        =/  spid  [*signature:post src.bowl id.post.e]
+        =.  quoted.engagement.u.poast  (~(put in quoted.engagement.u.poast) spid)
+        =.  state  (add-to-feed u.poast)
+        =/  f=fact:comms  [%post %upd (wrap-post u.poast)]
+        :_  state
+        :~  (update-followers:cards:lib f)
+            hark-card
+        ==
+      %rp
+        =/  poast  (get:orm:feed feed.state id.src.e)
+        ?~  poast  [cards state]
+        =/  pid  [our.bowl src.e]
+        =/  spid  [*signature:post src.bowl target.e]
+        =.  shared.engagement.u.poast  
+          ?:  (~(has in shared.engagement.u.poast) spid)
+            (~(del in shared.engagement.u.poast) spid)
+          (~(put in shared.engagement.u.poast) spid)
+        =.  state  (add-to-feed u.poast)
+        =/  f=fact:comms  [%post %upd (wrap-post u.poast)]
+        :_  state
+        :~  (update-followers:cards:lib f)
+             hark-card
+        ==
+      %reaction
+        =/  poast  (get:orm:feed feed.state id.pid.e)
+        ?~  poast  [cards state]
+        :: TODO signatures et al.
+        =/  pid  [our.bowl id.pid.e]
+        =/  sign  *signature:post
+        =.  q.sign  src.bowl
+        =.  reacts.engagement.u.poast  (~(put by reacts.engagement.u.poast) src.bowl [reaction.e sign])
+        =.  state  (add-to-feed u.poast)
+        =/  f=fact:comms  [%post %upd (wrap-post u.poast)]
+        :_  state
+        :~  (update-followers:cards:lib f)
+            hark-card
+        ==
+      %del-reply 
+        ?~  p=(get:orm:feed feed.state child.e)  [cards state]
+        =/  parent  (get:orm:feed feed.state id.parent.e)
+        ?~  parent  [cards state]
+        ::
+        =/  pid  [our.bowl id.parent.e]
+        =.  state  (del-from-feed u.p)
+        ::  get the updated parent
+        =/  parent  (get:orm:feed feed.state id.parent.e)
+        ?~  parent  ~&  "parent failed to update!!"  [cards state]
+        :_  state
+        :~  (update-followers:cards:lib [%post %upd (wrap-post u.parent)])
+            (update-followers:cards:lib [%post %del (wrap-post u.p)])
+            hark-card
+        ==
+      
+      %del-parent  ::  this is always going to be external
+        [cards state]
+      %del-quote
+        =/  poast  (get:orm:feed feed.state id.src.e)
+        ?~  poast  [cards state]
+        ::
+        =/  pid  [our.bowl src.e]
+
+        =/  spid  [*signature:post src.bowl quote.e]
+        =.  quoted.engagement.u.poast  (~(del in quoted.engagement.u.poast) spid)
+        =.  state  (add-to-feed u.poast)
+        =/  f=fact:comms  [%post %upd (wrap-post u.poast)]
+        :_  state
+        :~  (update-followers:cards:lib f)
+            hark-card
+        ==
+    ==
+
+
+
+
+
+
+
 ++  handle-post-fact  |=  pf=post-fact:comms
   ^-  (quip card _state)
   ~&  handle-post-fact=pf
-  =/  =user:sur  [%urbit src.bowl]
-  =/  fed  (~(get by following.state) user)
-  ?~  fed  ~&  "emmm not following ya"  `state
-    =/  nf=feed:feed
-    ?:  ?=(%del -.pf)
-          =<  +  (del:orm:feed u.fed id.pf)
-      ::mmm people aren't supposed to update if its not their own feeds
-      :: =/  =user:nsur  [%urbit host.p.pdf]
-      (put:orm:feed u.fed id.p.pf p.pf)
-  =.  following.state  (~(put by following.state) user nf)
-  =.  following2.state
-    ?:  ?=(%del -.pf)
-    =<  +  (del:orm:feed following2.state id.pf)
-    (insert-to-global:trill-feed nf p.pf)
-    :: TODO update the ui with the changes 
-    :_  state
-    =/  profile  (~(get by profiles.state) user)
-    =/  pubkey  0  :: TODO
-    =/  jfact=fact:ui:sur
-      ?:  ?=(%del -.pf)
-        =/  p  *post:post
-        =/  p  p(host src.bowl, id id.pf)
-        =/  pw  [p ~ ~ ~ profile]
-        [%post %del pw]
-        =/  pw  [p.pf ~ ~ ~ profile]
-        [%post %add pw]
-    =/  ui-card  (update-ui:cards:lib jfact)
-    :~  ui-card
-    ==
+  ?-  -.pf
+    %add  :_  (add-to-feed post.pf)
+          :~  (update-ui:cards:lib [%post pf])  
+          ==
+    %upd  :_  (add-to-feed post.pf)
+          :~  (update-ui:cards:lib [%post pf])  
+          ==
+    %del  :_  (del-from-feed post.pf)
+          :~  (update-ui:cards:lib [%post pf])  
+          ==
+  ==
 --

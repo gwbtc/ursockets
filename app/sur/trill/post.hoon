@@ -12,8 +12,7 @@
       parent=(unit id)
       children=(set id)
       contents=content-map
-      read=lock:gate
-      write=lock:gate
+      =perms
       =engagement
       =hash  ::  We'll reuse this for the Nostr pubkey
       =signature
@@ -25,8 +24,7 @@
       thread=(unit id)
       parent=(unit id)
       contents=content-list
-      read=lock:gate
-      write=lock:gate
+      =perms
       tags=(set tag) 
   ==
 +$  full-node
@@ -37,13 +35,15 @@
       parent=(unit id)
       children=internal-graph
       contents=content-map
-      read=lock:gate
-      write=lock:gate
+      =perms
       =engagement
       =hash
       =signature
       tags=(set tag) 
   ==
+
++$  perms  [read=gate:gate write=gate:gate]
+  
 ::  recursive types crash
 +$  internal-graph
   $~  [%empty ~]

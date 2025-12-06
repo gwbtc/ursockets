@@ -34,7 +34,6 @@ function UserFeed({
   const { api, pubkey } = useLocalState((s) => ({
     api: s.api,
     addProfile: s.addProfile,
-    addNotification: s.addNotification,
     lastFact: s.lastFact,
     pubkey: s.pubkey,
   }));

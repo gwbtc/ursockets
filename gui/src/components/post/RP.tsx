@@ -2,12 +2,11 @@ import Post from "./Post";
 import type { Ship } from "@/types/urbit";
 import type { Poast, FullNode, ID } from "@/types/trill";
 import PostData from "./Loader";
+import { userFromAuthor } from "@/logic/trill/helpers";
 export default function (props: {
   host: string;
   id: string;
-  rter: Ship;
-  rtat: number;
-  rtid: ID;
+  rp: { ship: Ship; time: number; id: ID };
   refetch?: Function;
 }) {
   return PostData(props)(RP);
@@ -16,22 +15,17 @@ export default function (props: {
 function RP({
   data,
   refetch,
-  rter,
-  rtat,
-  rtid,
+  rp,
 }: {
   data: FullNode;
   refetch: Function;
-  rter: Ship;
-  rtat: number;
-  rtid: ID;
+  rp: { ship: Ship; time: number; id: ID };
 }) {
   return (
     <Post
+      user={userFromAuthor(data.author)}
       poast={toFlat(data)}
-      rter={rter}
-      rtat={rtat}
-      rtid={rtid}
+      rp={rp}
       refetch={refetch}
     />
   );

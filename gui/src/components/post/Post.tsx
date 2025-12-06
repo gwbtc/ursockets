@@ -16,9 +16,7 @@ export interface PostProps {
   user: UserType;
   thread?: boolean;
   fake?: boolean;
-  rter?: Ship;
-  rtat?: number;
-  rtid?: PostID;
+  rp?: { ship: Ship; time: number; id: PostID };
   nest?: number;
   refetch?: Function;
   profile?: UserProfile;
@@ -26,6 +24,7 @@ export interface PostProps {
 function Post(props: PostProps) {
   // console.log("post", props);
   const { poast } = props;
+  console.log({ poast });
   if (!poast || poast.contents === null) {
     return null;
   }
@@ -39,9 +38,7 @@ function Post(props: PostProps) {
       <RP
         host={ref.ship}
         id={ref.path.slice(1)}
-        rter={poast.author}
-        rtat={poast.time}
-        rtid={poast.id}
+        rp={{ ship: poast.author, time: poast.time, id: poast.id }}
       />
     );
   } else return <TrillPost {...props} />;
@@ -49,7 +46,7 @@ function Post(props: PostProps) {
 export default Post;
 
 function TrillPost(props: PostProps) {
-  const { poast, profile, fake } = props;
+  const { poast, profile, fake, rp } = props;
   const setModal = useLocalState((s) => s.setModal);
   const [_, navigate] = useLocation();
   function openThread(_e: React.MouseEvent) {
@@ -76,6 +73,8 @@ function TrillPost(props: PostProps) {
       <Sigil patp={poast.author} size={46} />
     </div>
   );
+  // TODO
+  const rpString = rp ? `Reposted by ${rp.ship} at ${rp.time}` : "";
   return (
     <div
       className={`timeline-post trill-post cp`}

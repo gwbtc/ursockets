@@ -5,11 +5,12 @@ import type { ComposerData } from "@/types/ui";
 import { create } from "zustand";
 import type { Fact, Relays, UserProfile } from "@/types/nostrill";
 import type { Event } from "@/types/nostr";
-import type { FC, Poast } from "@/types/trill";
+import type { FC, Gate, Poast } from "@/types/trill";
 import type { Notification } from "@/types/notifications";
 import { useShallow } from "zustand/shallow";
-import type { HarkAction, Skein, Yarn } from "@/logic/hark";
+import type { HarkAction, Skein } from "@/types/hark";
 import { skeinToNote } from "@/logic/notifications";
+import { defaultGate } from "@/logic/bunts";
 // TODO handle airlock connection issues
 // the SSE pipeline has a "status-update" event FWIW
 // type AirlockState = "connecting" | "connected" | "failed";
@@ -33,8 +34,8 @@ export type LocalState = {
   // Notifications
   notifications: Notification[];
   setNotifications: (n: Notification[]) => void;
-  dismissNotification: (n: string) => void;
   lastFact: Fact | null;
+  feedPerms: Gate;
 };
 
 const creator = create<LocalState>();
@@ -96,10 +97,14 @@ export const useStore = creator((set, get) => ({
         if ("fols" in fact) {
           const { following, profiles } = get();
           if ("new" in fact.fols) {
-            const { user, feed, profile } = fact.fols.new;
-            following.set(user, feed);
-            if (profile) profiles.set(user, profile);
-            set({ following, profiles });
+            const { user, data } = fact.fols.new;
+            if (data.data === "maybe") return;
+            if (data.data) {
+              const { feed, profile } = data.data;
+              following.set(user, feed);
+              if (profile) profiles.set(user, profile);
+              set({ following, profiles });
+            }
           }
           if ("quit" in fact.fols) {
             following.delete(fact.fols.quit);
@@ -169,11 +174,7 @@ export const useStore = creator((set, get) => ({
   setNotifications: (notifications) => {
     set({ notifications });
   },
-  dismissNotification: (id) => {
-    const nots = get().notifications;
-    const notifications = nots.filter((n) => n.id !== id);
-    set({ notifications });
-  },
+  feedPerms: defaultGate,
 }));
 
 const useShallowStore = <T extends (state: LocalState) => any>(

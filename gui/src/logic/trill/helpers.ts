@@ -1,14 +1,26 @@
 import type { NostrEvent } from "@/types/nostr";
 import type { FlatFeed, FullFeed, FullNode, Poast } from "@/types/trill";
 import { eventToPoast } from "../nostrill";
+import { isValidPatp } from "urbit-ob";
+import type { UserType } from "@/types/nostrill";
+import { decodeNostrKey } from "../nostr";
 
 export function toFlat(n: FullNode): Poast {
-  return {
+  console.log("to flat", n);
+  const r = {
     ...n,
     children: !n.children
       ? []
       : Object.keys(n.children).map((c) => n.children[c].id),
   };
+  console.log("flat", r);
+  return r;
+  // return {
+  //   ...n,
+  //   children: !n.children
+  //     ? []
+  //     : Object.keys(n.children).map((c) => n.children[c].id),
+  // };
 }
 
 type res = { threadChildren: FullNode[]; replies: FullNode[] };
@@ -215,4 +227,22 @@ export function countNodes(tree: FullFeed): number {
   traverse(tree);
   return count;
 }
+
+export function userFromPost(poast: Poast) {
+  const user: UserType = poast.event
+    ? { nostr: poast.event.pubkey }
+    : isValidPatp(poast.author)
+      ? { urbit: poast.author }
+      : { nostr: poast.author };
+  return user;
+}
+export function userFromAuthor(userString: string): UserType {
+  if (isValidPatp(userString)) return { urbit: userString };
+  else {
+    const nostrKey = decodeNostrKey(userString);
+    if (nostrKey) return { nostr: nostrKey };
+    else throw new Error("bad user");
+  }
+}
+
 // http://localhost:5173/apps/nostrill/t/nevent1qqsp3faj5jy9fpc6779rcs9kdccc0mxwlv2pnhymwqtjmletn72u5echttguv

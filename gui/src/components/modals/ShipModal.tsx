@@ -5,12 +5,14 @@ import Icon from "@/components/Icon";
 import useLocalState from "@/state/state";
 import { useLocation } from "wouter";
 import toast from "react-hot-toast";
+import { userFromAuthor } from "@/logic/trill/helpers";
 
 export default function ({ ship }: { ship: Ship }) {
   const { setModal, api } = useLocalState((s) => ({
     setModal: s.setModal,
     api: s.api,
   }));
+  const user = userFromAuthor(ship);
   const [_, navigate] = useLocation();
   function close() {
     setModal(null);
@@ -24,7 +26,7 @@ export default function ({ ship }: { ship: Ship }) {
     <Modal close={close}>
       <div id="ship-modal">
         <div className="flex">
-          <Avatar p={ship} size={60} />
+          <Avatar user={user} size={60} />
           <Icon
             name="copy"
             size={20}

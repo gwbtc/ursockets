@@ -24,9 +24,8 @@ export default function NostrUser({
   isAccessLoading: boolean;
   setIsAccessLoading: (b: boolean) => void;
 }) {
-  const { api, addNotification, lastFact } = useLocalState((s) => ({
+  const { api, lastFact } = useLocalState((s) => ({
     api: s.api,
-    addNotification: s.addNotification,
     lastFact: s.lastFact,
   }));
   const [fc, setFC] = useState<FC>();
@@ -76,13 +75,8 @@ export default function NostrUser({
     setIsAccessLoading(true);
     try {
       await api.nostrFeed(pubkey);
-      addNotification({
-        type: "fetching_nostr",
-        from: userString,
-        message: `Fetching nostr feed from ${userString}`,
-      });
     } catch (error) {
-      toast.error(`Failed to request access from ${user.urbit}`);
+      toast.error(`Failed to request access from ${pubkey}`);
       console.error("Access request error:", error);
     } finally {
       setIsAccessLoading(false);

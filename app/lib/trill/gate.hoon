@@ -6,10 +6,21 @@
       ?:  public.luk.lock     luk.lock     [~ %| %|]
       ?:  public.ship.lock    ship.lock    [~ %| %|]
       ?:  public.tags.lock    tags.lock    [~ %| %|]
+                              pass.lock
       ?:  public.custom.lock  custom.lock  [~ %|]
   ==
 ++  can-access
-|=  [=ship =lock:gate =bowl:gall]  ^-  ?
+|=  [=ship =gate:gate msg=@t =bowl:gall]  ^-  ?
+  ::  TODO
+  :: =/  is-muted  (check-lock ship mute.gate '' bowl)
+  :: ?:  is-muted  .n
+  (check-lock ship lock.gate msg bowl)
+
+++  check-lock
+::  TODO change this to =user?
+|=  [=ship =lock:gate msg=@t =bowl:gall]  ^-  ?
+  ::  TODO hashing algorithm
+  ?^  pass.lock  .=(u.pass.lock (shas %nostrillio msg))
   ?^  fn.custom.lock  %-  u.fn.custom.lock  ship
   =/  in-luk  (~(has in caveats.ship.lock) ship)
   =/  fu  (sein:title our.bowl now.bowl ship)
