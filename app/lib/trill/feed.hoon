@@ -155,8 +155,8 @@
     $(children t.children)
   =/  nf  =<  +  (del:orm:feed f id.u.child)
   $(children t.children, f nf)
-
-  ++  delete-nested-children
+::
+++  delete-nested-children
   |=  [f=feed:feed p=post:post]  ^-  feed:feed
   ?~   ~(tap in children.p)  f
   =/  children=(list id:post)  ~(tap in children.p)
@@ -165,14 +165,14 @@
   ?~  child=(get:orm:feed f i.children)
     $(children t.children)
   =/  nf  =<  +  (del:orm:feed f id.u.child)
-  ?~  children.u.child
+  =/  grandc=(list id:post)
+    ~(tap in `(set id:post)`children.u.child)
+  ?~  grandc
     $(children t.children, f nf)
-  =/  grandc=(set id:post)  children.u.child
-  =/  grandcl  ~(tap in grandc)
-  $(children (welp (tail children) grandcl), f nf)
+  $(children (welp (tail children) grandc), f nf)
 ::   global
 ++  insert-to-global
-|=  [gf=global-feed:sur p=post:post]  ^-  global-feed:sur
+  |=  [gf=global-feed:sur p=post:post]  ^-  global-feed:sur
   =/  host  (atom-to-user:lib host.p)
   =/  =upid:sur  [host id.p]
   (put:uorm:sur gf upid p)

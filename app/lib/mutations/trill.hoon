@@ -113,20 +113,18 @@
             %urbit
           =/  host=@p  +.host.poke
           ?.  .=(our.bowl host)
-            ~&  %host-is-not-us
             ?~  pos=(get:orm:feed feed.state id.poke)
               ::  case: del our reply when host isn't our.bowl
-              ::  TODO: change structure of %del-reply to [%del-reply =id]
               =/  eng-card  (poke-host:crds host [%eng [%del-reply [host.poke *@da] id.poke]])
               :_  state
               :~  eng-card
               ==
-            =.  feed.state  =<  +  (del:orm:feed feed.state id.poke)
             =/  p  u.pos
             ?~  parent.p
               ?~  is-ref=(get-ref p)
                 ~&  >>>  'unexpected post structure'
                 `state
+              =.  feed.state  =<  +  (del:orm:feed feed.state id.poke)
               =/  ref=[ship @da]  u.is-ref
               =/  eng-poke  (headsup-poke [%rp host.poke +.ref] p)
               =/  eng-card  (poke-host:crds `@p`-.ref [%eng eng-poke])
@@ -140,39 +138,36 @@
             ~&  >>>  'unexpected post structure'
             `state
             ::
-          ?~  pos=(get:orm:feed feed.state id.poke)
-              ~&  >>>  not-in-state/id.poke
-              `state
+          ?~  pos=(get:orm:feed feed.state id.poke)  `state
           =/  p  u.pos
           =.  feed.state  =<  +  (del:orm:feed feed.state id.poke)
           =.  feed.state  (delete-nested-children:feedlib feed.state p)
           =/  f  [%post %del (wrap-post p)]
           =/  cards=(list card)
-              :~  (update-followers:cards:lib f)
-                  (update-ui:cards:lib f)
-              ==
+            :~  (update-followers:cards:lib f)
+                (update-ui:cards:lib f)
+            ==
           =/  is-ref=(unit [ship @da])  (get-ref p)
           ?~  is-ref  
             ?~  parent.p  
               ::  case: delete our post
               [cards state]
-            =/  poast  (get:orm:feed feed.state u.parent.p)
-            ?~  poast  
+            ?~  poast=(get:orm:feed feed.state u.parent.p)
               ~&  >>>  %parent-missing
               [cards state]
+            ::  case: delete our reply to our post
             =.  children.u.poast  (~(del in children.u.poast) id.p)
             =.  feed.state  (put:orm:feed feed.state u.parent.p u.poast)
             =/  f   [%post %upd (wrap-post u.poast)]
             :_  state
-            ::  case: delete our reply to our post
             %+  welp  cards
             :~
               (update-followers:cards:lib f)
               (update-ui:cards:lib f)
             ==
+          ::  case: delete quote
           =/  ref=[ship @da]  u.is-ref
           =/  eng-poke  [%eng [%del-quote [urbit+our.bowl +.ref] id.p]]
-          ::  case: delete quote
           :_  state
           %+  snoc  cards
           (poke-host:crds `@p`-.ref eng-poke)
@@ -410,20 +405,11 @@
             hark-card
         ==
       %del-reply
-        ~&  got-del-reply/child.e
-        ?~  p=(get:orm:feed feed.state child.e)  
-          ~&  %no-such-a-post
-          `state
-        ?.  .=(src.bowl author.u.p)  
-          ~&  >>  %poke-is-not-from-author
-          `state
-        ?~  parent.u.p  
-          ~&  %not-a-reply
-          `state
+        ?~  p=(get:orm:feed feed.state child.e)  `state
+        ?.  .=(src.bowl author.u.p)  `state
+        ?~  parent.u.p  `state
         =/  poast  (get:orm:feed feed.state u.parent.u.p)
-        ?~  poast  
-          ~&  %we-dont-have-parent-post
-          `state
+        ?~  poast  `state
         (handle-post [%del urbit+our.bowl child.e])
       %del-quote
         =/  poast  (get:orm:feed feed.state id.src.e)
