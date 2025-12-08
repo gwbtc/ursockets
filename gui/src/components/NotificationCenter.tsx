@@ -8,14 +8,11 @@ import type { Notification, NotificationType } from "@/types/notifications";
 import "@/styles/NotificationCenter.css";
 
 const NotificationCenter = () => {
-  const [_, navigate] = useLocation();
-  const { notifications, dismissNotification, setModal } = useLocalState(
-    (s) => ({
-      notifications: s.notifications,
-      dismissNotification: s.dismissNotification,
-      setModal: s.setModal,
-    }),
-  );
+  const [_, _navigate] = useLocation();
+  const { notifications, setModal } = useLocalState((s) => ({
+    notifications: s.notifications,
+    setModal: s.setModal,
+  }));
   console.log({ notifications });
 
   const [filter, setFilter] = useState<"all" | "unread">("all");
@@ -51,25 +48,13 @@ const NotificationCenter = () => {
   };
 
   const getNotificationIcon = (type: NotificationType) => {
-    switch (type) {
-      case "follow":
-      case "unfollow":
-        return "pals";
-      case "mention":
-      case "reply":
-        return "messages";
-      case "repost":
-        return "repost";
-      case "react":
-        return "emoji";
-      case "access-request":
-      case "access-granted":
-        return "key";
-      case "access-denied":
-        return "bell";
-      default:
-        return "bell";
-    }
+    // TODO
+    if ("req" in type) return "pals";
+    else if ("res" in type) return "pals";
+    else if ("prof" in type) return "emoji";
+    else if ("post" in type) return "messages";
+    else if ("nostr" in type) return "bell";
+    else return "key";
   };
 
   const formatTimestamp = (ts: number) => {
@@ -153,7 +138,9 @@ const NotificationCenter = () => {
 
                 <div className="notification-content">
                   <div className="notification-user">
-                    <Avatar user={notification.from} size={32} />
+                    {notification.from && (
+                      <Avatar user={notification.from} size={32} />
+                    )}
                     <div className="notification-text">
                       {notification.message.map((m, i) => (
                         <p key={m.toString() + i}>

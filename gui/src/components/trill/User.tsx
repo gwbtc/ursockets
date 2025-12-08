@@ -41,9 +41,24 @@ function UserFeed({
     if (!("fols" in lastFact)) return;
     const follow = lastFact.fols;
     if (!follow) return;
+    console.log("last fact", lastFact);
     if ("new" in follow) {
+      console.log(follow.new.user);
       if (patp !== follow.new.user) return;
-      toast.success(`Now following ${patp}`);
+      if (follow.new.data.data === "maybe") {
+        const toastMsg = `${follow.new.user} will review your follow request manually.`;
+        const msg = follow.new.data.msg
+          ? toastMsg + `\nHe added: ${follow.new.data.msg}.`
+          : toastMsg;
+        toast.success(msg, { duration: 5000 });
+      } else if (follow.new.data.data === null) {
+        const toastMsg = `${follow.new.user} denied your follow request.`;
+        const msg = follow.new.data.msg
+          ? toastMsg + `\nHe added: ${follow.new.data.msg}.`
+          : toastMsg;
+        toast.error(msg, { duration: 5000 });
+      } else toast.success(`Now following ${patp}`);
+      //
       setIsFollowLoading(false);
     } else if ("quit" in follow) {
       toast.success(`Unfollowed ${patp}`);
@@ -75,12 +90,30 @@ function UserFeed({
     try {
       const res = await api.peekFeed(patp);
       toast.success(`Access request sent to ${patp}`);
-
       if ("error" in res) toast.error(res.error);
       else {
-        console.log("peeked", res.ok.feed);
-        setFC(res.ok.feed);
-        if (res.ok.profile) addProfile(patp, res.ok.profile);
+        console.log("peeked", res);
+        if (res.ok.data === "maybe") {
+          const toastMsg = `${patp} will review your access request manually.`;
+          const msg = res.ok.msg
+            ? toastMsg + `\nHe added: ${res.ok.msg}.`
+            : toastMsg;
+          toast.success(msg, { duration: 5000 });
+        } else if (!res.ok.data) {
+          const toastMsg = `${patp} denied your access request.`;
+          const msg = res.ok.msg
+            ? toastMsg + `\nHe added: ${res.ok.msg}.`
+            : toastMsg;
+          toast.error(msg, { duration: 5000 });
+        } else {
+          const toastMsg = `${patp} granted your access request.`;
+          const msg = res.ok.msg
+            ? toastMsg + `\nHe added: ${res.ok.msg}.`
+            : toastMsg;
+          toast.success(msg);
+          setFC(res.ok.data.feed);
+          if (res.ok.data.profile) addProfile(patp, res.ok.data.profile);
+        }
       }
     } catch (error) {
       toast.error(`Failed to request access from ${patp}`);

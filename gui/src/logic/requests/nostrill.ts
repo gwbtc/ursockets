@@ -1,8 +1,16 @@
 import type Urbit from "urbit-api";
-import type { Cursor, FC, FullNode, PostID } from "@/types/trill";
+import type { Cursor, FullNode, Gate, PostID, PostPerms } from "@/types/trill";
 import type { Ship } from "@/types/urbit";
 import { FeedPostCount } from "../constants";
-import type { UserProfile, UserType } from "@/types/nostrill";
+import type {
+  Deferred,
+  PeekFeedRes,
+  PeekRes,
+  PeekThreadRes,
+  ThreadData,
+  UserProfile,
+  UserType,
+} from "@/types/nostrill";
 import type { AsyncRes } from "@/types/ui";
 import type { Skein } from "../hark";
 
@@ -22,11 +30,13 @@ export default class IO {
       threadName,
     });
   }
-  private async poke(json: any) {
+  private async poke(json: any, agent?: string, marc?: string) {
+    const app = agent ? agent : "nostrill";
+    const mark = marc ? marc : "json";
     try {
       const res = await this.airlock.poke({
-        app: "nostrill",
-        mark: "json",
+        app,
+        mark,
         json,
       });
       return { ok: res };
@@ -99,35 +109,32 @@ export default class IO {
     // start: Cursor,
     // end: Cursor,
     // desc = true,
-  ): AsyncRes<{ node: FullNode; thread: FullNode[] }> {
+  ): AsyncRes<PeekThreadRes> {
     // const order = desc ? 1 : 0;
 
     // const path = `/j/thread/${host}/${id}/${start}/${end}/${FeedPostCount}/${order}`;
     const path = `/j/thread/${host}/${id}`;
     const res = await this.scry(path);
+    console.log("scrytherad", res);
     if ("error" in res) return res;
-    if (!("begs" in res.ok)) return { error: "wrong result" };
-    if ("ng" in res.ok.begs) return { error: res.ok.begs.ng.msg };
-    if ("ok" in res.ok.begs) {
-      if (!("data" in res.ok.begs.ok)) return { error: "wrong result on data" };
-      if (!("thread" in res.ok.begs.ok.data)) return { error: "wrong result on thread" };
-      else return { ok: res.ok.begs.ok.data.thread };
-    } else return { error: "wrong result" };
+    const r = res.ok as { thread: PeekThreadRes };
+    if (!("thread" in r)) return { error: "wrong result" };
+    return { ok: r.thread };
   }
   // async scryHark(): AsyncRes<Skein[]> {
   async scryHark(): AsyncRes<Skein[]> {
-    const path3 = "/all/skeins";
-    const path4 = "/all/latest";
+    // const path3 = "/all/skeins";
+    // const path4 = "/all/latest";
     const path = "/desk/nostrill/skeins";
     // const path2 = "/desk/nostrill/latest";
     // this returns Carpet
     const res = await this.scry(path, "hark");
-    const res3 = await this.scry(path3, "hark");
-    const res4 = await this.scry(path4, "hark");
+    // const res3 = await this.scry(path3, "hark");
+    // const res4 = await this.scry(path4, "hark");
     // const res2 = await this.scry(path2, "hark");
     console.log("hark scry", res);
-    console.log("hark all skeins", res3);
-    console.log("hark all latest", res4);
+    // console.log("hark all skeins", res3);
+    // console.log("hark all latest", res4);
     return res;
   }
 
@@ -185,6 +192,22 @@ export default class IO {
     return this.poke({ post: json });
   }
 
+  async setFeedPerms(gate: Gate) {
+    return this.poke({ gate });
+  }
+
+  async setPostPerms(id: string, perms: PostPerms) {
+    const json = { perms: { id, perms } };
+    return this.poke({ post: json });
+  }
+
+  //
+  async dismissAllNotifications() {
+    const json = { "saw-seam": { desk: "nostrill" } };
+    return this.poke(json, "hark", "hark-action-1");
+  }
+  //
+
   //  follows
   async follow(user: UserType) {
     const json = { add: user };
@@ -231,30 +254,24 @@ export default class IO {
   }
   // threads
   //
-  async peekFeed(
-    host: string,
-  ): AsyncRes<{ feed: FC; profile: UserProfile | null }> {
+  async peekFeed(host: string): AsyncRes<PeekFeedRes> {
     try {
       const json = { begs: { feed: host } };
-      const res: any = await this.thread("beg", json);
+      const res = (await this.thread("beg", json)) as PeekRes;
       console.log("peeking feed", res);
-      if (!("begs" in res)) return { error: "wrong request" };
-      if ("ng" in res.begs) return { error: res.begs.ng };
-      if (!("feed" in res.begs.ok.data)) return { error: "wrong request" };
-      else return { ok: res.begs.ok.data };
+      if (!("feed" in res)) return { error: "request error" };
+      else return { ok: res.feed };
     } catch (e) {
       return { error: `${e}` };
     }
   }
-  async peekThread(host: string, id: string): AsyncRes<FullNode> {
+  async peekThread(host: string, id: string): AsyncRes<PeekThreadRes> {
     try {
       const json = { begs: { thread: { host, id } } };
-      const res: any = await this.thread("beg", json);
-      console.log("peeking feed", res);
-      if (!("begs" in res)) return { error: "wrong request" };
-      if ("ng" in res.begs) return { error: res.begs.ng };
-      if (!("thread" in res.begs.ok.data)) return { error: "wrong request" };
-      else return { ok: res.begs.ok.data.thread };
+      const res = (await this.thread("beg", json)) as PeekRes;
+      console.log("peeking thread", res);
+      if (!("thread" in res)) return { error: "request error" };
+      else return { ok: res.thread };
     } catch (e) {
       return { error: `${e}` };
     }

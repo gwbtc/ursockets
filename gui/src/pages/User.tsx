@@ -33,6 +33,8 @@ function UserFeed({
 }) {
   const { api, pubkey } = useLocalState((s) => ({
     api: s.api,
+    addProfile: s.addProfile,
+    lastFact: s.lastFact,
     pubkey: s.pubkey,
   }));
   const isMe =

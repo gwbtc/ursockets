@@ -76,7 +76,7 @@ export default function NostrUser({
     try {
       await api.nostrFeed(pubkey);
     } catch (error) {
-      toast.error(`Failed to request access from ${user.urbit}`);
+      toast.error(`Failed to request access from ${pubkey}`);
       console.error("Access request error:", error);
     } finally {
       setIsAccessLoading(false);

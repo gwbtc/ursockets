@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import useLocalState from "@/state/state";
 import type { FullNode, PostID } from "@/types/trill";
 import type { Ship } from "@/types/urbit";
-import type { AsyncRes } from "@/types/ui";
+import type { AsyncRes, Result } from "@/types/ui";
 import { toFlat } from "@/logic/trill/helpers";
+import type { PeekThreadRes } from "@/types/nostrill";
 
 type Props = {
   host: Ship;
@@ -47,17 +48,37 @@ function PostData(props: Props) {
     }, [data]);
 
     async function fetchNode(): AsyncRes<FullNode> {
-      let error = "";
       const res = await api!.scryThread(host, id);
-      console.log("scry res", res);
-      if ("error" in res) error = res.error;
-      if ("ok" in res) return res;
+      const data = handleRes(res);
+      return data;
+    }
+
+    function handleRes(res: Result<PeekThreadRes>): Result<FullNode> {
+      if ("error" in res) return { error: "Failed to load post: " + res.error };
       else {
-        const res2 = await api!.peekThread(host, id);
-        return res2;
+        const msg = res.ok.data.msg;
+        const data = res.ok.data.data;
+        if (data === "maybe") {
+          setDenied(true);
+          return {
+            error: `The post ${host}/${id} is gated: ${msg}. A request has been sent.`,
+          };
+        } else if (data === null) {
+          setDenied(true);
+          return {
+            error: `The post ${host}/${id} is gated and access was denied: ${msg}`,
+          };
+        } else {
+          return { ok: data.node };
+        }
       }
     }
+
     async function peekTheNode() {
+      const res2 = await api!.peekThread(host, id);
+      const node = handleRes(res2);
+      queryClient.setQueryData(["trill-thread", host, id], node);
+
       // let timer;
       // peekNode({ ship: host, id });
       // timer = setTimeout(() => {
@@ -89,9 +110,9 @@ function PostData(props: Props) {
     //   }
     // }, [lastThread]);
     function retryPeek(e: React.MouseEvent) {
-      // e.stopPropagation();
-      // setDead(false);
-      // peekTheNode();
+      e.stopPropagation();
+      setDead(false);
+      peekTheNode();
     }
     if (enest > 3)
       return (

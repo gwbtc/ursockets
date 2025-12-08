@@ -3,6 +3,7 @@ import { date_diff } from "@/logic/utils";
 import { useLocation } from "wouter";
 import Body from "./Body";
 import Sigil from "../Sigil";
+import { userFromPost } from "@/logic/trill/helpers";
 
 type QuoteData = {
     node: Poast;
@@ -62,7 +63,12 @@ function Quote({
         </div>
         <span>{date_diff(postData.time, "short")}</span>
       </header>
-      <Body user={{ urbit: postData.author }} poast={postData} nest={nest} refetch={refetch!} />
+      <Body
+        user={userFromPost(postData)}
+        poast={postData}
+        nest={nest}
+        refetch={refetch!}
+      />
     </div>
   );
 }

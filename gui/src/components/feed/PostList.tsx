@@ -3,6 +3,7 @@ import type { FC } from "@/types/trill";
 import useLocalState from "@/state/state";
 import type { UserType } from "@/types/nostrill";
 import { isValidPatp } from "urbit-ob";
+import { userFromPost } from "@/logic/trill/helpers";
 // import { useEffect } from "react";
 // import { useQueryClient } from "@tanstack/react-query";
 // import { toFull } from "../thread/helpers";
@@ -31,11 +32,7 @@ function TrillFeed({ data, refetch }: { data: FC; refetch: Function }) {
         // .slice(0, 50)
         .map((i) => {
           const poast = data.feed[i];
-          const user: UserType = poast.event
-            ? { nostr: poast.event.pubkey }
-            : isValidPatp(poast.author)
-              ? { urbit: poast.author }
-              : { nostr: poast.author };
+          const user = userFromPost(poast);
           const userString = "urbit" in user ? user.urbit : user.nostr;
           const profile = profiles.get(userString);
           return (

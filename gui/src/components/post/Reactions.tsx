@@ -19,14 +19,20 @@ import Icon from "@/components/Icon";
 import emojis from "@/logic/emojis.json";
 import Modal from "../modals/Modal";
 import useLocalState from "@/state/state";
-import { isValidPatp } from "urbit-ob";
+import toast from "react-hot-toast";
+import type { UserType } from "@/types/nostrill";
+import type { AsyncRes } from "@/types/ui";
 
-export function ReactModal({ send }: { send: (s: string) => Promise<number> }) {
+export function ReactModal({
+  send,
+}: {
+  send: (s: string) => AsyncRes<number>;
+}) {
   const { setModal } = useLocalState((s) => ({ setModal: s.setModal }));
   async function sendReact(e: React.MouseEvent, s: string) {
     e.stopPropagation();
     const res = await send(s);
-    if (res) setModal(null);
+    if ("ok" in res) setModal(null);
   }
   // todo one more meme
   return (
@@ -111,8 +117,16 @@ export function stringToReact(s: string) {
   else return <span className="react-icon">{s}</span>;
 }
 
-export function TrillReactModal({ poast }: { poast: Poast }) {
-  const { api } = useLocalState((s) => ({ api: s.api }));
+export function TrillReactModal({
+  user,
+  poast,
+}: {
+  user: UserType;
+  poast: Poast;
+}) {
+  const { api } = useLocalState((s) => ({
+    api: s.api,
+  }));
   const our = api!.airlock.our!;
 
   const user: UserType = poast.event
@@ -123,6 +137,10 @@ export function TrillReactModal({ poast }: { poast: Poast }) {
 
   async function sendReact(s: string) {
     const result = await api!.addReact(user, poast.id, s);
+    // Only add notification if reacting to someone else's post
+    if (result && poast.author !== our) {
+      toast.success(`You reacted to ${poast.author}'s post`);
+    }
     return result;
   }
   return <ReactModal send={sendReact} />;

@@ -14,13 +14,11 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
   const [_showMenu, setShowMenu] = useState(false);
   const [location, navigate] = useLocation();
   const [reposting, _setReposting] = useState(false);
-  const { api, setComposerData, setModal } = useLocalState(
-    (s) => ({
-      api: s.api,
-      setComposerData: s.setComposerData,
-      setModal: s.setModal,
-    }),
-  );
+  const { api, setComposerData, setModal } = useLocalState((s) => ({
+    api: s.api,
+    setComposerData: s.setComposerData,
+    setModal: s.setModal,
+  }));
   const our = api!.airlock.our!;
   function getComposerData(): SPID {
     return user && "urbit" in user
@@ -73,7 +71,7 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
   function doReact(e: React.MouseEvent) {
     e.stopPropagation();
     e.preventDefault();
-    const modal = <TrillReactModal poast={poast} />;
+    const modal = <TrillReactModal user={user} poast={poast} />;
     setModal(modal);
   }
   function showReplyCount() {

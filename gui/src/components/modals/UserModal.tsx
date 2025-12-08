@@ -132,13 +132,7 @@ export default function ({ user }: { user: UserType }) {
             onClick={handleAvatarClick}
             style={{ cursor: "nostr" in user ? "pointer" : "default" }}
           >
-            <Avatar
-              user={user}
-              userString={userString}
-              profile={profile}
-              size={80}
-              picOnly
-            />
+            <Avatar user={user} profile={profile} size={80} picOnly />
           </div>
 
           <div className="user-modal-info">
