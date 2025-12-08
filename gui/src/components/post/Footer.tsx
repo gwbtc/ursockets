@@ -8,6 +8,8 @@ import { TrillReactModal, stringToReact } from "./Reactions";
 import toast from "react-hot-toast";
 import NostrIcon from "./wrappers/NostrIcon";
 import type { SPID } from "@/types/ui";
+import QuoteModal from "@/components/modals/QuoteModal";
+import ReactionsModal from "@/components/modals/ReactionsModal";
 // TODO abstract this somehow
 
 function Footer({ user, poast, thread, refetch }: PostProps) {
@@ -96,11 +98,17 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
     // const ships = poast.engagement.shared.map((entry) => entry.host);
     // setEngagement({ type: "reposts", ships: ships }, poast);
   }
-  function showQuoteCount() {
-    // setEngagement({ type: "quotes", quotes: poast.engagement.quoted }, poast);
+
+  function showQuoteCount(e: React.MouseEvent) {
+    e.stopPropagation();
+    e.preventDefault();
+    setModal(<QuoteModal poast={poast} onClose={() => setModal(null)} />);
   }
-  function showReactCount() {
-    // setEngagement({ type: "reacts", reacts: poast.engagement.reacts }, poast);
+
+  function showReactCount(e: React.MouseEvent) {
+    e.stopPropagation();
+    e.preventDefault();
+    setModal(<ReactionsModal poast={poast} onClose={() => setModal(null)} />);
   }
 
   const mostCommonReact = Object.values(poast.engagement.reacts).reduce(
