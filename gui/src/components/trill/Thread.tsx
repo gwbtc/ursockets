@@ -85,6 +85,7 @@ function Loader({
         const toastMsg = `The request to access this thread was denied.`;
         msg ? toastMsg + `\nHe added: ${msg}.` : toastMsg;
         toast.error(msg, { duration: 5000 });
+        setError(msg)
       } else {
         setData(data.node);
         setThread(data.thread);
