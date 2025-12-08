@@ -18,7 +18,6 @@
       [%quote src=@da =post:tp]
       [%del-quote src=upid quote=@da]
       [%del-reply parent=upid child=@da]
-      [%del-parent parent=upid child=@da]
       [%rp src=upid target=@da]
       [%reaction pid=upid reaction=@t]
       [%mention =post:tp]
