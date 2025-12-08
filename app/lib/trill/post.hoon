@@ -1,6 +1,22 @@
 /-  tp=trill-post, md=markdown
 /+  sr=sortug, mdlib=markdown
 |%
+
+++  get-ref
+  |=  p=post:tp
+  ^-  (unit [ship @da])
+  =/  refs=(list block:tp)
+    %-  zing
+    %+  turn  (tap:corm:tp contents.p)
+    |=  [t=time cl=content-list:tp]
+    %+  skim  cl
+    |=(b=block:tp =(%ref -.b)) 
+  ?~  refs  ~
+  =/  ref  (head refs)
+  ?.  ?=([%ref @ ship=@ path=*] ref)  ~
+  ?~  ref-id=(slaw:sr %ud (head path.ref))  ~
+  `[ship.ref u.ref-id]
+
 ++  build-sp
   |=  [host=@p author=@p input=@t parent=(unit @) thread=(unit @)]
   ^-  sent-post:tp
@@ -28,8 +44,7 @@
         parent.sp
         ~
         cm
-        read.sp
-        write.sp
+        perms.sp
         *engagement:tp
         `@uvH`pubkey
         *signature:tp
@@ -380,4 +395,32 @@
 ++  init-content-map  |=  [cl=content-list:tp date=@da]  ^-  content-map:tp
   (put:corm:tp *content-map:tp date cl)
 
+++  extract-mentions
+|=  p=post:tp  ^-  (list @p)
+  =/  ignore=(set @p)  (silt ~[host.p author.p])
+  =/  blocks  (latest-post-content contents.p)
+  =|  ships=(set @p)
+  |-  ?~  blocks  ~(tap in ships)
+    =/  inlines=(list inline)
+      ?+  -.i.blocks  ~
+        %paragraph  p.i.blocks  
+        %list       p.i.blocks
+        :: %heading   TODO   
+        :: ;~(pfix sig fed:ag)
+      ==
+    =/  mentions  (extract-mentions-inner inlines ignore)
+    =/  ns  (~(uni in ships) mentions)
+    $(blocks t.blocks, ships ns)
+
+++  extract-mentions-inner
+|=  [l=(list inline:contents:tp) ignore=(set @p)]  ^-  (set @p)
+  =|  ships=(set @p)
+  |-  ?~  l  ships 
+    ?.  ?=(%ship -.i.l)           $(l t.l)
+    ?:  (~(has in ignore) p.i.l)  $(l t.l)
+    =/  ns  (~(put in ships) p.i.l)
+    $(l t.l, ships ns)
 --
+
+
+

@@ -2,13 +2,14 @@ import useLocalState from "@/state/state";
 import Icon from "@/components/Icon";
 import spinner from "@/assets/triangles.svg";
 import Post from "@/components/post/Post";
-import { extractThread, toFlat } from "@/logic/trill/helpers";
+import { toFlat } from "@/logic/trill/helpers";
 import type { FC, FullNode, Poast } from "@/types/trill";
 import type { UserProfile } from "@/types/nostrill";
 import type { Ship } from "@/types/urbit";
 import { useEffect, useState } from "react";
 import Body from "../post/Body";
 import Footer from "../post/Footer";
+import toast from "react-hot-toast";
 
 export default function Thread({
   host,
@@ -74,8 +75,20 @@ function Loader({
     console.log("scried thread", res);
     if ("error" in res) setError(res.error);
     else {
-      setData(res.ok.node);
-      setThread(res.ok.thread);
+      const msg = res.ok.data.msg;
+      const data = res.ok.data.data;
+      if (data === "maybe") {
+        const toastMsg = `The request to access this thread will be reviewed manually.`;
+        msg ? toastMsg + `\nHe added: ${msg}.` : toastMsg;
+        toast.success(msg, { duration: 5000 });
+      } else if (data === null) {
+        const toastMsg = `The request to access this thread was denied.`;
+        msg ? toastMsg + `\nHe added: ${msg}.` : toastMsg;
+        toast.error(msg, { duration: 5000 });
+      } else {
+        setData(data.node);
+        setThread(data.thread);
+      }
     }
   }
   useEffect(() => {
@@ -181,7 +194,10 @@ function LongThread({
         />
       </div>
       {thread.slice(1).map((child, i) => (
-        <div className="timeline-post trill-post cp thread-child">
+        <div
+          key={child.hash + i}
+          className="timeline-post trill-post cp thread-child"
+        >
           <div className="left">{`${i + 2}/${thread.length}`}</div>
           <div className="right">
             <Body poast={toFlat(child)} user={{ urbit: child.author }} />
