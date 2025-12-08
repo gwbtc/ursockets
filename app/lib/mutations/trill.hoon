@@ -108,76 +108,74 @@
     ?-  -.poke
       %del  
         ?-  -.host.poke  
-            :: TODO
             %nostr  `state
             ::
             %urbit
-          ?~  pos=(get:orm:feed feed.state id.poke)  `state
+          =/  host=@p  +.host.poke
+          ?.  .=(our.bowl host)
+            ~&  %host-is-not-us
+            ?~  pos=(get:orm:feed feed.state id.poke)
+              ::  case: del our reply when host isn't our.bowl
+              ::  TODO: change structure of %del-reply to [%del-reply =id]
+              =/  eng-card  (poke-host:crds host [%eng [%del-reply [host.poke *@da] id.poke]])
+              :_  state
+              :~  eng-card
+              ==
+            =.  feed.state  =<  +  (del:orm:feed feed.state id.poke)
+            =/  p  u.pos
+            ?~  parent.p
+              ?~  is-ref=(get-ref p)
+                ~&  >>>  'unexpected post structure'
+                `state
+              =/  ref=[ship @da]  u.is-ref
+              =/  eng-poke  (headsup-poke [%rp host.poke +.ref] p)
+              =/  eng-card  (poke-host:crds `@p`-.ref [%eng eng-poke])
+              =/  f   [%post %del (wrap-post p)]
+              ::  case: delete rp
+              :_  state
+              :~  (update-followers:cards:lib f)
+                  (update-ui:cards:lib f)
+                  eng-card
+              ==
+            ~&  >>>  'unexpected post structure'
+            `state
+            ::
+          ?~  pos=(get:orm:feed feed.state id.poke)
+              ~&  >>>  not-in-state/id.poke
+              `state
           =/  p  u.pos
           =.  feed.state  =<  +  (del:orm:feed feed.state id.poke)
-          =.  feed.state  (delete-children:feedlib feed.state p)
-          =/  pw  (wrap-post p)
-          =/  eng-cards=(list card)  
-            (del-parent-cards host.poke children.p id.p)
-          =/  fact  [%post %del pw]
-          :: IMPORTANT  no need to send one card per children, just have followers handle that logic
-          :: =/  upd-fol-cards
-          ::   %+  turn  ~(tap in children.p)
-          ::   |=(c=id:post (update-followers:cards:lib [%post %del c]))
+          =.  feed.state  (delete-nested-children:feedlib feed.state p)
+          =/  f  [%post %del (wrap-post p)]
           =/  cards=(list card)
-            ;:  welp
-              eng-cards
-              :~  (update-ui:cards:lib fact)
-                  (update-followers:cards:lib fact)
+              :~  (update-followers:cards:lib f)
+                  (update-ui:cards:lib f)
               ==
+          =/  is-ref=(unit [ship @da])  (get-ref p)
+          ?~  is-ref  
+            ?~  parent.p  
+              ::  case: delete our post
+              [cards state]
+            =/  poast  (get:orm:feed feed.state u.parent.p)
+            ?~  poast  
+              ~&  >>>  %parent-missing
+              [cards state]
+            =.  children.u.poast  (~(del in children.u.poast) id.p)
+            =.  feed.state  (put:orm:feed feed.state u.parent.p u.poast)
+            =/  f   [%post %upd (wrap-post u.poast)]
+            :_  state
+            ::  case: delete our reply to our post
+            %+  welp  cards
+            :~
+              (update-followers:cards:lib f)
+              (update-ui:cards:lib f)
             ==
-          =/  is-ref=(unit [ship @da])  (get-ref:postlib p)
-          =/  host=@p  +.host.poke
-          ?:  .=(our.bowl host)  
-            ?~  is-ref  
-              ?~  parent.p  
-                ::  case: delete our post
-                [cards state]
-              =/  poast  (get:orm:feed feed.state u.parent.p)
-              ?~  poast  
-                ::  case:  handle %del-parent
-                [cards state]
-              =.  children.u.poast  (~(del in children.u.poast) id.p)
-              =.  feed.state  (put:orm:feed feed.state u.parent.p u.poast)
-              :_  state
-              ?:  .=(our.bowl author.p)
-                ::  case: delete our reply to our post
-                %+  snoc  cards
-                (update-followers:cards:lib [%post %upd (wrap-post u.poast)])
-              ::  case:  delete reply to our post
-              ::  send %del-parent to deleted reply 
-              =/  eng-poke=engagement:comms  [%del-parent [host.poke u.parent.p] id.p]
-              %+  welp  cards
-              :~
-                (poke-host:crds author.p [%eng eng-poke])
-                (update-followers:cards:lib [%post %upd (wrap-post u.poast)])
-              ==
-            =/  ref  u.is-ref
-            =/  eng-poke  [%eng [%del-quote [host.poke +.ref] id.p]]
-            ::  case: delete quote
-            :_  state
-            %+  snoc  cards
-            (poke-host:crds `@p`-.ref eng-poke)
-          ?~  parent.p
-            ?~  is-ref
-              ~&  'unexpected post structure'
-              !!
-            =/  ref=[ship @da]  u.is-ref
-            =/  eng-poke  (headsup-poke [%rp host.poke +.ref] p)
-            =/  eng-card  (poke-host:crds `@p`-.ref [%eng eng-poke])
-            ::  case: delete rp
-            :_  state
-            (snoc cards eng-card)
-          =/  eng-poke  (headsup-poke [%del host.poke u.parent.p] p)
-          =/  eng-card  (poke-host:crds host [%eng eng-poke])
-          ::  case: delete our reply
+          =/  ref=[ship @da]  u.is-ref
+          =/  eng-poke  [%eng [%del-quote [urbit+our.bowl +.ref] id.p]]
+          ::  case: delete quote
           :_  state
-          (snoc cards eng-card)
+          %+  snoc  cards
+          (poke-host:crds `@p`-.ref eng-poke)
         ==
       %add
         =/  sp     (build-sp:postlib our.bowl our.bowl content.poke ~ ~)
@@ -322,18 +320,20 @@
               ==
     ==
   ::
-  ++  del-parent-cards
-    |=  [host=user:sur children=(set id:post) parent=@da]
-    =/  c  ~(tap in children)
-    =/  crds  ~(. cards:lib bowl)
-    |-  ^-  (list card)
-    ?~  c  ~
-    =/  child=(unit post:post)  (get:orm:feed feed.state i.c)
-    ?~  child  $(c t.c)
-    :_  $(c t.c)
-    =/  eng-poke=engagement:comms  [%del-parent [host parent] id.u.child]
-    =/  host=@p  author.u.child
-    (poke-host:crds host [%eng eng-poke])
+  ++  get-ref
+    |=  p=post:post
+    ^-  (unit [ship @da])
+    =/  refs=(list block:post)
+      %-  zing
+      %+  turn  (tap:corm:post contents.p)
+      |=  [t=time cl=content-list:post]
+      %+  skim  cl
+      |=(b=block:post =(%ref -.b)) 
+    ?~  refs  ~
+    =/  ref  (head refs)
+    ?.  ?=([%ref @ ship=@ path=*] ref)  ~
+    ?~  ref-id=(slaw:sr %ud (head path.ref))  ~
+    `[ship.ref u.ref-id]
   --
 
 
@@ -355,11 +355,13 @@
         ::  now the parent should be updated 
         =/  poast  (get:orm:feed feed.state parent.e)
         ?~  poast  ~&  "parent of reply doesnt exist"  [cards state]
-        =/  f=fact:comms   [%post %add (wrap-post child.e)]
-        =/  f2=fact:comms  [%post %upd (wrap-post u.poast)]
+        =/  f   [%post %add (wrap-post child.e)]
+        =/  f2  [%post %upd (wrap-post u.poast)]
         :_  state
         :~  (update-followers:cards:lib f)
+            (update-ui:cards:lib f)
             (update-followers:cards:lib f2)
+            (update-ui:cards:lib [%post %add (wrap-post u.poast)])
             hark-card
         ==
       %quote
@@ -370,9 +372,10 @@
         =/  spid  [*signature:post src.bowl id.post.e]
         =.  quoted.engagement.u.poast  (~(put in quoted.engagement.u.poast) spid)
         =.  state  (add-to-feed u.poast)
-        =/  f=fact:comms  [%post %upd (wrap-post u.poast)]
+        =/  f  [%post %upd (wrap-post u.poast)]
         :_  state
         :~  (update-followers:cards:lib f)
+            (update-ui:cards:lib [%post %add (wrap-post u.poast)])
             hark-card
         ==
       %rp
@@ -385,10 +388,11 @@
             (~(del in shared.engagement.u.poast) spid)
           (~(put in shared.engagement.u.poast) spid)
         =.  state  (add-to-feed u.poast)
-        =/  f=fact:comms  [%post %upd (wrap-post u.poast)]
+        =/  f  [%post %upd (wrap-post u.poast)]
         :_  state
         :~  (update-followers:cards:lib f)
-             hark-card
+            (update-ui:cards:lib [%post %add (wrap-post u.poast)])
+            hark-card
         ==
       %reaction
         =/  poast  (get:orm:feed feed.state id.pid.e)
@@ -399,29 +403,28 @@
         =.  q.sign  src.bowl
         =.  reacts.engagement.u.poast  (~(put by reacts.engagement.u.poast) src.bowl [reaction.e sign])
         =.  state  (add-to-feed u.poast)
-        =/  f=fact:comms  [%post %upd (wrap-post u.poast)]
+        =/  f  [%post %upd (wrap-post u.poast)]
         :_  state
         :~  (update-followers:cards:lib f)
+            (update-ui:cards:lib [%post %add (wrap-post u.poast)])
             hark-card
         ==
-      %del-reply 
-        ?~  p=(get:orm:feed feed.state child.e)  [cards state]
-        =/  parent  (get:orm:feed feed.state id.parent.e)
-        ?~  parent  [cards state]
-        ::
-        =/  pid  [our.bowl id.parent.e]
-        =.  state  (del-from-feed u.p)
-        ::  get the updated parent
-        =/  parent  (get:orm:feed feed.state id.parent.e)
-        ?~  parent  ~&  "parent failed to update!!"  [cards state]
-        :_  state
-        :~  (update-followers:cards:lib [%post %upd (wrap-post u.parent)])
-            (update-followers:cards:lib [%post %del (wrap-post u.p)])
-            hark-card
-        ==
-      
-      %del-parent  ::  this is always going to be external
-        [cards state]
+      %del-reply
+        ~&  got-del-reply/child.e
+        ?~  p=(get:orm:feed feed.state child.e)  
+          ~&  %no-such-a-post
+          `state
+        ?.  .=(src.bowl author.u.p)  
+          ~&  >>  %poke-is-not-from-author
+          `state
+        ?~  parent.u.p  
+          ~&  %not-a-reply
+          `state
+        =/  poast  (get:orm:feed feed.state u.parent.u.p)
+        ?~  poast  
+          ~&  %we-dont-have-parent-post
+          `state
+        (handle-post [%del urbit+our.bowl child.e])
       %del-quote
         =/  poast  (get:orm:feed feed.state id.src.e)
         ?~  poast  [cards state]
@@ -431,9 +434,10 @@
         =/  spid  [*signature:post src.bowl quote.e]
         =.  quoted.engagement.u.poast  (~(del in quoted.engagement.u.poast) spid)
         =.  state  (add-to-feed u.poast)
-        =/  f=fact:comms  [%post %upd (wrap-post u.poast)]
+        =/  f  [%post %upd (wrap-post u.poast)]
         :_  state
         :~  (update-followers:cards:lib f)
+            (update-ui:cards:lib [%post %add (wrap-post u.poast)])
             hark-card
         ==
     ==

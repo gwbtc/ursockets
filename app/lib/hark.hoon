@@ -190,16 +190,6 @@
           =/  pat  (weld hostpath /[sid]/[ids])
           :-  :~([%ship ship] 'Deleted his reply on:' parents)
               (weld /post/del-reply/(scot %p ship) pat)
-        %del-parent
-          =/  hostpath=path  (user-to-path:lib -.parent.a)
-          =/  sid    (scot %ud `@`+.parent.a)
-          =/  ids    (scot %ud `@`child.a)
-          =/  pidpath=path  (weld hostpath /[sid])
-          =/  parents  (spat pidpath)
-
-          =/  pat  (weld hostpath /[sid]/[ids])
-          :-  :~([%ship ship] 'Deleted the parent to the post on:' parents)
-              (weld /post/del-parent/(scot %p ship) pat)
         %del-quote
           =/  hostpath=path  (user-to-path:lib -.src.a)
           =/  sid    (scot %ud `@`+.src.a)

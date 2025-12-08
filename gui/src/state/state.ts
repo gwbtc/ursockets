@@ -122,6 +122,18 @@ export const useStore = creator((set, get) => ({
 
             set({ following });
           }
+          if ("del" in fact.post) {
+            const post: Poast = fact.post.del.post;
+            const following = get().following;
+            const curr = following.get(post.author);
+            
+            if (curr && curr.feed[post.id]) {
+              delete curr.feed[post.id];
+              following.set(post.author, curr);
+              
+              set({ following });
+            }
+          }
         }
         if ("nostr" in fact) {
           console.log("nostr fact", fact);
