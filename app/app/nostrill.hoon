@@ -141,7 +141,7 @@
       [cs this]
   --
   ++  handle-comms
-    =/  pok  !<(poke:comms vase)
+    =/  pok  ;;(poke:comms +.vase)
     ?:  ?=(%dbug -.pok)  (debug +.pok)
     =^  cs  state  (handle-eng:mutat +.pok)
     [cs this]
