@@ -14,13 +14,13 @@ export function P404() {
           The page you're looking for doesn't exist or has been moved.
         </p>
         <div className="error-actions">
-          <Link href="/apps/nostrill/f/nostr">
+          <Link href="/f/nostr">
             <button className="error-btn primary">
               <Icon name="home" size={18} />
               Go to Feed
             </button>
           </Link>
-          <Link href="/apps/nostrill/sets">
+          <Link href="/sets">
             <button className="error-btn secondary">
               <Icon name="settings" size={18} />
               Settings

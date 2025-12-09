@@ -39,7 +39,7 @@ export default function Thread({
         </div>
         <h2>Thread</h2>
         <div className="thread-info">
-          <span className="thread-host">~{host}</span>
+          <span className="thread-host">{host}</span>
           <span className="thread-separator">•</span>
           <span className="thread-id">#{id}</span>
         </div>
@@ -85,6 +85,7 @@ function Loader({
         const toastMsg = `The request to access this thread was denied.`;
         msg ? toastMsg + `\nHe added: ${msg}.` : toastMsg;
         toast.error(msg, { duration: 5000 });
+        setError(msg)
       } else {
         setData(data.node);
         setThread(data.thread);

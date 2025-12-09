@@ -100,7 +100,7 @@ function Inlin({ i }: { i: Inline }) {
   const [_, navigate] = useLocation();
   function gotoShip(e: React.MouseEvent, ship: Ship) {
     e.stopPropagation();
-    navigate(`/feed/${ship}`);
+    navigate(`/f/${ship}`);
   }
   if ("text" in i) {
     const tokens = extractURLs(i.text);

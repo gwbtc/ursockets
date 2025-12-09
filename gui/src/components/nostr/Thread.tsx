@@ -99,7 +99,7 @@ export default function Thread(props: Props) {
         </div>
         <h2>Thread</h2>
         <div className="thread-info">
-          <span className="thread-host">~{host}</span>
+          <span className="thread-host">{host}</span>
           <span className="thread-separator">•</span>
           <span className="thread-id">#{id}</span>
         </div>
