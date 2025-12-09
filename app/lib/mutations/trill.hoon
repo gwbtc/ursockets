@@ -202,19 +202,26 @@
         =/  fact  [%post %add pw]
         =/  ui-card    (update-ui:cards:lib fact)
         =/  fact-card  (update-followers:cards:lib fact)
-        =/  eng-poke  [%eng (headsup-poke poke p)]
-        =/  eng-card  (poke-host:crds host.p eng-poke)
-
-        =/  mentions  (extract-mentions:postlib p)
-        =/  mention-cards  %+  turn  mentions  |=  s=@p
-          %+  poke-host:crds  s  [%eng %mention p]
-        
-        :_  state
-          %+  weld  mention-cards
-          :~  ui-card
-              fact-card
-              eng-card
-          ==
+        ?-  -.host.poke  
+          %nostr
+            ::  TODO: %quote nostr case
+            :_  state
+            :~  ui-card
+                fact-card
+            ==
+          %urbit
+            =/  eng-poke  [%eng (headsup-poke poke p)]
+            =/  eng-card  (poke-host:crds +.host.poke eng-poke)
+            =/  mentions  (extract-mentions:postlib p)
+            =/  mention-cards  %+  turn  mentions  |=  s=@p
+              %+  poke-host:crds  s  [%eng %mention p]
+            :_  state
+              %+  weld  mention-cards
+              :~  ui-card
+                  fact-card
+                  eng-card
+              ==
+        ==
       %reply
         ?:  ?=(%nostr -.host.poke)  
           =/  mutan  ~(. mutations-nostr [state bowl])
@@ -260,18 +267,27 @@
         =.  contents.sp  ~[quote]
         =/  p=post:post
           (build-post:postlib now.bowl pubkey sp)
-        =.  state  (add-to-feed p)
+        =.  feed.state  (put:orm:feed feed.state id.p p)
         =/  pw  (wrap-post p)
         =/  fact  [%post %add pw]
         =/  ui-card    (update-ui:cards:lib fact)
         =/  fact-card  (update-followers:cards:lib fact)
-        =/  eng-poke  [%eng (headsup-poke poke p)]
-        =/  eng-card  (poke-host:crds host.p eng-poke)
-        :_  state
-          :~  ui-card
-              fact-card
-              eng-card
-          ==
+        ?-  -.host.poke
+          %nostr
+            ::  TODO: %rp nostr case
+            :_  state 
+            :~  ui-card
+                fact-card
+            ==
+          %urbit
+            =/  eng-poke  [%eng (headsup-poke poke p)]
+            =/  eng-card  (poke-host:crds +.host.poke eng-poke)
+            :_  state
+              :~  ui-card
+                  fact-card
+                  eng-card
+              ==
+        ==
       %reaction
         =/  host  (user-to-atom:lib host.poke)
         ?:  .=(host our.bowl)
