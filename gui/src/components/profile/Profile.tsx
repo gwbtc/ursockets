@@ -46,13 +46,7 @@ function Profile({
       )}
       <div className="flex items-center gap-4">
         <div className="profile-picture">
-          <Avatar
-            user={user}
-            userString={userString}
-            size={120}
-            picOnly={true}
-            profile={profile}
-          />
+          <Avatar user={user} size={120} picOnly={true} profile={profile} />
         </div>
         <h2 className="text-4xl">{profile?.name || userString}</h2>
       </div>

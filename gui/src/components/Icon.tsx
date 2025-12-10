@@ -75,6 +75,7 @@ const Icon: React.FC<IconProps> = ({
   className = "",
   title,
   onClick,
+  size,
   color = "text",
   customColor,
 }) => {
@@ -116,6 +117,7 @@ const Icon: React.FC<IconProps> = ({
 
   return (
     <img
+      width={size}
       src={iconUrl}
       className={`icon ${className}`}
       onClick={onClick}

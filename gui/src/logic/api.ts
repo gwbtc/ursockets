@@ -1,6 +1,6 @@
 import Urbit from "urbit-api";
 
-export const URL = import.meta.env.PROD ? "" : "http://localhost:8091";
+export const URL = import.meta.env.PROD ? "" : "http://localhost:8090";
 
 export async function start(): Promise<Urbit> {
   const airlock = new Urbit(URL, "");

@@ -7,9 +7,9 @@ import { ThemeSwitcher } from "@/styles/ThemeSwitcher";
 
 function SlidingMenu() {
   const [_, navigate] = useLocation();
-  const { api, unreadNotifications, setModal } = useLocalState((s) => ({
+  const { api, notifications, setModal } = useLocalState((s) => ({
     api: s.api,
-    unreadNotifications: s.unreadNotifications,
+    notifications: s.notifications,
     setModal: s.setModal,
   }));
 
@@ -23,6 +23,10 @@ function SlidingMenu() {
       setModal(<NotificationCenter />);
     });
   }
+  const unreadNotifications = notifications.reduce(
+    (acc, item) => (item.unread ? acc + 1 : acc),
+    0,
+  );
   return (
     <div id="left-menu">
       <div id="logo">
@@ -34,11 +38,7 @@ function SlidingMenu() {
         <Icon name="home" size={20} />
         <div>Home</div>
       </div>
-      <div
-        className="opt notification-item"
-        role="link"
-        onClick={openNotifications}
-      >
+      <div className="opt" role="link" onClick={openNotifications}>
         <div className="notification-icon-wrapper">
           <Icon name="bell" size={20} />
           {unreadNotifications > 0 && (
@@ -60,10 +60,12 @@ function SlidingMenu() {
         <div>Messages</div>
       </div>
     */}
+      {/*
       <div className="opt" role="link" onClick={() => goto("/pals")}>
         <Icon name="pals" size={20} />
         <div>Pals</div>
       </div>
+      */}
       <hr />
       <div
         className="opt"

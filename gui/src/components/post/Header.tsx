@@ -4,7 +4,6 @@ import { useLocation } from "wouter";
 function Header(props: PostProps) {
   const [_, navigate] = useLocation();
   const { profile } = props;
-  console.log(props);
   // console.log("profile", profile);
   // console.log(props.poast.author.length, "length");
   function go(e: React.MouseEvent) {

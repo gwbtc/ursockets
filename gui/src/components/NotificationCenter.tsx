@@ -132,7 +132,11 @@ const NotificationCenter = () => {
                 <div className="notification-content">
                   <div className="notification-user">
                     {notification.from && (
-                      <Avatar user={notification.from} size={32} />
+                      <Avatar
+                        user={notification.from}
+                        size={32}
+                        picOnly={true}
+                      />
                     )}
                     <div className="notification-text">
                       {notification.message.map((m, i) => (

@@ -13,6 +13,12 @@
   .icon {
     width: 6rem;
   }
+
+  .resync-btn {
+    .icon {
+      width: 1rem;
+    }
+  }
 }
 
 .empty-content {

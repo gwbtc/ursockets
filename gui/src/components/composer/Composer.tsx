@@ -10,14 +10,11 @@ import { wait } from "@/logic/utils";
 import type { UserType } from "@/types/nostrill";
 
 function Composer({ isAnon }: { isAnon?: boolean }) {
-  const { api, composerData, addNotification, setComposerData } = useLocalState(
-    (s) => ({
-      api: s.api,
-      composerData: s.composerData,
-      addNotification: s.addNotification,
-      setComposerData: s.setComposerData,
-    }),
-  );
+  const { api, composerData, setComposerData } = useLocalState((s) => ({
+    api: s.api,
+    composerData: s.composerData,
+    setComposerData: s.setComposerData,
+  }));
   const [input, setInput] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setLoading] = useState(false);
@@ -76,42 +73,9 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
   async function poast(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!api) return; // TODOhandle error
-    const our = api.airlock.our!;
     setLoading(true);
     const res = !composerData ? addSimple() : addComplex();
-    const ares = await res;
-    if (ares) {
-      // // Check for mentions in the post (ship names starting with ~)
-      const mentions = input.match(/~[a-z-]+/g);
-      if (mentions) {
-        mentions.forEach((mention) => {
-          if (mention !== our) {
-            // Don't notify self-mentions
-            addNotification({
-              type: "mention",
-              from: our,
-              message: `You mentioned ${mention} in a post`,
-            });
-          }
-        });
-      }
-
-      // If this is a reply, add notification
-      if (
-        composerData?.type === "reply" &&
-        composerData.post &&
-        "trill" in composerData.post
-      ) {
-        if (composerData.post.trill.author !== our) {
-          addNotification({
-            type: "reply",
-            from: our,
-            message: `You replied to ${composerData.post.trill.author}'s post`,
-            postId: composerData.post.trill.id,
-          });
-        }
-      }
-
+    if (await res) {
       setInput("");
       setComposerData(null); // Clear composer data after successful post
       toast.success("post sent");

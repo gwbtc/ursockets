@@ -5,6 +5,7 @@ import Icon from "@/components/Icon";
 import toast from "react-hot-toast";
 import Avatar from "../Avatar";
 import FeedSettings from "./FeedSettings";
+import Modal from "../modals/Modal";
 
 interface ProfileEditorProps {
   user: UserType;
@@ -19,10 +20,11 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
   userString,
   onSave,
 }) => {
-  const { api, profiles } = useLocalState((s) => ({
+  const { api, profiles, setModal } = useLocalState((s) => ({
     api: s.api,
     pubkey: s.pubkey,
     profiles: s.profiles,
+    setModal: s.setModal,
   }));
 
   // Initialize state with existing profile or defaults
@@ -39,7 +41,13 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
   );
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showFeedSettings, setShowFeedSettings] = useState(false);
+  function openFeedSettings() {
+    setModal(
+      <Modal>
+        <FeedSettings />
+      </Modal>,
+    );
+  }
 
   const handleAddCustomField = () => {
     setCustomFields([...customFields, { key: "", value: "" }]);
@@ -233,7 +241,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
           </div>
 
           <div className="profile-info">
-            <h3>{name}</h3>
+            <h2>{name}</h2>
             {about && <p className="profile-about">{about}</p>}
 
             {customFields.length > 0 && (
@@ -251,7 +259,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 
           <div style={{ marginTop: "20px" }}>
             <button
-              onClick={() => setShowFeedSettings(!showFeedSettings)}
+              onClick={openFeedSettings}
               style={{
                 background: "transparent",
                 border: "1px solid #444",
@@ -265,10 +273,8 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
               }}
             >
               <Icon name="settings" size={14} />
-              {showFeedSettings ? "Hide Feed Settings" : "Feed Settings"}
+              Feed Settings
             </button>
-
-            {showFeedSettings && <FeedSettings />}
           </div>
         </div>
       )}
