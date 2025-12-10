@@ -11,7 +11,7 @@ import type { UserType } from "@/types/nostrill";
 
 export function skeinToNote(skein: Skein): Result<Notification> {
   const path = skein.top.wer.split("/").filter((s) => !!s);
-  console.log("skein path", path);
+  // console.log("skein path", path);
   const key = path[0];
   if (!key) return { error: "no path" };
   let type: NotificationType | null = null;

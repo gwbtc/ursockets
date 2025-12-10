@@ -1,5 +1,5 @@
 #composer {
-  padding: 16px;
+  padding: 8px;
   display: flex;
   gap: 0.75rem;
   transition: all 0.3s ease;
@@ -31,6 +31,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
+    width: 80%;
   }
 
   & .composer-context {

@@ -2,7 +2,6 @@ import PostList from "@/components/feed/PostList";
 import useLocalState from "@/state/state";
 import spinner from "@/assets/triangles.svg";
 import { useState } from "react";
-import { eventsToFc } from "@/logic/nostrill";
 import Icon from "@/components/Icon";
 import toast from "react-hot-toast";
 import { Contact, RefreshCw } from "lucide-react";
@@ -14,8 +13,8 @@ export default function Nostr() {
     relays: s.relays,
   }));
   const [isSyncing, setIsSyncing] = useState(false);
-  const feed = eventsToFc(nostrFeed);
-  const refetch = () => feed;
+
+  const refetch = () => nostrFeed;
 
   const handleResync = async () => {
     if (!api) return;
@@ -68,7 +67,7 @@ export default function Nostr() {
       </div>
     );
   // Show empty state with resync option when no feed data
-  if (!feed || !feed.feed || Object.keys(feed.feed).length === 0) {
+  if (Object.keys(nostrFeed.feed).length === 0) {
     return (
       <div className="nostr-empty-state">
         <div className="empty-content">
@@ -107,7 +106,7 @@ export default function Nostr() {
         <div className="feed-info">
           <h4>Nostr Feed</h4>
           <span className="post-count">
-            {Object.keys(feed.feed).length} posts
+            {Object.keys(nostrFeed.feed).length} posts
           </span>
         </div>
         <div className="flex gap-4">
@@ -133,7 +132,7 @@ export default function Nostr() {
           </button>
         </div>
       </div>
-      <PostList data={feed} refetch={refetch} />
+      <PostList data={nostrFeed} refetch={refetch} />
     </div>
   );
 }

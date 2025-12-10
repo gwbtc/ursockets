@@ -180,7 +180,7 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
           </span>
           {reactIcon}
         </div>
-        <NostrIcon poast={poast} />
+        {poast.author === api?.airlock.our && <NostrIcon poast={poast} />}
       </footer>
     </div>
   );

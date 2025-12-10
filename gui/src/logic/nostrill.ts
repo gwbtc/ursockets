@@ -1,6 +1,6 @@
 import type { Event } from "@/types/nostr";
 import type { Content, Cursor, FC, FlatFeed, Poast } from "@/types/trill";
-import { engagementBunt, openLock } from "./bunts";
+import { defaultGate, engagementBunt } from "./bunts";
 import type { UserType } from "@/types/nostrill";
 import type { Result } from "@/types/ui";
 import { isValidPatp } from "urbit-ob";
@@ -73,8 +73,7 @@ export function eventToPoast(event: Event): Poast | null {
     contents,
     thread: null,
     parent: null,
-    read: openLock,
-    write: openLock,
+    perms: { read: defaultGate, write: defaultGate },
     tags: [],
     hash: event.id,
     time: ts,

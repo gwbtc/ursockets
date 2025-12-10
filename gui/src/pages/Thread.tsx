@@ -48,5 +48,5 @@ export function NostrThreadLoader() {
   if (!id) return <ErrorPage msg="No thread id passed" />;
   const dec = decodeNostrKey(id);
   if (!dec) return <ErrorPage msg="Unknown thread id format" />;
-  return <NostrThread id={dec} host="" />;
+  return <NostrThread idString={id} id={dec} host="" />;
 }
