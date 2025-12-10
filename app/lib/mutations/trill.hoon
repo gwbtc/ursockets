@@ -191,9 +191,12 @@
               fact-card
           ==
       %quote
+        =/  quote  ?-  -.host.poke
+          %urbit  [%ref %trill +.host.poke /(crip (scow:sr %ud id.poke))]
+          %nostr  [%ref %nostr `@p`+.host.poke /(crip (scow:sr %ud id.poke))]
+          ==
         =/  host  (user-to-atom:lib host.poke)
         =/  sp     (build-sp:postlib our.bowl our.bowl content.poke ~ ~)
-        =/  quote  [%ref %trill host /(crip (scow:sr %ud id.poke))]
         =.  contents.sp  (snoc contents.sp quote)
         =/  p=post:post
           (build-post:postlib now.bowl pubkey sp)

@@ -308,6 +308,7 @@
     ==
   ++  handle-rela  |=  rh=relay-handling:ui
     ^-  (quip card _state)
+    ~&  handle-rela-mutan=rh
     =/  rl  get-relay
     ?~  rl  ~&  >>>  "no relay!!!!"  `state
     =/  wid=@ud  -.u.rl
