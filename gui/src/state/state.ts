@@ -80,7 +80,7 @@ export const useStore = creator((set, get) => ({
     await api.subscribeStore((data) => {
       if ("state" in data) {
         console.log("state", data.state);
-        const { feed, nostr, following, following2, relays, profiles, pubkey } =
+        const { feed, nostr, following, following2, relays, profiles, key } =
           data.state;
         const flwing = new Map(Object.entries(following as Record<string, FC>));
         flwing.set(api!.airlock.our!, feed);
@@ -92,7 +92,7 @@ export const useStore = creator((set, get) => ({
           profiles: new Map(Object.entries(profiles)),
           following: flwing,
           following2,
-          pubkey,
+          pubkey: key,
         });
       } else if ("fact" in data) {
         const fact: Fact = data.fact;

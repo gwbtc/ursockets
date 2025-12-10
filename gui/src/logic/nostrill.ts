@@ -117,7 +117,7 @@ export function eventToPoast(event: Event): Poast | null {
   }
   if (!poast.parent && !poast.thread) {
     const tags = event.tags.filter((t) => t[0] !== "p");
-    console.log("no parent", { event, poast, tags });
+    // console.log("no parent", { event, poast, tags });
   }
   if (!poast.parent && poast.thread) poast.parent = poast.thread;
   return poast;

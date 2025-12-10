@@ -1,18 +1,16 @@
 import type Urbit from "urbit-api";
-import type { Cursor, FullNode, Gate, PostID, PostPerms } from "@/types/trill";
+import type { Cursor, Gate, PostID, PostPerms } from "@/types/trill";
 import type { Ship } from "@/types/urbit";
 import { FeedPostCount } from "../constants";
 import type {
-  Deferred,
   PeekFeedRes,
   PeekRes,
   PeekThreadRes,
-  ThreadData,
   UserProfile,
   UserType,
 } from "@/types/nostrill";
 import type { AsyncRes } from "@/types/ui";
-import type { Skein } from "../hark";
+import type { Skein } from "@/types/hark";
 
 // Subscribe
 type Handler = (date: any) => void;

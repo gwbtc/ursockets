@@ -7,10 +7,13 @@ interface ReactionsModalProps {
   onClose: () => void;
 }
 
-export default function ReactionsModal({ poast, onClose }: ReactionsModalProps) {
+export default function ReactionsModal({
+  poast,
+  onClose,
+}: ReactionsModalProps) {
   const [_, navigate] = useLocation();
 
-  function handleNavigate(e: React.MouseEvent, routerPath: string){
+  function handleNavigate(e: React.MouseEvent, routerPath: string) {
     e.preventDefault();
     e.stopPropagation();
     navigate(routerPath);
@@ -26,12 +29,15 @@ export default function ReactionsModal({ poast, onClose }: ReactionsModalProps) 
             const userPath = `/apps/nostrill/u/${ship}`;
             const routerPath = `/u/${ship}`;
             return (
-              <div key={ship} style={{ display: 'flex', gap: '10px' }}>
+              <div key={ship} style={{ display: "flex", gap: "10px" }}>
                 <span>{emoji}</span>
                 <a
                   href={userPath}
                   role="link"
-                  onClick={(e) => { handleNavigate(e, routerPath) }}>
+                  onClick={(e) => {
+                    handleNavigate(e, routerPath);
+                  }}
+                >
                   {ship}
                 </a>
               </div>

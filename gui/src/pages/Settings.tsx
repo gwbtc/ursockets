@@ -8,12 +8,12 @@ import WebSocketWidget from "@/components/WsWidget";
 import type { RelayStats } from "@/types/nostrill";
 
 function Settings() {
-  const { key, relays, api, addNotification } = useLocalState((s) => ({
+  const { key, relays, api } = useLocalState((s) => ({
     key: s.pubkey,
     relays: s.relays,
     api: s.api,
-    addNotification: s.addNotification,
   }));
+  console.log(key);
   const [newRelay, setNewRelay] = useState("");
   const [isAddingRelay, setIsAddingRelay] = useState(false);
   const [isCyclingKey, setIsCyclingKey] = useState(false);
