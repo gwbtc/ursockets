@@ -16,7 +16,7 @@
         # !! Add path to local urbit binary
         urbitBin = ./urbit;
         # !! Add current nostril pill to repo
-        pill = ./nostril.pill;
+        pill = ./nostrill.pill;
 
         # Patch tools to make scripts executable
         usableTools = pkgs.runCommand "patched-tools" { } ''
