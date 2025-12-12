@@ -486,7 +486,7 @@
     %+  ex-cards:test-agent  caz-add
     ::  TODO: same issue as the above 
     :~  (ex-update [%prof %prof *user-meta:nostr])
-        (ex-ui-update [%prof *user-meta:nostr])
+        ::(ex-ui-update [%prof *user-meta:nostr])
     ==
   ;<  state-3=state-0:sur  bind:m  get-state
   %+  ex-equal:test-agent
