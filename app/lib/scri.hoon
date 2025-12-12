@@ -1,7 +1,7 @@
 /-  sur=nostrill, nsur=nostr, comms=nostrill-comms,
     post=trill-post, gate=trill-gate, feed=trill-feed
-    
 /+  appjs=json-nostrill,
+    trilljs=json-trill,
     lib=nostrill,
     njs=json-nostr,
     feedlib=trill-feed,
@@ -22,30 +22,42 @@
 
 ++  thread  |=  [hs=@t ids=@t]
   ^-  (unit (unit cage))  :-  ~  :-  ~  :-  %json  !>
-  %-  beg-res:en:appjs
+  %-  res:en:appjs
   ^-  res:comms
   =/  host  (slaw %p hs)
-  ?~  host  [%ng [%thread `@da`0 ''] 'Host is not a @p']
+  ?~  host
+    =/  msg  'Host is not a @p'  [%thread `@da`0 msg %done %ng]
   :: TODO what about non urbit stuff
   =/  =user:sur  [%urbit u.host]
-  =/  fed=(unit feed:feed)  ?:  .=(u.host our.bowl)  `feed.state  (~(get by following.state) user)
-  ?~  fed  [%ng [%thread `@da`0 ''] 'Feed not found']
-  =/  id  (slaw:sr %ud ids)  ?~  id  [%ng [%thread `@da`0 ''] 'Post ID malformed']
+  =/  fed=(unit feed:feed)
+    ?:  .=(u.host our.bowl)  `feed.state  (~(get by following.state) user)
+  ?~  fed
+    =/  msg  'Feed not found'
+        [%thread `@da`0 msg %done %ng]
+  =/  id  (slaw:sr %ud ids)  ?~  id
+    =/  msg  'Post ID malformed'
+    [%thread `@da`0 msg %done %ng]
   =/  node  (get:orm:feed u.fed u.id)
-  ?~  node  [%ng [%thread u.id ''] 'Post not found in feed']
+  ?~  node
+    =/  msg  'Post not found in feed'
+        [%thread u.id msg %done %ng]
   =/  fn   (node-to-full:feedlib u.node u.fed)
   =/  ted  (extract-thread:feedlib fn)
-  [%ok [%thread fn ted] '']
+  =/  msg  ''  [%thread u.id msg %done %ok fn ted]
 
 ++  sfeed  |=  [hs=@t s=@t e=@t c=@ n=@ r=@]
   ^-  (unit (unit cage))  :-  ~  :-  ~  :-  %json  !>
-  %-  beg-res:en:appjs
+  %-  res:en:appjs
   ^-  res:comms
   =/  host  (slaw %p hs)
-  ?~  host  [%ng [%feed ''] 'Host is not a @p']
+  ?~  host
+    =/  msg  'Host is not a @p'
+        [%feed msg %done %ng]
   =/  =user:sur  [%urbit u.host]
   =/  fed=(unit feed:feed)  ?:  .=(u.host our.bowl)  `feed.state  (~(get by following.state) user)
-  ?~  fed  [%ng [%feed ''] 'Feed not found']
+  ?~  fed
+  =/  msg  'Feed not found'
+        [%feed msg %done %ng]
   =/  start=(unit @da)  (timestamp:sr s)  
   =/  end               (timestamp:sr e) 
   =/  cont  (slaw:sr %ud c)
@@ -75,5 +87,34 @@
   =/  ne=(unit @da)  ?~  tal  ~  (some key.u.tal)
   =/  =fc:feed  [nf ns ne]
   =/  profile  (~(get by profiles.state) user)
-  [%ok [%feed fc profile] '']
+  =/  msg  ''  [%feed msg %done %ok fc profile]
+::
+++  feed-ids
+  |=  hs=@ta
+  ^-  (unit (unit cage))
+  :^  ~  ~  %noun  
+  !>
+  =/  host=(unit @p)  (slaw %p hs)
+  ?~  host  ~
+  =/  fed=(unit feed:feed)
+    ?:  =(u.host our.bowl)  `feed.state  
+    (~(get by following.state) urbit+u.host)
+  ?~  fed  ~
+  %-  sort  :_  gth
+  %+  turn  (tap:orm:feed u.fed)
+  |=([key=@da val=*] key)
+::
+++  host-feed
+  |=  hs=@ta
+  ^-  (unit (unit cage))
+  :^  ~  ~  %json
+  !>
+  =/  host=(unit @p)  (slaw %p hs)
+  ?~  host  ~
+  =/  fed=(unit feed:feed)  
+    ?:  .=(u.host our.bowl)  `feed.state  
+    (~(get by following.state) urbit+u.host)
+  ?~  fed  *json
+  (feed:en:trilljs u.fed)
+::
 --

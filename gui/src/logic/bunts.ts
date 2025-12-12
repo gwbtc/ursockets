@@ -5,7 +5,15 @@ export const openLock: Lock = {
   luk: { caveats: [], locked: false, public: true },
   ship: { caveats: [], locked: false, public: true },
   tags: { caveats: [], locked: false, public: true },
+  pass: null,
   custom: { fn: null, public: false },
+};
+export const defaultGate: Gate = {
+  lock: openLock,
+  manual: false,
+  mute: openLock,
+  begs: {},
+  backlog: 50,
 };
 
 export const engagementBunt: Engagement = {

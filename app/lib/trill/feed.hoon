@@ -1,5 +1,5 @@
 /-  feed=trill-feed, post=trill-post, sur=nostrill
-/+  sr=sortug, constants
+/+  lib=nostrill, sr=sortug, constants
 |%
 ++  latest-page
 =/  count  feed-page-size:constants
@@ -112,7 +112,7 @@
     
 ::
 ++  add-new-feed
-|=  [global=feed:feed new=feed:feed]  ^-  feed:feed
+|=  [global=global-feed:sur new=feed:feed]  ^-  global-feed:sur
   =/  poasts  (tap:orm:feed new)
   |-  ?~  poasts  global
     =/  poast  +.i.poasts
@@ -120,27 +120,30 @@
     $(poasts t.poasts)
 
 ++  consolidate-feeds
-|=  feeds=(list [* feed:feed])  ^-  feed:feed 
-  =|  nf=feed:feed
-  |-  ?~  feeds  nf
+|=  feeds=(list [* feed:feed])  ^-  global-feed:sur
+  =|  gf=global-feed:sur
+  |-  ?~  feeds  gf
     =/  poasts  (tap:orm:feed +.i.feeds)
-    =.  nf  |-  ?~  poasts  nf
+    =.  gf  |-  ?~  poasts  gf
       =/  poast  +.i.poasts
-      =.  nf  (insert-to-global nf poast)
+      =.  gf  (insert-to-global gf poast)
       $(poasts t.poasts)
     $(feeds t.feeds)
 
-++  find-available-id
-=|  tries=@ud
-|=  [f=feed:feed id=@da]  ^-  @da
-  ?:  (gte tries 20)  ~|('find-available-id stack overflow' !!)
-  ?.  (has:orm:feed f id)  id
-  $(id +(id), tries +(tries))
+++  delete-with-children
+  |=  [f=feed:feed p=post:post]  ^-  feed:feed
+  =.  f  =<  +  (del:orm:feed f id.p)
+  =.  f  (update-parent-on-delete f p)
+  (delete-children f p)
 
-++  insert-to-global
-|=  [f=feed:feed p=post:post]  ^-  feed:feed
-  =/  nid  (find-available-id f id.p)
-  (put:orm:feed f nid p)
+++  update-parent-on-delete
+  |=  [f=feed:feed p=post:post]  ^-  feed:feed
+  ?~  parent.p  f
+  =/  parent  (get:orm:feed f u.parent.p)
+  ?~  parent  ~&  "parent not found"  f
+  =/  nc  (~(del in children.u.parent) id.p)
+  =/  np  u.parent(children nc)
+  (put:orm:feed f id.u.parent np)
 
 ++  delete-children
   |=  [f=feed:feed p=post:post]  ^-  feed:feed
@@ -152,4 +155,64 @@
     $(children t.children)
   =/  nf  =<  +  (del:orm:feed f id.u.child)
   $(children t.children, f nf)
+::
+++  delete-nested-children
+  |=  [f=feed:feed p=post:post]  ^-  feed:feed
+  ?~   ~(tap in children.p)  f
+  =/  children=(list id:post)  ~(tap in children.p)
+  |-  ^-  feed:feed
+  ?~  children  f
+  ?~  child=(get:orm:feed f i.children)
+    $(children t.children)
+  =/  nf  =<  +  (del:orm:feed f id.u.child)
+  =/  grandc=(list id:post)
+    ~(tap in `(set id:post)`children.u.child)
+  ?~  grandc
+    $(children t.children, f nf)
+  $(children (welp (tail children) grandc), f nf)
+::   global
+++  insert-to-global
+  |=  [gf=global-feed:sur p=post:post]  ^-  global-feed:sur
+  =/  host  (atom-to-user:lib host.p)
+  =/  =upid:sur  [host id.p]
+  (put:uorm:sur gf upid p)
+
+++  delete-from-global
+|=  [gf=global-feed:sur p=post:post]  ^-  global-feed:sur
+  (delete-with-children-g gf p)
+
+++  delete-with-children-g
+  |=  [gf=global-feed:sur p=post:post]  ^-  global-feed:sur
+  =/  host  (atom-to-user:lib host.p)
+  =/  =upid:sur  [host id.p]
+  =.  gf  =<  +  (del:uorm:sur gf upid)
+  =.  gf  (update-parent-on-delete-g gf p)
+  (delete-children-g gf p)
+
+++  update-parent-on-delete-g
+  |=  [gf=global-feed:sur p=post:post]  ^-  global-feed:sur
+  ?~  parent.p  gf
+  =/  host  (atom-to-user:lib host.p)
+  =/  par-id=upid:sur  [host u.parent.p]
+  =/  parent  (get:uorm:sur gf par-id)
+  ?~  parent  ~&  "parent not found"  gf
+  =/  nc  (~(del in children.u.parent) id.p)
+  =/  np  u.parent(children nc)
+  (put:uorm:sur gf [host id.u.parent] np)
+
+++  delete-children-g
+  |=  [gf=global-feed:sur p=post:post]  ^-  global-feed:sur
+  =/  host  (atom-to-user:lib host.p)
+
+  ?~   ~(tap in children.p)  gf
+  =/  children  ~(tap in children.p)
+  |-  ^-  global-feed:sur
+  ?~  children  gf
+  =/  cid=upid:sur  [host i.children]
+  ?~  child=(get:uorm:sur gf cid)
+    $(children t.children)
+  =/  nf  =<  +  (del:uorm:sur gf cid)
+  $(children t.children, gf nf)
+
+
 --
