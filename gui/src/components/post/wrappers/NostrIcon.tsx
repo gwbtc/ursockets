@@ -28,7 +28,8 @@ export default function ({ poast }: { poast: Poast }) {
 
   return (
     <div className="icon" role="link" onMouseUp={handleClick}>
-      <Icon name="nostr" size={20} title="relay to nostr" />
+      <span />
+      <Icon name="nostr" title="relay to nostr" />
     </div>
   );
 }

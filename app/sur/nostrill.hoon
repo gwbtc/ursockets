@@ -1,4 +1,5 @@
-/-  nostr, trill=trill-feed, tp=trill-post, gate=trill-gate
+/-  *wrap, nostr, comms=nostrill-comms,
+    trill=trill-feed, tp=trill-post, gate=trill-gate
 |%
 +$  state  state-0
 +$  state-0
@@ -16,112 +17,39 @@
       ::  profiles
       profiles=(map user user-meta:nostr)
       following=(map user =feed:trill)
-      following2=feed:trill
+      following2=global-feed
+      =global-feed
       follow-graph=(map user (set user))
-    :: TODO global feed somehow?
-    :: TODO use %hark agent instead?
-      :: notifications=((mop @da notif) gth)
-
+      ::  Save incoming requests to handle async
+      =requests
+      ::  Save our given responses
+      =responses
   ==
+
++$  global-feed  ((mop upid post:tp) ugth)
+++  uorm         ((on upid post:tp) ugth)
+::
++$  upid  [=user id=@da]
+++  ugth        |=  [a=[[* id=@] =time] b=[[* id=@] =time]]  ?:  .=(time.a time.b)  (gth id.a id.b)  (gth time.a time.b)
+
 +$  nostr-feed  ((mop @ud event:nostr) gth)
 ++  norm        ((on @ud event:nostr) gth)
 +$  nfc         [feed=nostr-feed start=cursor:trill end=cursor:trill]
-
-+$  post-wrapper  [=post:tp nostr-meta=nostr-meta]
-+$  nostr-meta
-$:  pub=(unit @ux)
-    ev-id=(unit @ux)
-    relay=(unit @t)
-    pr=(unit user-meta:nostr)
-==
 +$  user  $%([%urbit p=@p] [%nostr p=@ux])
 
 +$  follow  [pubkey=@ux name=@t relay=(unit @t)]
-+$  notif
-  $%  [%prof =user prof=user-meta:nostr]      :: profile change
-      [%fols =user accepted=? msg=@t]             :: follow response 
-      [%beg beg=begs-poke:ui accepted=? msg=@t]   :: feed/post data request response
-      [%fans p=user]                       :: someone folowed me
-      [%post =pid:tp =user action=post-notif]               :: someone replied, reacted etc.
+::  request handling
+:: 
+::  TODO  save responses to requests?
+::  we need to pass request timestamp to responses too
++$  requests    ((mop @da req:comms) gth)
++$  responses   ((mop @da ruling) gth)
+++  orq         ((on @da req:comms) gth)
+++  ors         ((on @da ruling) gth)
++$  ruling  ::  my responses to received requests
+  $:  req=(enbowl req:comms)
+      =gate:gate
+      =decision
   ==
-+$  post-notif
-$%   [%reply p=post:tp]
-     [%quote p=post:tp]
-     [%reaction reaction=@t]
-     :: [%rt id=@ux pubkey=@ux relay=@t]  :: NIP-18
-     [%rp ~]  :: NIP-18
-     [%del ~]
-==
-++  ui
-  |%
-  +$  poke
-  $%  [%fols fols-poke]
-      [%begs begs-poke]
-      [%post post-poke]
-      [%prof prof-poke]
-      [%keys ~]  ::  cycle-keys
-      [%rela relay-poke]
-      :: [%notif @da]  :: dismiss notification
-  ==
-  +$  begs-poke
-  $%  [%feed p=@p]
-      [%thread p=@p id=@da]
-  ==
-  +$  post-poke
-  $%  [%add content=@t]
-      [%reply content=@t host=user id=@da thread=@da]
-      [%quote content=@t host=user id=@da]
-      [%rp host=user id=@da]  :: NIP-18
-      [%reaction host=user id=@da reaction=@t]
-      :: [%rt id=@ux pubkey=@ux relay=@t]  :: NIP-18
-      [%del host=user id=@da]
-  ==
-  +$  fols-poke
-  $%  [%add =user]
-      [%del =user]
-  ==
-  +$  prof-poke
-  $%  [%add meta=user-meta:nostr]
-      [%del ~]
-      [%fetch p=(list user)]
-  ==
-  +$  relay-poke
-  $%  [%add p=@t]
-      [%del p=@ud]
-      ::
-      relay-handling
-  ==
-  +$  relay-handling
-  $%  [%sync ~]
-      [%prof ~]
-      [%user pubkey=@ux]
-      [%thread id=@ux]
-      ::  send event for... relaying
-      [%send host=@p id=@ relays=(list @t)]
-  ==
-  :: facts
-  +$  fact
-  $%  [%nostr nostr-fact]
-      [%post post-fact]
-      [%prof (map user user-meta:nostr)]
-      [%enga p=post-wrapper reaction=*]
-      [%fols fols-fact]
-      [%hark =notif]
-  ==
-  +$  nostr-fact
-  $%  [%feed feed=nostr-feed]
-      [%user feed=nostr-feed]
-      [%thread feed=nostr-feed]
-      [%event event:nostr]
-      [%relays (map @ relay-stats:nostr)]
-  ==
-  +$  post-fact
-  $%  [%add post-wrapper]
-      [%del post-wrapper]
-  ==
-  +$  fols-fact
-  $%  [%new =user =fc:trill meta=(unit user-meta:nostr)]
-      [%quit =user]
-  ==
-  --
++$  decision  [time=@da approved=? manual=? msg=@t]
 --

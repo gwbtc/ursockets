@@ -3,6 +3,7 @@ import { date_diff } from "@/logic/utils";
 import { useLocation } from "wouter";
 import Body from "./Body";
 import Sigil from "../Sigil";
+import { userFromPost } from "@/logic/trill/helpers";
 
 // function Quote({
 //   data,
@@ -55,7 +56,12 @@ function Quote({
         </div>
         <span>{date_diff(data.time, "short")}</span>
       </header>
-      <Body poast={data} nest={nest} refetch={refetch!} />
+      <Body
+        user={userFromPost(data)}
+        poast={data}
+        nest={nest}
+        refetch={refetch!}
+      />
     </div>
   );
 }

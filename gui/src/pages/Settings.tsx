@@ -5,6 +5,7 @@ import { ThemeSwitcher } from "@/styles/ThemeSwitcher";
 import Icon from "@/components/Icon";
 import "@/styles/Settings.css";
 import WebSocketWidget from "@/components/WsWidget";
+import type { RelayStats } from "@/types/nostrill";
 
 function Settings() {
   const { key, relays, api, addNotification } = useLocalState((s) => ({
@@ -17,9 +18,9 @@ function Settings() {
   const [isAddingRelay, setIsAddingRelay] = useState(false);
   const [isCyclingKey, setIsCyclingKey] = useState(false);
 
-  async function removeRelay(url: string) {
+  async function removeRelay(url: string, relay: RelayStats) {
     try {
-      await api?.deleteRelay(url);
+      await api?.deleteRelay(relay.wid);
       toast.success("Relay removed");
     } catch (error) {
       toast.error("Failed to remove relay");
@@ -72,6 +73,19 @@ function Settings() {
     }
   };
 
+  async function testHark() {
+    // const types = ["follow", "reply", "react", "mention", "access_request"];
+    // const randomType = types[Math.floor(Math.random() * types.length)] as any;
+    // addNotification({
+    //   type: randomType,
+    //   from: "~sampel-palnet",
+    //   message: "This is a test notification",
+    //   reaction: randomType === "react" ? "👍" : undefined,
+    // });
+    // toast.success("Test notification sent!");
+    const res = await api?.scryHark();
+  }
+
   return (
     <div className="settings-page">
       <div className="settings-header">
@@ -94,28 +108,7 @@ function Settings() {
                 <p>Generate test notifications to see how they work</p>
               </div>
               <div className="setting-control">
-                <button
-                  className="test-notification-btn"
-                  onClick={() => {
-                    const types = [
-                      "follow",
-                      "reply",
-                      "react",
-                      "mention",
-                      "access_request",
-                    ];
-                    const randomType = types[
-                      Math.floor(Math.random() * types.length)
-                    ] as any;
-                    addNotification({
-                      type: randomType,
-                      from: "~sampel-palnet",
-                      message: "This is a test notification",
-                      reaction: randomType === "react" ? "👍" : undefined,
-                    });
-                    toast.success("Test notification sent!");
-                  }}
-                >
+                <button className="test-notification-btn" onClick={testHark}>
                   <Icon name="bell" size={16} />
                   Send Test Notification
                 </button>
@@ -197,14 +190,14 @@ function Settings() {
                       <p>No relays configured</p>
                     </div>
                   ) : (
-                    Object.keys(relays).map((url) => (
+                    Object.entries(relays).map(([url, relay]) => (
                       <div key={url} className="relay-item">
                         <div className="relay-info">
                           <span className="relay-url">{url}</span>
                           <span className="relay-status">Connected</span>
                         </div>
                         <button
-                          onClick={() => removeRelay(url)}
+                          onClick={() => removeRelay(url, relay)}
                           className="remove-relay-btn"
                           title="Remove relay"
                         >

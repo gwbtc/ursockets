@@ -5,9 +5,12 @@ import type { ComposerData } from "@/types/ui";
 import { create } from "zustand";
 import type { Fact, Relays, UserProfile } from "@/types/nostrill";
 import type { Event } from "@/types/nostr";
-import type { FC, Poast } from "@/types/trill";
+import type { FC, Gate, Poast } from "@/types/trill";
 import type { Notification } from "@/types/notifications";
 import { useShallow } from "zustand/shallow";
+import type { HarkAction, Skein } from "@/types/hark";
+import { skeinToNote } from "@/logic/notifications";
+import { defaultGate } from "@/logic/bunts";
 // TODO handle airlock connection issues
 // the SSE pipeline has a "status-update" event FWIW
 // type AirlockState = "connecting" | "connected" | "failed";
@@ -30,14 +33,9 @@ export type LocalState = {
   followers: string[];
   // Notifications
   notifications: Notification[];
-  unreadNotifications: number;
-  addNotification: (
-    notification: Omit<Notification, "id" | "timestamp" | "read">,
-  ) => void;
-  markNotificationRead: (id: string) => void;
-  markAllNotificationsRead: () => void;
-  clearNotifications: () => void;
+  setNotifications: (n: Notification[]) => void;
   lastFact: Fact | null;
+  feedPerms: Gate;
 };
 
 const creator = create<LocalState>();
@@ -48,6 +46,36 @@ export const useStore = creator((set, get) => ({
     const airlock = await start();
     const api = new IO(airlock);
     console.log({ api });
+    api.scryHark().then((r) => {
+      console.log("hark scry res", r);
+      if ("ok" in r) {
+        const notifications = r.ok.reduce((acc: Notification[], sk) => {
+          const note = skeinToNote(sk);
+          if ("ok" in note) return [...acc, note.ok];
+          else return acc;
+        }, []);
+        set({ notifications });
+      }
+    });
+    api.subscribeHark((data: HarkAction) => {
+      console.log("hark data", data);
+      if ("add-yarn" in data) {
+        if (data["add-yarn"].yarn.rope.desk !== "nostrill") return;
+        const nots = get().notifications;
+        const yarn = data["add-yarn"].yarn;
+        const skein: Skein = {
+          top: yarn,
+          time: yarn.time,
+          "ship-count": 0,
+          unread: true,
+          count: 0,
+        };
+        const note = skeinToNote(skein);
+        if ("error" in note) return;
+        const notifications = [...nots, note.ok];
+        set({ notifications });
+      }
+    });
     await api.subscribeStore((data) => {
       if ("state" in data) {
         console.log("state", data.state);
@@ -69,10 +97,14 @@ export const useStore = creator((set, get) => ({
         if ("fols" in fact) {
           const { following, profiles } = get();
           if ("new" in fact.fols) {
-            const { user, feed, profile } = fact.fols.new;
-            following.set(user, feed);
-            if (profile) profiles.set(user, profile);
-            set({ following, profiles });
+            const { user, data } = fact.fols.new;
+            if (data.data === "maybe") return;
+            if (data.data) {
+              const { feed, profile } = data.data;
+              following.set(user, feed);
+              if (profile) profiles.set(user, profile);
+              set({ following, profiles });
+            }
           }
           if ("quit" in fact.fols) {
             following.delete(fact.fols.quit);
@@ -89,6 +121,18 @@ export const useStore = creator((set, get) => ({
             following.set(post.author, fc);
 
             set({ following });
+          }
+          if ("del" in fact.post) {
+            const post: Poast = fact.post.del.post;
+            const following = get().following;
+            const curr = following.get(post.author);
+            
+            if (curr && curr.feed[post.id]) {
+              delete curr.feed[post.id];
+              following.set(post.author, curr);
+              
+              set({ following });
+            }
           }
         }
         if ("nostr" in fact) {
@@ -139,36 +183,10 @@ export const useStore = creator((set, get) => ({
   setComposerData: (composerData) => set({ composerData }),
   // Notifications
   notifications: [],
-  unreadNotifications: 0,
-  addNotification: (notification) => {
-    const newNotification: Notification = {
-      ...notification,
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date(),
-      read: false,
-    };
-    set((state) => ({
-      notifications: [newNotification, ...state.notifications],
-      unreadNotifications: state.unreadNotifications + 1,
-    }));
+  setNotifications: (notifications) => {
+    set({ notifications });
   },
-  markNotificationRead: (id) => {
-    set((state) => ({
-      notifications: state.notifications.map((n) =>
-        n.id === id ? { ...n, read: true } : n,
-      ),
-      unreadNotifications: Math.max(0, state.unreadNotifications - 1),
-    }));
-  },
-  markAllNotificationsRead: () => {
-    set((state) => ({
-      notifications: state.notifications.map((n) => ({ ...n, read: true })),
-      unreadNotifications: 0,
-    }));
-  },
-  clearNotifications: () => {
-    set({ notifications: [], unreadNotifications: 0 });
-  },
+  feedPerms: defaultGate,
 }));
 
 const useShallowStore = <T extends (state: LocalState) => any>(

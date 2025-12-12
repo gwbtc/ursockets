@@ -4,6 +4,7 @@ import useLocalState from "@/state/state";
 import Icon from "@/components/Icon";
 import toast from "react-hot-toast";
 import Avatar from "../Avatar";
+import FeedSettings from "./FeedSettings";
 
 interface ProfileEditorProps {
   user: UserType;
@@ -38,6 +39,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
   );
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showFeedSettings, setShowFeedSettings] = useState(false);
 
   const handleAddCustomField = () => {
     setCustomFields([...customFields, { key: "", value: "" }]);
@@ -152,7 +154,6 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
               ) : (
                 <Avatar
                   user={user}
-                  userString={userString}
                   profile={profile}
                   size={120}
                   picOnly={true}
@@ -228,13 +229,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
       ) : (
         <div className="profile-view">
           <div className="profile-picture">
-            <Avatar
-              user={user}
-              userString={userString}
-              profile={profile}
-              size={120}
-              picOnly={true}
-            />
+            <Avatar user={user} profile={profile} size={120} picOnly={true} />
           </div>
 
           <div className="profile-info">
@@ -252,6 +247,28 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
                 ))}
               </div>
             )}
+          </div>
+
+          <div style={{ marginTop: "20px" }}>
+            <button
+              onClick={() => setShowFeedSettings(!showFeedSettings)}
+              style={{
+                background: "transparent",
+                border: "1px solid #444",
+                color: "#aaa",
+                padding: "8px 12px",
+                cursor: "pointer",
+                borderRadius: "4px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <Icon name="settings" size={14} />
+              {showFeedSettings ? "Hide Feed Settings" : "Feed Settings"}
+            </button>
+
+            {showFeedSettings && <FeedSettings />}
           </div>
         </div>
       )}

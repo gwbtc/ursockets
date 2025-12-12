@@ -72,7 +72,6 @@ interface IconProps {
 
 const Icon: React.FC<IconProps> = ({
   name,
-  size = 20,
   className = "",
   title,
   onClick,
@@ -123,8 +122,6 @@ const Icon: React.FC<IconProps> = ({
       title={title}
       alt={title || name}
       style={{
-        width: size,
-        height: size,
         display: "inline-block",
         cursor: onClick ? "pointer" : "default",
         filter: getFilter(),

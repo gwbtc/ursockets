@@ -9,6 +9,10 @@
   justify-content: center;
   min-height: 400px;
   padding: 40px 20px;
+
+  .icon {
+    width: 6rem;
+  }
 }
 
 .empty-content {

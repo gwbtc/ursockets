@@ -1,4 +1,4 @@
-/-  feed=trill-feed, post=trill-post, sur=nostrill
+/-  sur=nostrill, feed=trill-feed, post=trill-post, tg=trill-gate
 /+  common=json-common, sr=sortug
 |%
 ++  en
@@ -47,6 +47,41 @@
           children+a+(turn ~(tap in children.p) ud:en:common)
           time+(time id.p)
       ==
+    ::  PERMS
+    ++  perms  |=  [read=gate:tg write=gate:tg]  ^-  json
+      %-  pairs
+      :~  :-  %read   (gate read)
+          :-  %write  (gate write)
+      ==
+    ++  gate  |=  g=gate:tg  ^-  json
+    %-  pairs
+    :~  lock+(lock lock.g)
+        mute+(lock mute.g)
+        manual+b+manual.g
+        begs+(gate-begs begs.g)
+        backlog+n+backlog.g
+    ==
+    ++  lock  |=  l=lock:tg
+    %-  pairs
+    :~  :-  %rank   %-  pairs
+          :~  [%locked %b locked.rank.l]  [%public %b public.rank.l]  :+  %caveats  %a
+            %+  turn  ~(tap in caveats.rank.l)  |=  a=rank:title  [%s `@t`a]  ==
+        :-  %luk    %-  pairs
+          :~  [%locked %b locked.luk.l]   [%public %b public.luk.l]   :+  %caveats  %a
+            %+  turn  ~(tap in caveats.luk.l)  |=  a=@p  [%s (scot %p a)]  ==
+        :-  %ship   %-  pairs
+          :~  [%locked %b locked.ship.l]  [%public %b public.ship.l]  :+  %caveats  %a
+            %+  turn  ~(tap in caveats.ship.l)  |=  a=@p  [%s (scot %p a)]  ==
+        :-  %tags   %-  pairs
+          :~  [%locked %b locked.tags.l]  [%public %b public.tags.l]  :+  %caveats  %a
+            %+  turn  ~(tap in caveats.tags.l)  |=  a=@t   [%s a]     ==
+        :-  %pass  ?~  pass.l  ~  [%s (crip (scow:sr %uw u.pass.l))]
+        :-  %custom  ~
+    ==  
+    ++  gate-begs  |=  bm=(map @p (list [@da @t]))
+      %-  pairs  %+  turn  ~(tap by bm)  |=  [key=@p val=(list [@da @t])]
+        :+  (scot %p key)  %a  %+  turn  val
+          |=  [ts=@da msg=@t]   %-  pairs  :~([%time (time ts)] [%msg %s msg])
 
     ++  content
     |=  cm=content-map:post  ^-  json
@@ -195,6 +230,12 @@
       :~  ship+(patp:en:common ship.pid)
           id+(ud:en:common id.pid)
       ==
+    ++  thread
+    |=  [p=full-node:post q=(list full-node:post)]  ^-  json
+      %-  pairs
+      :~  :-  %node    (full-node p)
+          :+  %thread  %a  (turn q full-node)
+      ==
     ++  full-node
     |=  p=full-node:post  ^-  json
       %-  pairs
@@ -226,4 +267,49 @@
           (full-node fn)
     ::
   --
+
+  ++  de
+  =,  dejs-soft:format
+    |%
+    ++  perms 
+      %-  ot
+      :~  read+gate
+          write+gate
+      ==
+    ++  gate  ^-  fist
+      %-  ot
+      :~  lock+lock
+          manual+bo
+          begs+begs
+          mute+lock
+          backlog+ni
+      ==
+    ++  lock  ^-  fist
+      %-  ot
+      :~  rank+(sublock rank)
+          luk+(sublock (se:de:common %p))
+          ship+(sublock (se:de:common %p))
+          tags+(sublock so)
+          pass+so
+          custom+custom
+      ==
+    ++  custom  ^-  fist  |=  j=json
+      %-  some  :-  ~  .n  
+    ++  sublock  |*  wit=fist  ^-  fist
+      %-  ot  :~
+        caveats+(as-soft:parsing:sr wit)
+        locked+bo
+        public+bo
+      ==
+    ++  rank  ^-  fist
+    %-  su  ;~  pose
+    %+  cold  %czar  (jest 'czar')
+    %+  cold  %king  (jest 'king')
+    %+  cold  %duke  (jest 'duke')
+    %+  cold  %earl  (jest 'earl')
+    %+  cold  %pawn  (jest 'pawn')
+    ==
+    ++  begs
+    %-  om  %-  ar  %-  ot  :~([%time di] [%msg so])
+    --
 --

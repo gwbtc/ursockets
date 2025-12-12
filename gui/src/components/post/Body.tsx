@@ -37,7 +37,7 @@ function Body(props: PostProps) {
   );
 
   return (
-    <div className="trill-post-body body">
+    <div className="body">
       <div className="body-text">
         {text.map((b, i) => (
           <TextBlock key={JSON.stringify(b) + i} block={b} />
