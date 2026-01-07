@@ -158,9 +158,7 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
             placeholder={placeHolder}
           />
           {isLoading ? (
-            <div className="loading-container">
-              <img src={spinner} />
-            </div>
+            <img width="40" src={spinner} />
           ) : (
             <button type="submit" disabled={!input.trim()} className="post-btn">
               Post
