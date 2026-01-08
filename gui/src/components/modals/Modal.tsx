@@ -1,7 +1,13 @@
 import useLocalState from "@/state/state";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
-function Modal({ children }: any) {
+function Modal({
+  children,
+  close,
+}: {
+  children: ReactNode;
+  close?: () => void;
+}) {
   const { setModal } = useLocalState((s) => ({ setModal: s.setModal }));
   function onKey(event: any) {
     if (event.key === "Escape") setModal(null);
@@ -17,7 +23,8 @@ function Modal({ children }: any) {
     console.log("clicked away");
     e.stopPropagation();
     if (!modalRef.current || !modalRef.current.contains(e.target))
-      setModal(null);
+      if (close) close();
+    setModal(null);
   }
   const modalRef = useRef(null);
   return (

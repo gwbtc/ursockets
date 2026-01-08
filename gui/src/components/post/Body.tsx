@@ -190,7 +190,11 @@ function Ref({ r, nest }: { r: Reference; nest: number }) {
       nest: nest + 1,
       className: "quote-in-post",
     })(Quote);
-    return <Card logo="crow" cn="ref-card">{comp}</Card>;
+    return (
+      <Card logo="crow" cn="ref-card">
+        {comp}
+      </Card>
+    );
   }
   return <></>;
 }
