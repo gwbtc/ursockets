@@ -59,9 +59,8 @@
 
   header {
     display: flex;
-    /* justify-content: space-between; */
+    justify-content: space-between;
     align-items: center;
-    justify-content: left;
 
     p {
       margin: 0 0.3rem;
@@ -248,10 +247,6 @@
   border: 1px solid grey;
   border-radius: 0.5rem;
   cursor: pointer;
-}
-
-.quote-in-post header {
-  display: flex;
 }
 
 .mention {
@@ -558,11 +553,6 @@
   overflow-y: scroll;
 }
 
-.btw {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 
 #stats-modal .react-stat img {
   width: 32px;
