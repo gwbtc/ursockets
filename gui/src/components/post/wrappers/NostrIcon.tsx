@@ -27,6 +27,7 @@ export default function ({ poast }: { poast: Poast }) {
     e.preventDefault();
     setModal(
       <ConfirmationDialog
+        message="Send this post to a Nostr Relay?"
         onConfirm={doSendToRelay}
         onCancel={() => setModal(null)}
       />,
