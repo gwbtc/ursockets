@@ -480,28 +480,10 @@
         =/  l  (list-connected:ws bowl)
         ~&  >  ws-connections=l
         `this
-      %wsc
-        =.  relays  ~
-        =.  nostr-feed  ~
-        =/  sockets  .^((map @ud websocket-connection:iris) %ix /(scot %p our.bowl)/ws/(scot %da now.bowl))
-        ~&  iris-sockets=sockets
-        =/  wids  ~(key by sockets)
-        =/  ws-paths  %+  turn  ~(tap in wids)  |=  wid=@  ^-  path  /websocket-client/(scot %ud wid)
-        ~&  ws-paths=ws-paths
-        :_  this
-        ?~  ws-paths  ~
-        :~  [%give %fact ws-paths %disconnect !>(~)]
-        ==
       %ws-close
         :_  this
-        =/  inc-subs  ~(tap by sup.bowl)
-        =/  ws-paths  %+  roll  inc-subs  |=  [i=[=duct =ship =path] acc=(list path)]
-          ?.  ?=([%websocket-client *] path.i)  acc
-          ~&  bitt=i
-          [path.i acc]
-        ?~  ws-paths  ~
-        :~  [%give %fact ws-paths %disconnect !>(~)]
-        ==
+        =/  l  (list-connected:ws bowl)
+        %+  turn  l  |=  [wid=@ url=@t status=*]  (cancel-connect:ws wid)
       %irisf
         :_  this
         =/  inc-subs  ~(tap by sup.bowl)
