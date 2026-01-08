@@ -441,12 +441,21 @@ h6 {
   position: fixed;
   top: 50%;
   left: 50%;
-  width: 80%;
+  width: clamp(300px, 50vw, 80vw);
   z-index: 101;
   transform: translate(-50%, -50%);
   background-color: var(--background-color);
-  padding: 1rem;
+  padding: 1.25rem;
   max-height: 80%;
+  border-radius: 12px;
+  overflow-y: auto;
+}
+
+/* Small modals like confirmation dialogs can override width */
+#modal:has(.confirmation-dialog) {
+  width: auto;
+  min-width: 200px;
+  max-width: 320px;
 }
 
 .modal-buttons {
@@ -456,4 +465,109 @@ h6 {
 
 ::-webkit-scrollbar {
   display: none;
+}
+
+/* Generic button styles */
+.btn {
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-confirm,
+.btn-primary {
+  background: var(--color-accent, #2a9d8f);
+  color: white;
+}
+
+.btn-confirm:hover,
+.btn-primary:hover {
+  background: color-mix(in srgb, var(--color-accent, #2a9d8f) 85%, black);
+  transform: translateY(-1px);
+}
+
+.btn-cancel,
+.btn-secondary {
+  background: rgba(128, 128, 128, 0.15);
+  color: var(--color-text);
+  border: 1px solid rgba(128, 128, 128, 0.3);
+}
+
+.btn-cancel:hover,
+.btn-secondary:hover {
+  background: rgba(128, 128, 128, 0.25);
+}
+
+.btn-danger {
+  background: #e63946;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #c5303c;
+}
+
+/* Confirmation Dialog */
+.confirmation-dialog {
+  text-align: center;
+  padding: 0.5rem;
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+.confirmation-dialog p {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.confirmation-buttons {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.confirmation-buttons button {
+  min-width: 80px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.confirmation-buttons .btn-confirm {
+  background: var(--color-accent, #2a9d8f);
+  color: white;
+}
+
+.confirmation-buttons .btn-confirm:hover {
+  background: color-mix(in srgb, var(--color-accent, #2a9d8f) 85%, black);
+}
+
+.confirmation-buttons .btn-cancel {
+  background: rgba(128, 128, 128, 0.15);
+  color: var(--color-text);
+  border: 1px solid rgba(128, 128, 128, 0.3);
+}
+
+.confirmation-buttons .btn-cancel:hover {
+  background: rgba(128, 128, 128, 0.25);
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
+.loading-spinner img {
+  width: 32px;
+  height: 32px;
 }

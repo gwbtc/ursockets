@@ -10,16 +10,18 @@ import NostrIcon from "./wrappers/NostrIcon";
 import type { SPID } from "@/types/ui";
 import QuoteModal from "@/components/modals/QuoteModal";
 import ReactionsModal from "@/components/modals/ReactionsModal";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 // TODO abstract this somehow
 
 function Footer({ user, poast, thread, refetch }: PostProps) {
   const [_showMenu, setShowMenu] = useState(false);
   const [location, navigate] = useLocation();
   const [reposting, _setReposting] = useState(false);
-  const { api, setComposerData, setModal } = useLocalState((s) => ({
+  const { api, setComposerData, setModal, relays } = useLocalState((s) => ({
     api: s.api,
     setComposerData: s.setComposerData,
     setModal: s.setModal,
+    relays: s.relays,
   }));
   const our = api!.airlock.our!;
   function getComposerData(): SPID {
@@ -52,23 +54,39 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
       : Object.keys(poast.children).length
     : 0;
   const myRP = poast.engagement.shared.find((r) => r.pid.ship === our);
-  async function cancelRP(e: React.MouseEvent) {
-    e.stopPropagation();
-    e.preventDefault();
+  async function doCancelRP() {
     const r = await api!.deletePost(user, poast.id);
     if (r) toast.success("Repost deleted");
-    // refetch();
+    setModal(null);
     if (location.includes(poast.id)) navigate("/");
   }
-  async function sendRP(e: React.MouseEvent) {
-    // TODO update backend because contents are only markdown now
+  function cancelRP(e: React.MouseEvent) {
     e.stopPropagation();
     e.preventDefault();
+    setModal(
+      <ConfirmationDialog
+        onConfirm={doCancelRP}
+        onCancel={() => setModal(null)}
+      />,
+    );
+  }
+  async function doSendRP() {
     const id = "urbit" in user ? poast.id : poast.hash;
     const r = await api!.addRP(user, id);
     if (r) {
       toast.success("Your repost was published");
     }
+    setModal(null);
+  }
+  function sendRP(e: React.MouseEvent) {
+    e.stopPropagation();
+    e.preventDefault();
+    setModal(
+      <ConfirmationDialog
+        onConfirm={doSendRP}
+        onCancel={() => setModal(null)}
+      />,
+    );
   }
   function doReact(e: React.MouseEvent) {
     e.stopPropagation();
@@ -123,25 +141,22 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
   ).winner;
   const reactIcon = stringToReact(mostCommonReact);
 
+  const canRelay =
+    Object.keys(relays).length > 0 && poast.author === api?.airlock.our;
+
   // TODO round up all helpers
 
   return (
     <div className="footer-wrapper post-footer">
       <footer>
-        {!thread && (
-          <div className="icon">
-            <span
-              role="link"
-              onMouseUp={showReplyCount}
-              className="reply-count"
-            >
-              {displayCount(childrenCount)}
-            </span>
-            <div className="icon-wrapper" role="link" onMouseUp={doReply}>
-              <Icon name="reply" />
-            </div>
+        <div className="icon">
+          <span role="link" onMouseUp={showReplyCount} className="reply-count">
+            {displayCount(childrenCount)}
+          </span>
+          <div className="icon-wrapper" role="link" onMouseUp={doReply}>
+            <Icon name="reply" />
           </div>
-        )}
+        </div>
         <div className="icon">
           <span role="link" onMouseUp={showQuoteCount} className="quote-count">
             {displayCount(poast.engagement.quoted.length)}
@@ -180,7 +195,7 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
           </span>
           {reactIcon}
         </div>
-        {poast.author === api?.airlock.our && <NostrIcon poast={poast} />}
+        {canRelay && <NostrIcon poast={poast} />}
       </footer>
     </div>
   );

@@ -49,9 +49,9 @@ function Quote({
   }
   return (
     <div onMouseUp={gotoQuote} className="quote-in-post">
-      <header className="btw">
+      <header>
         <div className="quote-author flex">
-          <Sigil patp={data.author} size={20} />
+          <Sigil patp={data.author} size={30} />
           {data.author}
         </div>
         <span>{date_diff(data.time, "short")}</span>
