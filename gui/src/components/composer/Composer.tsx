@@ -18,9 +18,10 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
   const [input, setInput] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setLoading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   console.log({ composerData });
+  // Input
   useEffect(() => {
     if (composerData) {
       setIsExpanded(true);
@@ -36,6 +37,19 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
       }, 100); // Small delay to ensure the composer is rendered
     }
   }, [composerData]);
+
+  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
+    const val = e.currentTarget.value;
+    setInput(val);
+  };
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && e.ctrlKey) {
+      e.preventDefault();
+      e.currentTarget.form?.requestSubmit();
+    }
+  };
+
+  //
   async function addSimple() {
     if (!api) return; // TODOhandle error
     return await api.addPost(input);
@@ -150,12 +164,18 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
         )}
 
         <div className="composer-input-row">
-          <input
+          <textarea
             ref={inputRef}
             value={input}
-            onInput={(e) => setInput(e.currentTarget.value)}
+            onInput={handleInput}
+            onKeyDown={handleKeyDown}
             onFocus={() => setIsExpanded(true)}
             placeholder={placeHolder}
+            rows={
+              input.split("\n").length > 1
+                ? Math.min(input.split("\n").length, 5)
+                : 1
+            }
           />
           {isLoading ? (
             <img width="40" src={spinner} />
