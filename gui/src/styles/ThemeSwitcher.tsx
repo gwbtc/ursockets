@@ -15,6 +15,7 @@ const themeIcons: Record<ThemeName, string> = {
   ocean: "🌊",
   forest: "🌲",
   gruvbox: "🍂",
+  christmas: "🎄",
 };
 
 const themeLabels: Record<ThemeName, string> = {
@@ -25,6 +26,7 @@ const themeLabels: Record<ThemeName, string> = {
   ocean: "Ocean",
   forest: "Forest",
   gruvbox: "Gruvbox",
+  christmas: "Christmas",
 };
 
 export const ThemeSwitcher: React.FC<ThemeSwitcherProps> = ({
