@@ -1,9 +1,5 @@
 const std = @import("std");
 
-const wslay_version = "1.1.1";
-const wslay_version_define =
-    std.fmt.comptimePrint("-DWSLAY_VERSION=\"{s}\"", .{wslay_version});
-
 pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -11,10 +7,10 @@ pub fn build(b: *std.Build) !void {
 
     const copts: []const []const u8 =
         b.option([]const []const u8, "copt", "") orelse &.{};
-    const pace = b.option([]const u8, "pace", "") orelse
-        @panic("Missing required option: pace");
-    const version = b.option([]const u8, "version", "") orelse
-        @panic("Missing required option: version");
+    const pace = b.option([]const u8, "pace", "") orelse  "live";
+        // @panic("Missing required option: pace");
+    const version = b.option([]const u8, "version", "") orelse  "3.5";
+        // @panic("Missing required option: version");
 
     const pkg_vere = b.addStaticLibrary(.{
         .name = "vere",
@@ -53,6 +49,12 @@ pub fn build(b: *std.Build) !void {
     });
 
     const pkg_noun = b.dependency("pkg_noun", .{
+        .target = target,
+        .optimize = optimize,
+        .copt = copts,
+    });
+
+    const pkg_past = b.dependency("pkg_past", .{
         .target = target,
         .optimize = optimize,
         .copt = copts,
@@ -155,7 +157,9 @@ pub fn build(b: *std.Build) !void {
     }
     pkg_vere.linkLibrary(natpmp.artifact("natpmp"));
     pkg_vere.linkLibrary(curl.artifact("curl"));
+
     pkg_vere.linkLibrary(gmp.artifact("gmp"));
+
     pkg_vere.linkLibrary(h2o.artifact("h2o"));
     pkg_vere.linkLibrary(wslay.artifact("wslay"));
     pkg_vere.linkLibrary(libuv.artifact("libuv"));
@@ -167,7 +171,14 @@ pub fn build(b: *std.Build) !void {
     pkg_vere.linkLibrary(pkg_ent.artifact("ent"));
     pkg_vere.linkLibrary(pkg_ur.artifact("ur"));
     pkg_vere.linkLibrary(pkg_noun.artifact("noun"));
+    pkg_vere.linkLibrary(pkg_past.artifact("past"));
     pkg_vere.linkLibC();
+
+    //
+    const wslay_version = "1.1.1";
+    const wslay_version_define =
+        std.fmt.comptimePrint("-DWSLAY_VERSION=\"{s}\"", .{wslay_version});
+    // 
 
     var files = std.ArrayList([]const u8).init(b.allocator);
     defer files.deinit();
@@ -183,6 +194,14 @@ pub fn build(b: *std.Build) !void {
         try files.appendSlice(&.{
             "platform/linux/daemon.c",
             "platform/linux/ptty.c",
+        });
+    }
+    if (t.os.tag == .windows) {
+        pkg_vere.addIncludePath(b.path("platform/windows"));
+        try files.appendSlice(&.{
+            "platform/windows/ptty.c",
+            "platform/windows/ctrlc.c",
+            "platform/windows/daemon.c",
         });
     }
 
@@ -239,9 +258,6 @@ const c_source_files = [_][]const u8{
     "melt.c",
     "newt.c",
     "pier.c",
-    "save.c",
-    "serf.c",
-    "time.c",
     "ward.c",
 };
 
@@ -256,7 +272,5 @@ const install_headers = [_][]const u8{
     "arena.h",
     "mars.h",
     "mdns.h",
-    "serf.h",
     "vere.h",
-    "verstable.h",
 };

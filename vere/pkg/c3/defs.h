@@ -64,7 +64,20 @@
 #     error  "port me"
 #endif
 
+#if   (64 == (CHAR_BIT * __SIZEOF_LONG__))
+#     define c3_lz_d __builtin_clzl
+#     define c3_tz_d __builtin_ctzl
+#     define c3_pc_d __builtin_popcountl
+#elif (64 == (CHAR_BIT * __SIZEOF_LONG_LONG__))
+#     define c3_lz_d __builtin_clzll
+#     define c3_tz_d __builtin_ctzll
+#     define c3_pc_d __builtin_popcountll
+#else
+#     error "port me"
+#endif
+
 #     define c3_bits_word(w) ((w) ? (32 - c3_lz_w(w)) : 0)
+#     define c3_bits_dabl(d) ((d) ? (64 - c3_lz_d(d)) : 0)
 
     /* Min and max.
     */
@@ -266,5 +279,8 @@ c3_align_p(void const * p, size_t al, align_dir hilo) {
   x &= ~(al - 1);
   return (void*)x;
 }
+
+#define c3_likely(x)    ( __builtin_expect(!!(x), 1) )
+#define c3_unlikely(x)  ( __builtin_expect(!!(x), 0) )
 
 #endif /* ifndef C3_DEFS_H */

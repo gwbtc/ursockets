@@ -3,15 +3,12 @@
 #include "vere.h"
 
 #include "h2o.h"
+// UIP-125
 #include "h2o/websocket.h"
+#include "wslay/wslay.h"
+//
 #include "noun.h"
 #include "openssl/ssl.h"
-#include "openssl/sha.h"
-#include "wslay/wslay.h"
-
-#include <ctype.h>
-#include <stdint.h>
-#include <string.h>
 
 #define U3_WS_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
@@ -25,15 +22,7 @@
     u3_csat_ripe = 4                    //  passed to libh2o
   } u3_csat;
 
-/* u3_cres: response to http client.
-*/
-  typedef struct _u3_cres {
-    c3_w             sas_w;             //  status code
-    u3_noun          hed;               //  headers
-    u3_hbod*         bod_u;             //  exit of body queue
-    u3_hbod*         dob_u;             //  entry of body queue
-  } u3_cres;
-
+// UIP-125
 typedef enum {
   u3_cws_pending = 0,
   u3_cws_open    = 1,
@@ -43,6 +32,18 @@ typedef enum {
 
 typedef struct _u3_cttp u3_cttp;
 typedef struct _u3_cws u3_cws;
+
+// 
+
+  
+/* u3_cres: response to http client.
+*/
+  typedef struct _u3_cres {
+    c3_w             sas_w;             //  status code
+    u3_noun          hed;               //  headers
+    u3_hbod*         bod_u;             //  exit of body queue
+    u3_hbod*         dob_u;             //  entry of body queue
+  } u3_cres;
 
 /* u3_creq: outgoing http request.
 */
@@ -70,6 +71,7 @@ typedef struct _u3_cws u3_cws;
     struct _u3_cttp*   ctp_u;           //  cttp backpointer
   } u3_creq;
 
+
 struct _u3_cws {
   c3_l                 wid_l;          // websocket id
   u3_cwsat             sat_e;          // websocket state
@@ -94,6 +96,7 @@ struct _u3_cws {
   struct _u3_cws*      pre_u;          // prev in list
 };
 
+// UIP-125
 static void _cttp_ws_close(u3_cws* cws_u, c3_o send_event);
 static void _cttp_ws_proceed(u3_cws* cws_u);
 static c3_o _cttp_ws_start(u3_cttp* ctp_u, c3_l wid_l, u3_atom url);
@@ -112,7 +115,7 @@ static c3_c* _cttp_ws_origin(u3_atom nor);
 
 static void _cttp_creq_start(u3_creq* ceq_u);
 static u3_atom _cttp_ws_normalize_url(u3_atom url);
-
+  
 /* u3_cttp: http client.
 */
   typedef struct _u3_cttp {
@@ -126,6 +129,7 @@ static u3_atom _cttp_ws_normalize_url(u3_atom url);
                      ctx_u;             //  h2o client ctx
     void*            tls_u;             //  client SSL_CTX*
   } u3_cttp;
+
 
 // XX deduplicate with _http_vec_to_atom
 /* _cttp_vec_to_atom(): convert h2o_iovec_t to atom (cord)
@@ -280,8 +284,7 @@ _cttp_bods_to_vec(u3_hbod* bod_u, c3_w* tot_w)
   return vec_u;
 }
 
-/* websocket session bookkeeping helpers
-*/
+// UIP-125
 static void
 _cttp_ws_link(u3_cttp* ctp_u, u3_cws* cws_u)
 {
@@ -492,6 +495,9 @@ _cttp_ws_normalize_url(u3_atom url)
   return ret;
 }
 
+//
+
+
 // XX deduplicate with _http_heds_free
 /* _cttp_heds_free(): free header linked list
 */
@@ -530,14 +536,6 @@ _cttp_hed_new(u3_atom nam, u3_atom val)
   u3r_bytes(0, val_w, (c3_y*)hed_u->val_c, val);
 
   return hed_u;
-}
-
-static void
-_cttp_hed_push(u3_hhed** list_u, const c3_c* nam_c, const c3_c* val_c)
-{
-  u3_hhed* hed_u = _cttp_hed_new(u3i_string(nam_c), u3i_string(val_c));
-  hed_u->nex_u = *list_u;
-  *list_u = hed_u;
 }
 
 // XX deduplicate with _http_heds_from_noun
@@ -800,6 +798,7 @@ _cttp_creq_unlink(u3_creq* ceq_u)
 static void
 _cttp_creq_free(u3_creq* ceq_u)
 {
+
   ceq_u->wsu_u = 0;
   _cttp_creq_unlink(ceq_u);
 
@@ -978,6 +977,679 @@ _cttp_creq_fire(u3_creq* ceq_u)
   }
 }
 
+/* _cttp_creq_quit(): cancel a u3_creq
+*/
+static void
+_cttp_creq_quit(u3_creq* ceq_u)
+{
+
+  if ( ceq_u->wsu_u ) {
+    _cttp_ws_fail_handshake(ceq_u, "cancel");
+    _cttp_creq_free(ceq_u);
+    return;
+  }
+  
+  if ( u3_csat_addr == ceq_u->sat_e ) {
+    ceq_u->sat_e = u3_csat_quit;
+    return;  // wait to be called again on address resolution
+  }
+
+  if ( ceq_u->cli_u ) {
+    h2o_http1client_cancel(ceq_u->cli_u);
+  }
+
+  _cttp_creq_free(ceq_u);
+}
+
+static void
+_cttp_http_client_receive(u3_creq* ceq_u, c3_w sas_w, u3_noun mes, u3_noun uct)
+{
+  u3_cttp* ctp_u = ceq_u->ctp_u;
+
+  //  XX inject partial responses as separate events
+  //
+  u3_noun wir = u3nt(u3i_string("http-client"),
+                     u3dc("scot", c3__uv, ctp_u->sev_l),
+                     u3_nul);
+  u3_noun cad = u3nt(u3i_string("receive"),
+                    ceq_u->num_l,
+                    u3nq(u3i_string("start"), u3nc(sas_w, mes), uct, c3y));
+
+  u3_auto_plan(&ctp_u->car_u, u3_ovum_init(0, c3__i, wir, cad));
+}
+
+/* _cttp_creq_fail(): dispatch error response
+*/
+static void
+_cttp_creq_fail(u3_creq* ceq_u, const c3_c* err_c)
+{
+
+  if ( ceq_u->wsu_u ) {
+    _cttp_ws_fail_handshake(ceq_u, err_c ? err_c : "handshake failed");
+    _cttp_creq_free(ceq_u);
+    return;
+  }
+  // XX anything other than a 504?
+  c3_w cod_w = 504;
+
+  u3l_log("http: fail (%d, %d): %s", ceq_u->num_l, cod_w, err_c);
+
+  // XX include err_c as response body?
+  _cttp_http_client_receive(ceq_u, cod_w, u3_nul, u3_nul);
+  _cttp_creq_free(ceq_u);
+}
+
+/* _cttp_creq_respond(): dispatch response
+*/
+static void
+_cttp_creq_respond(u3_creq* ceq_u)
+{
+
+  if ( ceq_u->wsu_u ) {
+    _cttp_ws_fail_handshake(ceq_u, "handshake rejected");
+    _cttp_creq_free(ceq_u);
+    return;
+  }
+  
+  u3_cres* res_u = ceq_u->res_u;
+
+  _cttp_http_client_receive(ceq_u, res_u->sas_w, res_u->hed,
+             ( !res_u->bod_u ) ? u3_nul :
+             u3nc(u3_nul, _cttp_bods_to_octs(res_u->bod_u)));
+
+  _cttp_creq_free(ceq_u);
+}
+
+// XX research: may be called with closed client?
+/* _cttp_creq_on_body(): cb invoked by h2o upon receiving a response body
+*/
+static c3_i
+_cttp_creq_on_body(h2o_http1client_t* cli_u, const c3_c* err_c)
+{
+  u3_creq* ceq_u = (u3_creq *)cli_u->data;
+
+  if ( ceq_u->wsu_u ) {
+    _cttp_ws_fail_handshake(ceq_u, err_c ? err_c : "unexpected body");
+    _cttp_creq_free(ceq_u);
+    return -1;
+  }
+  
+
+  if ( 0 != err_c && h2o_http1client_error_is_eos != err_c ) {
+    _cttp_creq_fail(ceq_u, err_c);
+    return -1;
+  }
+
+  h2o_buffer_t* buf_u = cli_u->sock->input;
+
+  if ( buf_u->size ) {
+    _cttp_cres_fire_body(ceq_u->res_u,
+                         _cttp_bod_new(buf_u->size, buf_u->bytes));
+    h2o_buffer_consume(&cli_u->sock->input, buf_u->size);
+  }
+
+  // We're using the end of stream thing here to queue event to urbit. we'll
+  // need to separate this into our own timer for partial progress sends.
+  if ( h2o_http1client_error_is_eos == err_c ) {
+    _cttp_creq_respond(ceq_u);
+  }
+
+  return 0;
+}
+
+/* _cttp_creq_on_head(): cb invoked by h2o upon receiving response headers
+*/
+static h2o_http1client_body_cb
+_cttp_creq_on_head(h2o_http1client_t* cli_u, const c3_c* err_c, c3_i ver_i,
+                   c3_i sas_i, h2o_iovec_t sas_u, h2o_header_t* hed_u,
+                   size_t hed_t, c3_i len_i)
+{
+  u3_creq* ceq_u = (u3_creq *)cli_u->data;
+  // UIP-125
+
+  if ( ceq_u->wsu_u ) {
+    u3_cws* cws_u = ceq_u->wsu_u;
+
+    if ( 0 != err_c && h2o_http1client_error_is_eos != err_c ) {
+      _cttp_ws_fail_handshake(ceq_u, err_c);
+      _cttp_creq_free(ceq_u);
+      return 0;
+    }
+
+    if ( 101 != sas_i ) {
+      _cttp_ws_fail_handshake(ceq_u, "status");
+      _cttp_creq_free(ceq_u);
+      return 0;
+    }
+
+    for ( size_t i = 0; i < hed_t; i++ ) {
+      h2o_header_t* hdr = &hed_u[i];
+      u3l_log("cttp: ws hdr %.*s: %.*s",
+              (int)hdr->name->len, hdr->name->base,
+              (int)hdr->value.len, hdr->value.base);
+    }
+
+    h2o_iovec_t* acc_u = _cttp_find_header(hed_u, hed_t, "sec-websocket-accept");
+    c3_c exp_c[29];
+
+    if ( 0 == acc_u ) {
+      _cttp_ws_fail_handshake(ceq_u, "missing accept");
+      _cttp_creq_free(ceq_u);
+      return 0;
+    }
+
+    _cttp_ws_compute_accept(cws_u->key_c, exp_c);
+
+    if ( acc_u->len != 28 || 0 != memcmp(acc_u->base, exp_c, 28) ) {
+      _cttp_ws_fail_handshake(ceq_u, "bad accept");
+      _cttp_creq_free(ceq_u);
+      return 0;
+    }
+
+    h2o_socket_t* sok_u = h2o_http1client_steal_socket(cli_u);
+
+    if ( 0 == sok_u ) {
+      _cttp_ws_fail_handshake(ceq_u, "steal failure");
+      _cttp_creq_free(ceq_u);
+      return 0;
+    }
+
+    ceq_u->wsu_u = 0;
+    ceq_u->cli_u = 0;
+    cws_u->ceq_u = 0;
+
+    if ( sok_u->input && sok_u->input->size ) {
+      u3l_log("cttp: ws draining leftover handshake wid=%u size=%zu",
+              cws_u->wid_l,
+              (size_t)sok_u->input->size);
+      h2o_buffer_consume(&sok_u->input, sok_u->input->size);
+    }
+
+    _cttp_creq_free(ceq_u);
+
+    memset(&cws_u->wcb_u, 0, sizeof(cws_u->wcb_u));
+    cws_u->wcb_u.recv_callback = _cttp_ws_recv_cb;
+    cws_u->wcb_u.send_callback = _cttp_ws_send_cb;
+    cws_u->wcb_u.genmask_callback = _cttp_ws_genmask_cb;
+    cws_u->wcb_u.on_msg_recv_callback = _cttp_ws_msg_cb;
+
+    wslay_event_context_client_init(&cws_u->wsl_w, &cws_u->wcb_u, cws_u);
+
+    cws_u->sok_u = sok_u;
+    sok_u->data = cws_u;
+
+    cws_u->sat_e = u3_cws_open;
+
+    _cttp_ws_plan_event(cws_u, u3nc(u3i_string("accept"), u3_nul));
+    _cttp_ws_proceed(cws_u);
+    return 0;
+  }
+
+  
+  // 
+
+  if ( 0 != err_c && h2o_http1client_error_is_eos != err_c ) {
+    _cttp_creq_fail(ceq_u, err_c);
+    return 0;
+  }
+
+  _cttp_cres_new(ceq_u, (c3_w)sas_i);
+  ceq_u->res_u->hed = _cttp_heds_to_noun(hed_u, hed_t);
+
+  if ( h2o_http1client_error_is_eos == err_c ) {
+    _cttp_creq_respond(ceq_u);
+    return 0;
+  }
+
+  return _cttp_creq_on_body;
+}
+
+/* _cttp_creq_on_connect(): cb invoked by h2o upon successful connection
+*/
+static h2o_http1client_head_cb
+_cttp_creq_on_connect(h2o_http1client_t* cli_u, const c3_c* err_c,
+                      h2o_iovec_t** vec_u, size_t* vec_i, c3_i* hed_i)
+{
+  u3_creq* ceq_u = (u3_creq *)cli_u->data;
+
+  if ( 0 != err_c ) {
+    //  if synchronously connecting, caller will cleanup
+    //
+    if ( u3_csat_conn == ceq_u->sat_e ) {
+      ceq_u->sat_e = u3_csat_quit;
+    }
+    else {
+      u3_assert( u3_csat_ripe == ceq_u->sat_e );
+      _cttp_creq_fail(ceq_u, err_c);
+    }
+    return 0;
+  }
+
+  //  serialize request (populate rub_u)
+  //
+  _cttp_creq_fire(ceq_u);
+
+  {
+    c3_w len_w;
+    ceq_u->vec_u = _cttp_bods_to_vec(ceq_u->rub_u, &len_w);
+
+    *vec_i = len_w;
+    *vec_u = ceq_u->vec_u;
+    *hed_i = (0 == strcmp(ceq_u->met_c, "HEAD"));
+  }
+
+  return _cttp_creq_on_head;
+}
+
+/* _cttp_creq_connect(): establish connection
+*/
+static void
+_cttp_creq_connect(u3_creq* ceq_u)
+{
+  u3_assert( u3_csat_conn == ceq_u->sat_e );
+  u3_assert( ceq_u->ipf_c );
+
+  //  connect by ip/port, avoiding synchronous getaddrinfo()
+  //
+  {
+    h2o_iovec_t ipf_u = h2o_iovec_init(ceq_u->ipf_c, strlen(ceq_u->ipf_c));
+    c3_t        tls_t = ( c3y == ceq_u->sec );
+    c3_s        por_s = ( ceq_u->por_s )
+                        ? ceq_u->por_s
+                        : ( tls_t ) ? 443 : 80;
+
+    h2o_http1client_connect(&ceq_u->cli_u, ceq_u, &ceq_u->ctp_u->ctx_u,
+                            ipf_u, por_s, tls_t, _cttp_creq_on_connect);
+  }
+
+  //  connect() failed, cb invoked synchronously
+  //
+  if ( u3_csat_conn != ceq_u->sat_e ) {
+    u3_assert( u3_csat_quit == ceq_u->sat_e );
+    //  only one such failure case
+    //
+    _cttp_creq_fail(ceq_u, "socket create error");
+  }
+  else {
+    ceq_u->sat_e = u3_csat_ripe;
+
+    //  fixup hostname for TLS handshake
+    //
+    //    must be synchronous, after successfull connect() call
+    //
+    if ( ceq_u->hot_c && (c3y == ceq_u->sec) ) {
+      u3_assert( ceq_u->cli_u );
+      c3_free(ceq_u->cli_u->ssl.server_name);
+      ceq_u->cli_u->ssl.server_name = strdup(ceq_u->hot_c);
+    }
+  }
+}
+
+/* _cttp_creq_resolve_cb(): cb upon IP address resolution
+*/
+static void
+_cttp_creq_resolve_cb(uv_getaddrinfo_t* adr_u,
+                      c3_i              sas_i,
+                      struct addrinfo*  aif_u)
+{
+  u3_creq* ceq_u = adr_u->data;
+
+  if ( u3_csat_quit == ceq_u->sat_e ) {
+    _cttp_creq_quit(ceq_u);;
+  }
+  else if ( 0 != sas_i ) {
+    _cttp_creq_fail(ceq_u, uv_strerror(sas_i));
+  }
+  else {
+    // XX traverse struct a la _ames_czar_cb
+    ceq_u->ipf_w = ntohl(((struct sockaddr_in *)aif_u->ai_addr)->sin_addr.s_addr);
+    ceq_u->ipf_c = _cttp_creq_ip(ceq_u->ipf_w);
+
+    ceq_u->sat_e = u3_csat_conn;
+    _cttp_creq_connect(ceq_u);
+  }
+
+  c3_free(adr_u);
+  uv_freeaddrinfo(aif_u);
+}
+
+/* _cttp_creq_resolve(): resolve hostname to IP address
+*/
+static void
+_cttp_creq_resolve(u3_creq* ceq_u)
+{
+  u3_assert(u3_csat_addr == ceq_u->sat_e);
+  u3_assert(ceq_u->hot_c);
+
+  uv_getaddrinfo_t* adr_u = c3_malloc(sizeof(*adr_u));
+  adr_u->data = ceq_u;
+
+  struct addrinfo hin_u;
+  memset(&hin_u, 0, sizeof(struct addrinfo));
+
+  hin_u.ai_family = PF_INET;
+  hin_u.ai_socktype = SOCK_STREAM;
+  hin_u.ai_protocol = IPPROTO_TCP;
+
+  // XX is this necessary?
+  c3_c* por_c = ceq_u->por_c ? ceq_u->por_c :
+                ( c3y == ceq_u->sec ) ? "443" : "80";
+
+  c3_i sas_i;
+
+  if ( 0 != (sas_i = uv_getaddrinfo(u3L, adr_u, _cttp_creq_resolve_cb,
+                                         ceq_u->hot_c, por_c, &hin_u)) ) {
+    _cttp_creq_fail(ceq_u, uv_strerror(sas_i));
+  }
+}
+
+/* _cttp_creq_start(): start a request
+*/
+static void
+_cttp_creq_start(u3_creq* ceq_u)
+{
+  if ( ceq_u->ipf_c ) {
+    ceq_u->sat_e = u3_csat_conn;
+    _cttp_creq_connect(ceq_u);
+  } else {
+    ceq_u->sat_e = u3_csat_addr;
+    _cttp_creq_resolve(ceq_u);
+  }
+}
+
+/* _cttp_init_tls: initialize OpenSSL context
+*/
+static SSL_CTX*
+_cttp_init_tls(void)
+{
+  // XX require 1.1.0 and use TLS_client_method()
+  SSL_CTX* tls_u = SSL_CTX_new(SSLv23_client_method());
+  // XX use SSL_CTX_set_max_proto_version() and SSL_CTX_set_min_proto_version()
+  SSL_CTX_set_options(tls_u, SSL_OP_NO_SSLv2 |
+                             SSL_OP_NO_SSLv3 |
+                             // SSL_OP_NO_TLSv1 | // XX test
+                             SSL_OP_NO_COMPRESSION);
+
+  u3K.ssl_x509_f(SSL_CTX_get_cert_store(tls_u));
+  SSL_CTX_set_verify(tls_u, SSL_VERIFY_PEER, 0);
+  SSL_CTX_set_session_cache_mode(tls_u, SSL_SESS_CACHE_OFF);
+  SSL_CTX_set_cipher_list(tls_u,
+                          "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:"
+                          "ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:"
+                          "RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS");
+
+  return tls_u;
+}
+
+/* _cttp_ef_http_client(): send an %http-client (outgoing request) to cttp.
+*/
+static c3_o
+_cttp_ef_http_client(u3_cttp* ctp_u, u3_noun tag, u3_noun dat)
+{
+  u3_creq* ceq_u;
+  c3_o     ret_o;
+
+  if ( c3y == u3r_sing_c("request", tag) ) {
+    u3_noun num, req;
+    c3_l  num_l;
+
+    if (  (c3n == u3r_cell(dat, &num, &req))
+       || (c3n == u3r_safe_word(num, &num_l)) )
+    {
+      u3l_log("cttp: strange request");
+      ret_o = c3n;
+    }
+    else if ( (ceq_u = _cttp_creq_new(ctp_u, num_l, u3k(req))) ) {
+      _cttp_creq_start(ceq_u);
+      ret_o = c3y;
+    }
+    else {
+      ret_o = c3n;
+    }
+  }
+  else if ( c3y == u3r_sing_c("cancel-request", tag) ) {
+    c3_l num_l;
+
+    if ( c3n == u3r_safe_word(dat, &num_l) ) {
+      u3l_log("cttp: strange cancel-request");
+      ret_o = c3n;
+    }
+    else if ( (ceq_u =_cttp_creq_find(ctp_u, num_l)) ) {
+      _cttp_creq_quit(ceq_u);
+      ret_o = c3y;
+    }
+    else {
+      //  accepted whether or not request exists
+      //
+      ret_o = c3y;
+    }
+  }
+// UIP-125
+
+  else if ( c3y == u3r_sing_c("websocket-handshake", tag) ) {
+    u3_noun wid, url;
+    c3_l    wid_l;
+
+    if (  (c3n == u3r_cell(dat, &wid, &url))
+       || (c3n == u3r_safe_word(wid, &wid_l)) )
+    {
+      u3l_log("cttp: strange websocket-handshake");
+      ret_o = c3n;
+    }
+    else {
+      ret_o = _cttp_ws_start(ctp_u, wid_l, u3k(url));
+    }
+  }
+  else if ( c3y == u3r_sing_c("websocket-response", tag) ) {
+    u3_noun wid, evt;
+    c3_l    wid_l;
+
+    if (  (c3n == u3r_cell(dat, &wid, &evt))
+       || (c3n == u3r_safe_word(wid, &wid_l)) )
+    {
+      u3l_log("cttp: strange websocket-response");
+      ret_o = c3n;
+    }
+    else {
+      u3_cws* cws_u = _cttp_ws_find(ctp_u, wid_l);
+
+      u3_noun typ = u3h(evt);
+
+      if ( 0 == cws_u ) {
+        if ( c3y == u3r_sing_c("message", typ) ) {
+          u3l_log("cttp: unknown websocket id %u", wid_l);
+          ret_o = c3n;
+        }
+        else {
+          ret_o = c3y;
+        }
+      }
+      else {
+        if ( c3y == u3r_sing_c("message", typ) ) {
+          ret_o = _cttp_ws_send_message(cws_u, u3k(u3t(evt)));
+        }
+        else if ( c3y == u3r_sing_c("disconnect", typ) ) {
+          _cttp_ws_queue_close(cws_u);
+          ret_o = c3y;
+        }
+        else if ( c3y == u3r_sing_c("accept", typ) ) {
+          ret_o = c3y;
+        }
+        else {
+          u3l_log("cttp: unexpected websocket response");
+          ret_o = c3n;
+        }
+      }
+    }
+  }
+
+// 
+
+  
+  else {
+    u3l_log("cttp: strange effect (unknown type)");
+    ret_o = c3n;
+  }
+
+  u3z(tag); u3z(dat);
+  return ret_o;
+}
+
+/* _cttp_io_talk(): notify that we're live.
+*/
+static void
+_cttp_io_talk(u3_auto* car_u)
+{
+  u3_cttp* ctp_u = (u3_cttp*)car_u;
+
+  //  XX remove u3A->sen
+  //
+  u3_noun wir = u3nt(u3i_string("http-client"),
+                     u3dc("scot", c3__uv, ctp_u->sev_l),
+                     u3_nul);
+  u3_noun cad = u3nc(c3__born, u3_nul);
+
+  u3_auto_plan(car_u, u3_ovum_init(0, c3__i, wir, cad));
+}
+
+/* _cttp_io_kick(): apply effects
+*/
+static c3_o
+_cttp_io_kick(u3_auto* car_u, u3_noun wir, u3_noun cad)
+{
+  u3_cttp* ctp_u = (u3_cttp*)car_u;
+
+  u3_noun tag, dat, i_wir;
+  c3_o ret_o;
+
+  if (  (c3n == u3r_cell(wir, &i_wir, 0))
+     || (c3n == u3r_cell(cad, &tag, &dat))
+     || (c3n == u3r_sing_c("http-client", i_wir)) )
+  {
+    ret_o = c3n;
+  }
+  else {
+    ret_o = _cttp_ef_http_client(ctp_u, u3k(tag), u3k(dat));
+  }
+
+  u3z(wir); u3z(cad);
+  return ret_o;
+}
+
+/* _cttp_io_exit_cb(): free cttp.
+*/
+static void
+_cttp_io_exit_cb(uv_handle_t* han_u)
+{
+  u3_cttp* ctp_u = han_u->data;
+
+  SSL_CTX_free(ctp_u->tls_u);
+  c3_free(ctp_u);
+}
+
+/* _cttp_io_exit(): shut down cttp.
+*/
+static void
+_cttp_io_exit(u3_auto* car_u)
+{
+  u3_cttp* ctp_u = (u3_cttp*)car_u;
+
+  //  close unused handle to free [ctp_u] after h2o is done
+  //
+  uv_close((uv_handle_t*)&ctp_u->nop_u, _cttp_io_exit_cb);
+
+  // UIP-125
+  {
+    u3_cws* cws_u = ctp_u->cws_u;
+
+    while ( cws_u ) {
+      u3_cws* nex_u = cws_u->nex_u;
+      _cttp_ws_close(cws_u, c3n);
+      cws_u = nex_u;
+    }
+  }
+  // 
+  //  cancel requests
+  //
+  {
+    u3_creq* ceq_u = ctp_u->ceq_u;
+
+    while ( ceq_u ) {
+      _cttp_creq_quit(ceq_u);
+      ceq_u = ceq_u->nex_u;
+    }
+  }
+
+  h2o_timeout_dispose(u3L, &ctp_u->tim_u);
+}
+
+/* u3_cttp_io_init(): initialize http client I/O.
+*/
+u3_auto*
+u3_cttp_io_init(u3_pier* pir_u)
+{
+  u3_cttp* ctp_u = c3_calloc(sizeof(*ctp_u));
+
+  //  link to event loop
+  //
+  ctp_u->ctx_u.loop = u3L;
+
+  //  unused handle for async close
+  //
+  uv_async_init(u3L, &ctp_u->nop_u, 0);
+  ctp_u->nop_u.data = ctp_u;
+
+  //  link to initialized request timeout
+  //
+  h2o_timeout_init(u3L, &ctp_u->tim_u, 300 * 1000);
+  ctp_u->ctx_u.io_timeout = &ctp_u->tim_u;
+  // UIP-125
+  ctp_u->ctx_u.websocket_timeout = &ctp_u->tim_u;
+  //
+
+  //  link to initialized tls ctx
+  //
+  ctp_u->tls_u = _cttp_init_tls();
+  ctp_u->ctx_u.ssl_ctx = ctp_u->tls_u;
+
+  u3_auto* car_u = &ctp_u->car_u;
+  car_u->nam_m = c3__cttp;
+
+  //  XX set in done_cb for %born
+  //
+  car_u->liv_o = c3y;
+  car_u->io.talk_f = _cttp_io_talk;
+  car_u->io.kick_f = _cttp_io_kick;
+  car_u->io.exit_f = _cttp_io_exit;
+  //  XX retry up to N?
+  //
+  // car_u->ev.bail_f = ...;
+
+  {
+    u3_noun now;
+    struct timeval tim_u;
+    gettimeofday(&tim_u, 0);
+
+    now = u3m_time_in_tv(&tim_u);
+    ctp_u->sev_l = u3r_mug(now);
+    u3z(now);
+  }
+
+  return car_u;
+}
+// UIP-125
+// 
+/* websocket session bookkeeping helpers
+*/
+
+
+static void
+_cttp_hed_push(u3_hhed** list_u, const c3_c* nam_c, const c3_c* val_c)
+{
+  u3_hhed* hed_u = _cttp_hed_new(u3i_string(nam_c), u3i_string(val_c));
+  hed_u->nex_u = *list_u;
+  *list_u = hed_u;
+}
 static void
 _cttp_ws_close(u3_cws* cws_u, c3_o send_event)
 {
@@ -1480,649 +2152,4 @@ _cttp_ws_start(u3_cttp* ctp_u, c3_l wid_l, u3_atom url)
   u3z(url);
   return c3y;
 }
-
-
-/* _cttp_creq_quit(): cancel a u3_creq
-*/
-static void
-_cttp_creq_quit(u3_creq* ceq_u)
-{
-  if ( ceq_u->wsu_u ) {
-    _cttp_ws_fail_handshake(ceq_u, "cancel");
-    _cttp_creq_free(ceq_u);
-    return;
-  }
-
-  if ( u3_csat_addr == ceq_u->sat_e ) {
-    ceq_u->sat_e = u3_csat_quit;
-    return;  // wait to be called again on address resolution
-  }
-
-  if ( ceq_u->cli_u ) {
-    h2o_http1client_cancel(ceq_u->cli_u);
-  }
-
-  _cttp_creq_free(ceq_u);
-}
-
-static void
-_cttp_http_client_receive(u3_creq* ceq_u, c3_w sas_w, u3_noun mes, u3_noun uct)
-{
-  u3_cttp* ctp_u = ceq_u->ctp_u;
-
-  //  XX inject partial responses as separate events
-  //
-  u3_noun wir = u3nt(u3i_string("http-client"),
-                     u3dc("scot", c3__uv, ctp_u->sev_l),
-                     u3_nul);
-  u3_noun cad = u3nt(u3i_string("receive"),
-                    ceq_u->num_l,
-                    u3nq(u3i_string("start"), u3nc(sas_w, mes), uct, c3y));
-
-  u3_auto_plan(&ctp_u->car_u, u3_ovum_init(0, c3__i, wir, cad));
-}
-
-/* _cttp_creq_fail(): dispatch error response
-*/
-static void
-_cttp_creq_fail(u3_creq* ceq_u, const c3_c* err_c)
-{
-  if ( ceq_u->wsu_u ) {
-    _cttp_ws_fail_handshake(ceq_u, err_c ? err_c : "handshake failed");
-    _cttp_creq_free(ceq_u);
-    return;
-  }
-
-  // XX anything other than a 504?
-  c3_w cod_w = 504;
-
-  u3l_log("http: fail (%d, %d): %s", ceq_u->num_l, cod_w, err_c);
-
-  // XX include err_c as response body?
-  _cttp_http_client_receive(ceq_u, cod_w, u3_nul, u3_nul);
-  _cttp_creq_free(ceq_u);
-}
-
-/* _cttp_creq_respond(): dispatch response
-*/
-static void
-_cttp_creq_respond(u3_creq* ceq_u)
-{
-  if ( ceq_u->wsu_u ) {
-    _cttp_ws_fail_handshake(ceq_u, "handshake rejected");
-    _cttp_creq_free(ceq_u);
-    return;
-  }
-
-  u3_cres* res_u = ceq_u->res_u;
-
-  _cttp_http_client_receive(ceq_u, res_u->sas_w, res_u->hed,
-             ( !res_u->bod_u ) ? u3_nul :
-             u3nc(u3_nul, _cttp_bods_to_octs(res_u->bod_u)));
-
-  _cttp_creq_free(ceq_u);
-}
-
-// XX research: may be called with closed client?
-/* _cttp_creq_on_body(): cb invoked by h2o upon receiving a response body
-*/
-static c3_i
-_cttp_creq_on_body(h2o_http1client_t* cli_u, const c3_c* err_c)
-{
-  u3_creq* ceq_u = (u3_creq *)cli_u->data;
-
-  if ( ceq_u->wsu_u ) {
-    _cttp_ws_fail_handshake(ceq_u, err_c ? err_c : "unexpected body");
-    _cttp_creq_free(ceq_u);
-    return -1;
-  }
-
-  if ( 0 != err_c && h2o_http1client_error_is_eos != err_c ) {
-    _cttp_creq_fail(ceq_u, err_c);
-    return -1;
-  }
-
-  h2o_buffer_t* buf_u = cli_u->sock->input;
-
-  if ( buf_u->size ) {
-    _cttp_cres_fire_body(ceq_u->res_u,
-                         _cttp_bod_new(buf_u->size, buf_u->bytes));
-    h2o_buffer_consume(&cli_u->sock->input, buf_u->size);
-  }
-
-  // We're using the end of stream thing here to queue event to urbit. we'll
-  // need to separate this into our own timer for partial progress sends.
-  if ( h2o_http1client_error_is_eos == err_c ) {
-    _cttp_creq_respond(ceq_u);
-  }
-
-  return 0;
-}
-
-/* _cttp_creq_on_head(): cb invoked by h2o upon receiving response headers
-*/
-static h2o_http1client_body_cb
-_cttp_creq_on_head(h2o_http1client_t* cli_u, const c3_c* err_c, c3_i ver_i,
-                   c3_i sas_i, h2o_iovec_t sas_u, h2o_header_t* hed_u,
-                   size_t hed_t, c3_i len_i)
-{
-  u3_creq* ceq_u = (u3_creq *)cli_u->data;
-
-  if ( ceq_u->wsu_u ) {
-    u3_cws* cws_u = ceq_u->wsu_u;
-
-    if ( 0 != err_c && h2o_http1client_error_is_eos != err_c ) {
-      _cttp_ws_fail_handshake(ceq_u, err_c);
-      _cttp_creq_free(ceq_u);
-      return 0;
-    }
-
-    if ( 101 != sas_i ) {
-      _cttp_ws_fail_handshake(ceq_u, "status");
-      _cttp_creq_free(ceq_u);
-      return 0;
-    }
-
-    for ( size_t i = 0; i < hed_t; i++ ) {
-      h2o_header_t* hdr = &hed_u[i];
-      u3l_log("cttp: ws hdr %.*s: %.*s",
-              (int)hdr->name->len, hdr->name->base,
-              (int)hdr->value.len, hdr->value.base);
-    }
-
-    h2o_iovec_t* acc_u = _cttp_find_header(hed_u, hed_t, "sec-websocket-accept");
-    c3_c exp_c[29];
-
-    if ( 0 == acc_u ) {
-      _cttp_ws_fail_handshake(ceq_u, "missing accept");
-      _cttp_creq_free(ceq_u);
-      return 0;
-    }
-
-    _cttp_ws_compute_accept(cws_u->key_c, exp_c);
-
-    if ( acc_u->len != 28 || 0 != memcmp(acc_u->base, exp_c, 28) ) {
-      _cttp_ws_fail_handshake(ceq_u, "bad accept");
-      _cttp_creq_free(ceq_u);
-      return 0;
-    }
-
-    h2o_socket_t* sok_u = h2o_http1client_steal_socket(cli_u);
-
-    if ( 0 == sok_u ) {
-      _cttp_ws_fail_handshake(ceq_u, "steal failure");
-      _cttp_creq_free(ceq_u);
-      return 0;
-    }
-
-    ceq_u->wsu_u = 0;
-    ceq_u->cli_u = 0;
-    cws_u->ceq_u = 0;
-
-    if ( sok_u->input && sok_u->input->size ) {
-      u3l_log("cttp: ws draining leftover handshake wid=%u size=%zu",
-              cws_u->wid_l,
-              (size_t)sok_u->input->size);
-      h2o_buffer_consume(&sok_u->input, sok_u->input->size);
-    }
-
-    _cttp_creq_free(ceq_u);
-
-    memset(&cws_u->wcb_u, 0, sizeof(cws_u->wcb_u));
-    cws_u->wcb_u.recv_callback = _cttp_ws_recv_cb;
-    cws_u->wcb_u.send_callback = _cttp_ws_send_cb;
-    cws_u->wcb_u.genmask_callback = _cttp_ws_genmask_cb;
-    cws_u->wcb_u.on_msg_recv_callback = _cttp_ws_msg_cb;
-
-    wslay_event_context_client_init(&cws_u->wsl_w, &cws_u->wcb_u, cws_u);
-
-    cws_u->sok_u = sok_u;
-    sok_u->data = cws_u;
-
-    cws_u->sat_e = u3_cws_open;
-
-    _cttp_ws_plan_event(cws_u, u3nc(u3i_string("accept"), u3_nul));
-    _cttp_ws_proceed(cws_u);
-    return 0;
-  }
-
-  if ( 0 != err_c && h2o_http1client_error_is_eos != err_c ) {
-    _cttp_creq_fail(ceq_u, err_c);
-    return 0;
-  }
-
-  _cttp_cres_new(ceq_u, (c3_w)sas_i);
-  ceq_u->res_u->hed = _cttp_heds_to_noun(hed_u, hed_t);
-
-  if ( h2o_http1client_error_is_eos == err_c ) {
-    _cttp_creq_respond(ceq_u);
-    return 0;
-  }
-
-  return _cttp_creq_on_body;
-}
-
-/* _cttp_creq_on_connect(): cb invoked by h2o upon successful connection
-*/
-static h2o_http1client_head_cb
-_cttp_creq_on_connect(h2o_http1client_t* cli_u, const c3_c* err_c,
-                      h2o_iovec_t** vec_u, size_t* vec_i, c3_i* hed_i)
-{
-  u3_creq* ceq_u = (u3_creq *)cli_u->data;
-
-  if ( 0 != err_c ) {
-    //  if synchronously connecting, caller will cleanup
-    //
-    if ( u3_csat_conn == ceq_u->sat_e ) {
-      ceq_u->sat_e = u3_csat_quit;
-    }
-    else {
-      u3_assert( u3_csat_ripe == ceq_u->sat_e );
-      _cttp_creq_fail(ceq_u, err_c);
-    }
-    return 0;
-  }
-
-  //  serialize request (populate rub_u)
-  //
-  _cttp_creq_fire(ceq_u);
-
-  {
-    c3_w len_w;
-    ceq_u->vec_u = _cttp_bods_to_vec(ceq_u->rub_u, &len_w);
-
-    *vec_i = len_w;
-    *vec_u = ceq_u->vec_u;
-    *hed_i = (0 == strcmp(ceq_u->met_c, "HEAD"));
-  }
-
-  return _cttp_creq_on_head;
-}
-
-/* _cttp_creq_connect(): establish connection
-*/
-static void
-_cttp_creq_connect(u3_creq* ceq_u)
-{
-  u3_assert( u3_csat_conn == ceq_u->sat_e );
-  u3_assert( ceq_u->ipf_c );
-
-  //  connect by ip/port, avoiding synchronous getaddrinfo()
-  //
-  {
-    h2o_iovec_t ipf_u = h2o_iovec_init(ceq_u->ipf_c, strlen(ceq_u->ipf_c));
-    c3_t        tls_t = ( c3y == ceq_u->sec );
-    c3_s        por_s = ( ceq_u->por_s )
-                        ? ceq_u->por_s
-                        : ( tls_t ) ? 443 : 80;
-
-    h2o_http1client_connect(&ceq_u->cli_u, ceq_u, &ceq_u->ctp_u->ctx_u,
-                            ipf_u, por_s, tls_t, _cttp_creq_on_connect);
-  }
-
-  //  connect() failed, cb invoked synchronously
-  //
-  if ( u3_csat_conn != ceq_u->sat_e ) {
-    u3_assert( u3_csat_quit == ceq_u->sat_e );
-    //  only one such failure case
-    //
-    _cttp_creq_fail(ceq_u, "socket create error");
-  }
-  else {
-    ceq_u->sat_e = u3_csat_ripe;
-
-    //  fixup hostname for TLS handshake
-    //
-    //    must be synchronous, after successfull connect() call
-    //
-    if ( ceq_u->hot_c && (c3y == ceq_u->sec) ) {
-      u3_assert( ceq_u->cli_u );
-      c3_free(ceq_u->cli_u->ssl.server_name);
-      ceq_u->cli_u->ssl.server_name = strdup(ceq_u->hot_c);
-    }
-  }
-}
-
-/* _cttp_creq_resolve_cb(): cb upon IP address resolution
-*/
-static void
-_cttp_creq_resolve_cb(uv_getaddrinfo_t* adr_u,
-                      c3_i              sas_i,
-                      struct addrinfo*  aif_u)
-{
-  u3_creq* ceq_u = adr_u->data;
-
-  if ( u3_csat_quit == ceq_u->sat_e ) {
-    _cttp_creq_quit(ceq_u);;
-  }
-  else if ( 0 != sas_i ) {
-    _cttp_creq_fail(ceq_u, uv_strerror(sas_i));
-  }
-  else {
-    // XX traverse struct a la _ames_czar_cb
-    ceq_u->ipf_w = ntohl(((struct sockaddr_in *)aif_u->ai_addr)->sin_addr.s_addr);
-    ceq_u->ipf_c = _cttp_creq_ip(ceq_u->ipf_w);
-
-    ceq_u->sat_e = u3_csat_conn;
-    _cttp_creq_connect(ceq_u);
-  }
-
-  c3_free(adr_u);
-  uv_freeaddrinfo(aif_u);
-}
-
-/* _cttp_creq_resolve(): resolve hostname to IP address
-*/
-static void
-_cttp_creq_resolve(u3_creq* ceq_u)
-{
-  u3_assert(u3_csat_addr == ceq_u->sat_e);
-  u3_assert(ceq_u->hot_c);
-
-  uv_getaddrinfo_t* adr_u = c3_malloc(sizeof(*adr_u));
-  adr_u->data = ceq_u;
-
-  struct addrinfo hin_u;
-  memset(&hin_u, 0, sizeof(struct addrinfo));
-
-  hin_u.ai_family = PF_INET;
-  hin_u.ai_socktype = SOCK_STREAM;
-  hin_u.ai_protocol = IPPROTO_TCP;
-
-  // XX is this necessary?
-  c3_c* por_c = ceq_u->por_c ? ceq_u->por_c :
-                ( c3y == ceq_u->sec ) ? "443" : "80";
-
-  c3_i sas_i;
-
-  if ( 0 != (sas_i = uv_getaddrinfo(u3L, adr_u, _cttp_creq_resolve_cb,
-                                         ceq_u->hot_c, por_c, &hin_u)) ) {
-    _cttp_creq_fail(ceq_u, uv_strerror(sas_i));
-  }
-}
-
-/* _cttp_creq_start(): start a request
-*/
-static void
-_cttp_creq_start(u3_creq* ceq_u)
-{
-  if ( ceq_u->ipf_c ) {
-    ceq_u->sat_e = u3_csat_conn;
-    _cttp_creq_connect(ceq_u);
-  } else {
-    ceq_u->sat_e = u3_csat_addr;
-    _cttp_creq_resolve(ceq_u);
-  }
-}
-
-/* _cttp_init_tls: initialize OpenSSL context
-*/
-static SSL_CTX*
-_cttp_init_tls(void)
-{
-  // XX require 1.1.0 and use TLS_client_method()
-  SSL_CTX* tls_u = SSL_CTX_new(SSLv23_client_method());
-  // XX use SSL_CTX_set_max_proto_version() and SSL_CTX_set_min_proto_version()
-  SSL_CTX_set_options(tls_u, SSL_OP_NO_SSLv2 |
-                             SSL_OP_NO_SSLv3 |
-                             // SSL_OP_NO_TLSv1 | // XX test
-                             SSL_OP_NO_COMPRESSION);
-
-  u3K.ssl_x509_f(SSL_CTX_get_cert_store(tls_u));
-  SSL_CTX_set_verify(tls_u, SSL_VERIFY_PEER, 0);
-  SSL_CTX_set_session_cache_mode(tls_u, SSL_SESS_CACHE_OFF);
-  SSL_CTX_set_cipher_list(tls_u,
-                          "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:"
-                          "ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:"
-                          "RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS");
-
-  return tls_u;
-}
-
-/* _cttp_ef_http_client(): send an %http-client (outgoing request) to cttp.
-*/
-static c3_o
-_cttp_ef_http_client(u3_cttp* ctp_u, u3_noun tag, u3_noun dat)
-{
-  u3_creq* ceq_u;
-  c3_o     ret_o;
-
-  if ( c3y == u3r_sing_c("request", tag) ) {
-    u3_noun num, req;
-    c3_l  num_l;
-
-    if (  (c3n == u3r_cell(dat, &num, &req))
-       || (c3n == u3r_safe_word(num, &num_l)) )
-    {
-      u3l_log("cttp: strange request");
-      ret_o = c3n;
-    }
-    else if ( (ceq_u = _cttp_creq_new(ctp_u, num_l, u3k(req))) ) {
-      _cttp_creq_start(ceq_u);
-      ret_o = c3y;
-    }
-    else {
-      ret_o = c3n;
-    }
-  }
-  else if ( c3y == u3r_sing_c("cancel-request", tag) ) {
-    c3_l num_l;
-
-    if ( c3n == u3r_safe_word(dat, &num_l) ) {
-      u3l_log("cttp: strange cancel-request");
-      ret_o = c3n;
-    }
-    else if ( (ceq_u =_cttp_creq_find(ctp_u, num_l)) ) {
-      _cttp_creq_quit(ceq_u);
-      ret_o = c3y;
-    }
-    else {
-      //  accepted whether or not request exists
-      //
-      ret_o = c3y;
-    }
-  }
-  else if ( c3y == u3r_sing_c("websocket-handshake", tag) ) {
-    u3_noun wid, url;
-    c3_l    wid_l;
-
-    if (  (c3n == u3r_cell(dat, &wid, &url))
-       || (c3n == u3r_safe_word(wid, &wid_l)) )
-    {
-      u3l_log("cttp: strange websocket-handshake");
-      ret_o = c3n;
-    }
-    else {
-      ret_o = _cttp_ws_start(ctp_u, wid_l, u3k(url));
-    }
-  }
-  else if ( c3y == u3r_sing_c("websocket-response", tag) ) {
-    u3_noun wid, evt;
-    c3_l    wid_l;
-
-    if (  (c3n == u3r_cell(dat, &wid, &evt))
-       || (c3n == u3r_safe_word(wid, &wid_l)) )
-    {
-      u3l_log("cttp: strange websocket-response");
-      ret_o = c3n;
-    }
-    else {
-      u3_cws* cws_u = _cttp_ws_find(ctp_u, wid_l);
-
-      u3_noun typ = u3h(evt);
-
-      if ( 0 == cws_u ) {
-        if ( c3y == u3r_sing_c("message", typ) ) {
-          u3l_log("cttp: unknown websocket id %u", wid_l);
-          ret_o = c3n;
-        }
-        else {
-          ret_o = c3y;
-        }
-      }
-      else {
-        if ( c3y == u3r_sing_c("message", typ) ) {
-          ret_o = _cttp_ws_send_message(cws_u, u3k(u3t(evt)));
-        }
-        else if ( c3y == u3r_sing_c("disconnect", typ) ) {
-          _cttp_ws_queue_close(cws_u);
-          ret_o = c3y;
-        }
-        else if ( c3y == u3r_sing_c("accept", typ) ) {
-          ret_o = c3y;
-        }
-        else {
-          u3l_log("cttp: unexpected websocket response");
-          ret_o = c3n;
-        }
-      }
-    }
-  }
-  else {
-    u3l_log("cttp: strange effect (unknown type)");
-    ret_o = c3n;
-  }
-
-  u3z(tag); u3z(dat);
-  return ret_o;
-}
-
-/* _cttp_io_talk(): notify that we're live.
-*/
-static void
-_cttp_io_talk(u3_auto* car_u)
-{
-  u3_cttp* ctp_u = (u3_cttp*)car_u;
-
-  //  XX remove u3A->sen
-  //
-  u3_noun wir = u3nt(u3i_string("http-client"),
-                     u3dc("scot", c3__uv, ctp_u->sev_l),
-                     u3_nul);
-  u3_noun cad = u3nc(c3__born, u3_nul);
-
-  u3_auto_plan(car_u, u3_ovum_init(0, c3__i, wir, cad));
-}
-
-/* _cttp_io_kick(): apply effects
-*/
-static c3_o
-_cttp_io_kick(u3_auto* car_u, u3_noun wir, u3_noun cad)
-{
-  u3_cttp* ctp_u = (u3_cttp*)car_u;
-
-  u3_noun tag, dat, i_wir;
-  c3_o ret_o;
-
-  if (  (c3n == u3r_cell(wir, &i_wir, 0))
-     || (c3n == u3r_cell(cad, &tag, &dat))
-     || (c3n == u3r_sing_c("http-client", i_wir)) )
-  {
-    ret_o = c3n;
-  }
-  else {
-    ret_o = _cttp_ef_http_client(ctp_u, u3k(tag), u3k(dat));
-  }
-
-  u3z(wir); u3z(cad);
-  return ret_o;
-}
-
-/* _cttp_io_exit_cb(): free cttp.
-*/
-static void
-_cttp_io_exit_cb(uv_handle_t* han_u)
-{
-  u3_cttp* ctp_u = han_u->data;
-
-  SSL_CTX_free(ctp_u->tls_u);
-  c3_free(ctp_u);
-}
-
-/* _cttp_io_exit(): shut down cttp.
-*/
-static void
-_cttp_io_exit(u3_auto* car_u)
-{
-  u3_cttp* ctp_u = (u3_cttp*)car_u;
-
-  //  close unused handle to free [ctp_u] after h2o is done
-  //
-  uv_close((uv_handle_t*)&ctp_u->nop_u, _cttp_io_exit_cb);
-
-  {
-    u3_cws* cws_u = ctp_u->cws_u;
-
-    while ( cws_u ) {
-      u3_cws* nex_u = cws_u->nex_u;
-      _cttp_ws_close(cws_u, c3n);
-      cws_u = nex_u;
-    }
-  }
-
-  //  cancel requests
-  //
-  {
-    u3_creq* ceq_u = ctp_u->ceq_u;
-
-    while ( ceq_u ) {
-      _cttp_creq_quit(ceq_u);
-      ceq_u = ceq_u->nex_u;
-    }
-  }
-
-  h2o_timeout_dispose(u3L, &ctp_u->tim_u);
-}
-
-/* u3_cttp_io_init(): initialize http client I/O.
-*/
-u3_auto*
-u3_cttp_io_init(u3_pier* pir_u)
-{
-  u3_cttp* ctp_u = c3_calloc(sizeof(*ctp_u));
-
-  //  link to event loop
-  //
-  ctp_u->ctx_u.loop = u3L;
-
-  //  unused handle for async close
-  //
-  uv_async_init(u3L, &ctp_u->nop_u, 0);
-  ctp_u->nop_u.data = ctp_u;
-
-  //  link to initialized request timeout
-  //
-  h2o_timeout_init(u3L, &ctp_u->tim_u, 300 * 1000);
-  ctp_u->ctx_u.io_timeout = &ctp_u->tim_u;
-  ctp_u->ctx_u.websocket_timeout = &ctp_u->tim_u;
-
-  //  link to initialized tls ctx
-  //
-  ctp_u->tls_u = _cttp_init_tls();
-  ctp_u->ctx_u.ssl_ctx = ctp_u->tls_u;
-
-  u3_auto* car_u = &ctp_u->car_u;
-  car_u->nam_m = c3__cttp;
-
-  //  XX set in done_cb for %born
-  //
-  car_u->liv_o = c3y;
-  car_u->io.talk_f = _cttp_io_talk;
-  car_u->io.kick_f = _cttp_io_kick;
-  car_u->io.exit_f = _cttp_io_exit;
-  //  XX retry up to N?
-  //
-  // car_u->ev.bail_f = ...;
-
-  {
-    u3_noun now;
-    struct timeval tim_u;
-    gettimeofday(&tim_u, 0);
-
-    now = u3_time_in_tv(&tim_u);
-    ctp_u->sev_l = u3r_mug(now);
-    u3z(now);
-  }
-
-  return car_u;
-}
+// 
