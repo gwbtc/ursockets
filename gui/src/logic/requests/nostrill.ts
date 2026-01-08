@@ -1,6 +1,13 @@
 import type Urbit from "urbit-api";
 import type { Cursor, Gate, PostID, PostPerms } from "@/types/trill";
-import type { Ship } from "@/types/urbit";
+import type {
+  S3Config,
+  SettingsRes,
+  Ship,
+  StorageConfigurationRes,
+  StorageCredentialsRes,
+  UrbitContacts,
+} from "@/types/urbit";
 import { FeedPostCount } from "../constants";
 import type {
   PeekFeedRes,
@@ -134,6 +141,34 @@ export default class IO {
     // console.log("hark all skeins", res3);
     // console.log("hark all latest", res4);
     return res;
+  }
+
+  async scryContacts(): AsyncRes<UrbitContacts> {
+    const path = "/all";
+    const res = await this.scry(path, "contacts");
+    return res;
+  }
+  async scrySettings(): AsyncRes<SettingsRes> {
+    const path = "/all";
+    const res = await this.scry(path, "settings");
+    return res;
+  }
+  async scryStorage(): AsyncRes<S3Config> {
+    const path = "/credentials";
+    const path2 = "/configuration";
+    const res = await this.scry(path, "storage");
+    const res2 = await this.scry(path2, "storage");
+    if ("error" in res) return res;
+    if ("error" in res2) return res2;
+    const creds: StorageCredentialsRes = res.ok;
+    if (!creds["storage-update"].credentials.endpoint)
+      return { error: "no credentials" };
+    const conf: StorageConfigurationRes = res2.ok;
+    const ret = {
+      ...creds["storage-update"].credentials,
+      ...conf["storage-update"].configuration,
+    };
+    return { ok: ret };
   }
 
   // pokes

@@ -12,6 +12,7 @@ export default function ({
   noClickOnName,
   profile,
   picOnly = false,
+  customClass,
 }: {
   user: UserType;
   size: number;
@@ -19,6 +20,7 @@ export default function ({
   noClickOnName?: boolean;
   profile?: UserProfile;
   picOnly?: boolean;
+  customClass?: string;
 }) {
   const { setModal } = useLocalState((s) => ({ setModal: s.setModal }));
   // TODO revisit this when %whom updates
@@ -57,7 +59,7 @@ export default function ({
     </div>
   );
   return (
-    <div className="ship-avatar">
+    <div className={customClass ? customClass : "ship-avatar"}>
       {avatar}
       {name}
     </div>

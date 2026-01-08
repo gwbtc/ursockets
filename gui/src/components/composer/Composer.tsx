@@ -8,13 +8,17 @@ import toast from "react-hot-toast";
 import Icon from "@/components/Icon";
 import { wait } from "@/logic/utils";
 import type { UserType } from "@/types/nostrill";
+import InputBox from "./InputBox";
 
 function Composer({ isAnon }: { isAnon?: boolean }) {
-  const { api, composerData, setComposerData } = useLocalState((s) => ({
-    api: s.api,
-    composerData: s.composerData,
-    setComposerData: s.setComposerData,
-  }));
+  const { api, composerData, setComposerData, contacts, profiles } =
+    useLocalState((s) => ({
+      api: s.api,
+      composerData: s.composerData,
+      setComposerData: s.setComposerData,
+      contacts: s.contacts,
+      profiles: s.profiles,
+    }));
   const [input, setInput] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setLoading] = useState(false);
@@ -38,10 +42,6 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
     }
   }, [composerData]);
 
-  const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
-    const val = e.currentTarget.value;
-    setInput(val);
-  };
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && e.ctrlKey) {
       e.preventDefault();
@@ -97,7 +97,7 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
       setIsExpanded(false);
     }
   }
-  const placeHolder =
+  const placeholder =
     composerData?.type === "reply"
       ? "Write your reply..."
       : composerData?.type === "quote"
@@ -164,18 +164,13 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
         )}
 
         <div className="composer-input-row">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onInput={handleInput}
-            onKeyDown={handleKeyDown}
-            onFocus={() => setIsExpanded(true)}
-            placeholder={placeHolder}
-            rows={
-              input.split("\n").length > 1
-                ? Math.min(input.split("\n").length, 5)
-                : 1
-            }
+          <InputBox
+            input={input}
+            setInput={setInput}
+            setIsExpanded={setIsExpanded}
+            contacts={contacts}
+            profiles={profiles}
+            placeholder={placeholder}
           />
           {isLoading ? (
             <img width="40" src={spinner} />

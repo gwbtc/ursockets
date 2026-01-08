@@ -749,3 +749,8 @@ h6 {
   border-radius: 4px;
   font-size: 0.75rem;
 }
+
+.flex-avatar {
+  display: flex;
+  gap: 0.3rem;
+}

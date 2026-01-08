@@ -12,6 +12,8 @@ import type { HarkAction, Skein } from "@/types/hark";
 import { skeinToNote } from "@/logic/notifications";
 import { defaultGate } from "@/logic/bunts";
 import { eventsToFc, addEventToFc } from "@/logic/nostrill";
+import type { S3Config, UrbitContacts } from "@/types/urbit";
+import contactsSample from "../contacts.json";
 // TODO handle airlock connection issues
 // the SSE pipeline has a "status-update" event FWIW
 // type AirlockState = "connecting" | "connected" | "failed";
@@ -37,16 +39,38 @@ export type LocalState = {
   setNotifications: (n: Notification[]) => void;
   lastFact: Fact | null;
   feedPerms: Gate;
+  contacts: UrbitContacts;
+  s3: S3Config | null;
 };
 
 const creator = create<LocalState>();
 export const useStore = creator((set, get) => ({
   isNew: false,
+  contacts: {},
+  s3: null,
   api: null,
   init: async () => {
     const airlock = await start();
     const api = new IO(airlock);
     console.log({ api });
+
+    api.scryContacts().then((r) => {
+      console.log("contacts scry res", r);
+      set({ contacts: contactsSample });
+      // if ("ok" in r) {
+      //   set({ contacts: r.ok });
+      // }
+    });
+    api.scrySettings().then((r) => {
+      console.log("settings", r);
+    });
+    api.scryStorage().then((r) => {
+      console.log("storage scry res", r);
+      if ("ok" in r) {
+        set({ s3: r.ok });
+      }
+    });
+
     api.scryHark().then((r) => {
       console.log("hark scry res", r);
       if ("ok" in r) {
@@ -78,6 +102,7 @@ export const useStore = creator((set, get) => ({
       }
     });
     await api.subscribeStore((data) => {
+      console.log("store sub", data);
       if ("state" in data) {
         console.log("state", data.state);
         const { feed, nostr, following, following2, relays, profiles, key } =
