@@ -11,6 +11,7 @@ import { useShallow } from "zustand/shallow";
 import type { HarkAction, Skein } from "@/types/hark";
 import { skeinToNote } from "@/logic/notifications";
 import { defaultGate } from "@/logic/bunts";
+import { eventsToFc, addEventToFc } from "@/logic/nostrill";
 // TODO handle airlock connection issues
 // the SSE pipeline has a "status-update" event FWIW
 // type AirlockState = "connecting" | "connected" | "failed";
@@ -24,7 +25,7 @@ export type LocalState = {
   composerData: ComposerData | null;
   setComposerData: (c: ComposerData | null) => void;
   pubkey: string;
-  nostrFeed: Event[];
+  nostrFeed: FC;
   relays: Relays;
   profiles: Map<string, UserProfile>; // pubkey key
   addProfile: (key: string, u: UserProfile) => void;
@@ -79,17 +80,19 @@ export const useStore = creator((set, get) => ({
     await api.subscribeStore((data) => {
       if ("state" in data) {
         console.log("state", data.state);
-        const { feed, nostr, following, following2, relays, profiles, pubkey } =
+        const { feed, nostr, following, following2, relays, profiles, key } =
           data.state;
         const flwing = new Map(Object.entries(following as Record<string, FC>));
         flwing.set(api!.airlock.our!, feed);
+        //  TODO do this in the backend
+        const nostrFeed = eventsToFc(nostr);
         set({
           relays,
-          nostrFeed: nostr,
+          nostrFeed,
           profiles: new Map(Object.entries(profiles)),
           following: flwing,
           following2,
-          pubkey,
+          pubkey: key,
         });
       } else if ("fact" in data) {
         const fact: Fact = data.fact;
@@ -126,25 +129,28 @@ export const useStore = creator((set, get) => ({
             const post: Poast = fact.post.del.post;
             const following = get().following;
             const curr = following.get(post.author);
-            
+
             if (curr && curr.feed[post.id]) {
               delete curr.feed[post.id];
               following.set(post.author, curr);
-              
+
               set({ following });
             }
           }
         }
         if ("nostr" in fact) {
           console.log("nostr fact", fact);
-          if ("feed" in fact.nostr) set({ nostrFeed: fact.nostr.feed });
+          // if ("feed" in fact.nostr) set({ nostrFeed: fact.nostr.feed });
+          if ("thread" in fact.nostr)
+            console.log("nostr thread!!!", fact.nostr.thread);
           if ("relays" in fact.nostr) set({ relays: fact.nostr.relays });
           if ("event" in fact.nostr) {
             // console.log("san event", fact.nostr.event);
             const event: Event = fact.nostr.event;
             if (event.kind === 1) {
               const nostrFeed = get().nostrFeed;
-              set({ nostrFeed: [...nostrFeed, event] });
+              const nf = addEventToFc(event, nostrFeed);
+              set({ nostrFeed: nf });
             }
             if (event.kind === 0) {
               const profiles = get().profiles;
@@ -171,7 +177,7 @@ export const useStore = creator((set, get) => ({
   },
   lastFact: null,
   relays: {},
-  nostrFeed: [],
+  nostrFeed: { feed: {}, start: null, end: null },
   following: new Map(),
   followers: [],
   following2: { feed: {}, start: "", end: "" },

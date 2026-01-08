@@ -4,16 +4,19 @@ import { ErrorPage } from "@/pages/Error";
 import "@/styles/trill.css";
 import "@/styles/feed.css";
 import { stringToUser } from "@/logic/nostrill";
+import ComposerModal from "@/components/modals/ComposerModal";
 import TrillThread from "@/components/trill/Thread";
 import NostrThread from "@/components/nostr/Thread";
 import { decodeNostrKey } from "@/logic/nostr";
 
 export default function ThreadLoader() {
-  const { profiles, following } = useLocalState((s) => ({
+  const { profiles, following, composerData } = useLocalState((s) => ({
     profiles: s.profiles,
     following: s.following,
+    composerData: s.composerData,
   }));
 
+  console.log({ composerData });
   const params = useParams<{ host: string; id: string }>();
   const { host, id } = params;
 
@@ -21,25 +24,30 @@ export default function ThreadLoader() {
   if ("error" in uuser) return <ErrorPage msg={uuser.error} />;
   const feed = following.get(host);
   const profile = profiles.get(host);
-  if ("urbit" in uuser.ok)
-    return (
-      <TrillThread
-        feed={feed}
-        profile={profile}
-        host={uuser.ok.urbit}
-        id={id}
-      />
-    );
-  if ("nostr" in uuser.ok)
-    return (
-      <NostrThread
-        feed={feed}
-        profile={profile}
-        host={uuser.ok.nostr}
-        id={id}
-      />
-    );
-  else return <ErrorPage msg="weird" />;
+
+  return (
+    <>
+      {"urbit" in uuser.ok ? (
+        <TrillThread
+          feed={feed}
+          profile={profile}
+          host={uuser.ok.urbit}
+          id={id}
+        />
+      ) : "nostr" in uuser.ok ? (
+        <NostrThread
+          feed={feed}
+          profile={profile}
+          host={uuser.ok.nostr}
+          id={id}
+          idString={id}
+        />
+      ) : (
+        <ErrorPage msg="weird" />
+      )}
+      {composerData && <ComposerModal />}
+    </>
+  );
 }
 
 export function NostrThreadLoader() {
@@ -48,5 +56,5 @@ export function NostrThreadLoader() {
   if (!id) return <ErrorPage msg="No thread id passed" />;
   const dec = decodeNostrKey(id);
   if (!dec) return <ErrorPage msg="Unknown thread id format" />;
-  return <NostrThread id={dec} host="" />;
+  return <NostrThread idString={id} id={dec} host="" />;
 }

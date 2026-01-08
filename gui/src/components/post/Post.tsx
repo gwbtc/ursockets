@@ -24,7 +24,6 @@ export interface PostProps {
 function Post(props: PostProps) {
   // console.log("post", props);
   const { poast } = props;
-  console.log({ poast });
   if (!poast || poast.contents === null) {
     return null;
   }

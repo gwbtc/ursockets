@@ -100,7 +100,7 @@ function Inlin({ i }: { i: Inline }) {
   const [_, navigate] = useLocation();
   function gotoShip(e: React.MouseEvent, ship: Ship) {
     e.stopPropagation();
-    navigate(`/f/${ship}`);
+    navigate(`/u/${ship}`);
   }
   if ("text" in i) {
     const tokens = extractURLs(i.text);
@@ -190,7 +190,11 @@ function Ref({ r, nest }: { r: Reference; nest: number }) {
       nest: nest + 1,
       className: "quote-in-post",
     })(Quote);
-    return <Card logo="crow">{comp}</Card>;
+    return (
+      <Card logo="crow" cn="ref-card">
+        {comp}
+      </Card>
+    );
   }
   return <></>;
 }

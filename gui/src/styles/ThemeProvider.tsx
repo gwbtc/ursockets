@@ -13,7 +13,8 @@ export type ThemeName =
   | "noir"
   | "ocean"
   | "forest"
-  | "gruvbox";
+  | "gruvbox"
+  | "christmas";
 
 export interface ThemeColors {
   primary: string;
@@ -320,6 +321,36 @@ const themes: Record<ThemeName, Theme> = {
       linkHover: "#b8bb26",
       shadow: "rgba(0, 0, 0, 0.3)",
       overlay: "rgba(40, 40, 40, 0.8)",
+    },
+    typography: commonTypography,
+    spacing: commonSpacing,
+    radius: commonRadius,
+    transitions: commonTransitions,
+  },
+  christmas: {
+    name: "christmas",
+    colors: {
+      primary: "#D42426",
+      primaryHover: "#B81E20",
+      secondary: "#146B3A",
+      accent: "#F8B229",
+      accentHover: "#DDA025",
+      background: "#FFFAFA",
+      surface: "#F0F5F2",
+      surfaceHover: "#E6EFEC",
+      text: "#1A1A1A",
+      textSecondary: "#2F2F2F",
+      textMuted: "#4A4A4A",
+      border: "#146B3A",
+      borderLight: "#A0CEB6",
+      success: "#2E8B57",
+      warning: "#DAA520",
+      error: "#B22222",
+      info: "#20B2AA",
+      link: "#146B3A",
+      linkHover: "#0F522C",
+      shadow: "rgba(20, 107, 58, 0.15)",
+      overlay: "rgba(20, 107, 58, 0.2)",
     },
     typography: commonTypography,
     spacing: commonSpacing,
