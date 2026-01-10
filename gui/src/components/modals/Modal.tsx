@@ -20,10 +20,9 @@ function Modal({
   }, [children]);
 
   function clickAway(e: React.MouseEvent) {
-    console.log("clicked away");
+    if (e.target !== e.currentTarget) return;
     e.stopPropagation();
-    if (!modalRef.current || !modalRef.current.contains(e.target as Node))
-      if (close) close();
+    if (close) close();
     setModal(null);
   }
   const modalRef = useRef<HTMLDivElement>(null);
@@ -36,7 +35,6 @@ function Modal({
   );
 }
 export default Modal;
-
 
 export function Tooltip({ children, text, className }: any) {
   const [show, toggle] = useState(false);

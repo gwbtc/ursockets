@@ -35,10 +35,10 @@
   display: flex;
   padding: 0.5rem;
 
-  a {
-    text-decoration: 0;
-    color: var(--text-color);
-  }
+  /* a { */
+  /* text-decoration: 0; */
+  /* color: var(--text-color); */
+  /* } */
 
   /* min-height: 150px; */
 
@@ -150,6 +150,7 @@
     }
 
     .body-text a {
+      margin: 0 0.5ch 0 0.5ch;
       text-decoration: underline;
     }
 
@@ -172,6 +173,11 @@
       font-size: 1rem;
       line-height: 1rem;
       color: var(--text);
+    }
+
+    .inline-pic {
+      max-width: 80%;
+      max-height: 250px;
     }
   }
 

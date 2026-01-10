@@ -143,7 +143,6 @@
 
 
   & .input-editor {
-    width: full;
     background-color: transparent;
     color: var(--color-text);
     flex-grow: 1;
@@ -156,7 +155,7 @@
 
     /* fallback */
     min-height: 2.5rem;
-    max-height: 8rem;
+    max-height: 35rem;
     overflow-y: auto;
     outline: none;
     white-space: pre-wrap;
@@ -221,4 +220,22 @@
     align-items: center;
     gap: 8px;
   }
+}
+
+.composer-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+
+  button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+}
+
+.img-thumb {
+  display: inline-block;
+  margin: 0 1ch 0 1ch;
+  width: 80px;
 }

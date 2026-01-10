@@ -15,6 +15,7 @@ import PostData from "./Loader";
 import Card from "./Card.tsx";
 import type { Ship } from "@/types/urbit.ts";
 import { extractURLs } from "@/logic/nostrill.ts";
+import { IMAGE_REGEX } from "@/logic/constants.ts";
 
 function Body(props: PostProps) {
   const text = props.poast.contents.filter((c) => {
@@ -155,6 +156,8 @@ function Inlin({ i }: { i: Inline }) {
 }
 
 function LinkParser({ href, show }: { href: string; show: string }) {
+  const isImg = href.match(IMAGE_REGEX);
+  // const isImg2 = href.match(IMAGE_SUBREGEX);
   const YOUTUBE_REGEX_1 = /(youtube\.com\/watch\?v=)(\w+)/;
   const YOUTUBE_REGEX_2 = /(youtu\.be\/)([a-zA-Z0-9-_]+)/;
   const m1 = href.match(YOUTUBE_REGEX_1);
@@ -162,6 +165,8 @@ function LinkParser({ href, show }: { href: string; show: string }) {
   const ytb = m1 && m1[2] ? m1[2] : m2 && m2[2] ? m2[2] : "";
   return ytb ? (
     <YoutubeSnippet href={href} id={ytb} />
+  ) : isImg ? (
+    <img className="inline-pic" src={href} />
   ) : (
     <a href={href}>{show}</a>
   );

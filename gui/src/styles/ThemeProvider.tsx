@@ -408,7 +408,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 
     // Set typography variables
     Object.entries(theme.typography).forEach(([key, value]) => {
-      const cssVarName = `--${key.replace(/([A-Z])/g, "-$1").toLowerCase().replace("font-", "font-").replace("size", "").replace("weight", "")}`;
+      const cssVarName = `--${key
+        .replace(/([A-Z])/g, "-$1")
+        .toLowerCase()
+        .replace("size-", "")
+        .replace("weight-", "")}`;
       root.style.setProperty(cssVarName, value);
     });
 
@@ -431,8 +435,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     });
 
     // Legacy variables for backward compatibility
-    root.style.setProperty('--text-color', theme.colors.text);
-    root.style.setProperty('--background-color', theme.colors.background);
+    root.style.setProperty("--text-color", theme.colors.text);
+    root.style.setProperty("--background-color", theme.colors.background);
 
     localStorage.setItem("theme", themeName);
   }, [themeName, theme]);
