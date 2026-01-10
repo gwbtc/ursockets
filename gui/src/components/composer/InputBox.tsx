@@ -103,50 +103,111 @@ export default function ({
   const mentionCandidates = useMemo(() => {
     if (!mentionState) return [];
     const { query } = mentionState;
-    const q = termToPatp(query).toLowerCase(); // Normalize if needed, or just lower
+    // Buckets for sorting
+    let exactIdMatch: AutoCompleteCandidate | null = null;
+    const exactDisplayMatches: AutoCompleteCandidate[] = [];
+    const partialMatches: AutoCompleteCandidate[] = [];
 
-    const matches: AutoCompleteCandidate[] = [];
-    let count = 0;
     const MAX_CANDIDATES = 20;
 
+    // Normalize query for ID matching (ensure ~)
+    const qRaw = query.toLowerCase().trim();
+    if (!qRaw) return [];
+
+    const qPatp = qRaw.startsWith("~") ? qRaw : "~" + qRaw;
+
     for (const candidate of allCandidates) {
-      if (count >= MAX_CANDIDATES) break;
+      // Optimization: if we have full buckets, we could stop, but we want the BEST matches
+      // A simple O(N) scan is fine for typical contact list sizes (thousands).
+      // If we hit a very large limit we might need to break, but sorting requires seeing all relevant ones.
+      // Let's break only if we have WAY too many partials (e.g. 100) to keep sorting cheap,
+      // but strictly we capped render at 20, filtering should be somewhat aggressive.
+      // For now, scan all (safest for correctness).
 
-      const matchId = candidate.id.toLowerCase().includes(q);
-      const matchDisplay = candidate.display.toLowerCase().includes(q);
+      const cId = candidate.id.toLowerCase();
+      const cDisp = candidate.display.toLowerCase();
 
-      if (matchId || matchDisplay) {
-        matches.push(candidate);
-        count++;
+      // 1. Exact ID Match (Top Priority)
+      if (cId === qPatp || cId === qRaw) {
+        exactIdMatch = candidate;
+        continue;
+      }
+
+      // 2. Exact Display Match (High Priority)
+      if (cDisp === qRaw) {
+        exactDisplayMatches.push(candidate);
+        continue;
+      }
+
+      // 3. Partials
+      // We only gather partials if we haven't exceeded a safe buffer for sorting
+      if (partialMatches.length < 50) {
+        const matchId = cId.includes(qRaw);
+        const matchDisplay = cDisp.includes(qRaw);
+
+        if (matchId || matchDisplay) {
+          partialMatches.push(candidate);
+        }
       }
     }
 
-    // Always allow exact valid patq or patp if it's not already matched
-    // We allow this even if MAX_CANDIDATES is reached.
+    // Sort partials: Shorter matches first (closeness), then alphabetical
+    partialMatches.sort((a, b) => {
+      // Preference 1: Starts with query (prefix match)
+      const aStarts =
+        a.id.toLowerCase().startsWith(qRaw) ||
+        a.display.toLowerCase().startsWith(qRaw);
+      const bStarts =
+        b.id.toLowerCase().startsWith(qRaw) ||
+        b.display.toLowerCase().startsWith(qRaw);
+      if (aStarts && !bStarts) return -1;
+      if (!bStarts && aStarts) return 1;
 
-    // Check patq
-    if (
-      isValidPatq(q) &&
-      !matches.find((m) => m.id === q)
-    ) {
-      matches.push({ id: q, display: q, pic: "" });
+      // Preference 2: Shorter ID length (closest match)
+      // e.g. ~docteg (7) vs ~hostyr-docteg (14)
+      if (a.id.length !== b.id.length) return a.id.length - b.id.length;
+
+      // Preference 3: Alphabetical
+      return a.id.localeCompare(b.id);
+    });
+
+    // Construct final list
+    const result: AutoCompleteCandidate[] = [];
+    if (exactIdMatch) result.push(exactIdMatch);
+    result.push(...exactDisplayMatches);
+    result.push(...partialMatches);
+
+    // Cap result
+    const cappedResult = result.slice(0, MAX_CANDIDATES);
+
+    // Final check: if exactIdMatch wasn't found in candidates, but q is valid patp, append/prepend logic?
+    // User wants exact match on top. If it wasn't in candidates, we should inject it at TOP.
+    // Logic: if exactIdMatch is null, AND q is valid, create it.
+
+    if (!exactIdMatch) {
+      try {
+        // Check explicit qRaw (e.g. ~zod)
+        if (isValidPatq(qRaw) || isValidPatp(qRaw)) {
+          // Ensure we don't duplicate if it was a display match or partial
+          if (!cappedResult.find((c) => c.id === qRaw)) {
+            cappedResult.unshift({ id: qRaw, display: qRaw, pic: "" });
+          }
+        }
+        // Check qPatp (e.g. zod -> ~zod)
+        else if (qRaw !== qPatp && (isValidPatp(qPatp) || isValidPatq(qPatp))) {
+          if (!cappedResult.find((c) => c.id === qPatp)) {
+            cappedResult.unshift({ id: qPatp, display: qPatp, pic: "" });
+          }
+        }
+      } catch (e) {
+        // urbit-ob functions might throw on invalid input
+      }
     }
 
-    // Check patp (autofix missing ~)
-    const asPatp = q.startsWith("~") ? q : "~" + q;
-    if (
-      isValidPatp(asPatp) &&
-      !matches.find((m) => m.id === asPatp)
-    ) {
-      matches.push({ id: asPatp, display: asPatp, pic: "" });
-    }
-
-    return matches;
+    return cappedResult;
   }, [mentionState, allCandidates]);
 
-  function termToPatp(s: string) {
-    return s.startsWith("~") ? s : s;
-  }
+
 
   // Mention detection
   function checkMention(text: string, cursor: number) {
@@ -191,7 +252,6 @@ export default function ({
 
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0) return;
-    const range = sel.getRangeAt(0);
 
     // We need to delete the typed query (e.g. @zod) and replace it with a chip
     // This is tricky with DOM ranges because the text might be split across nodes.
@@ -208,23 +268,21 @@ export default function ({
 
     // Delete the text
     for (let i = 0; i < deleteLength; i++) {
-      document.execCommand('delete');
+      document.execCommand("delete");
     }
 
     // Insert the chip
     // We construct the HTML for the chip
     // Note: ID must always be valid patp for Urbit
-    const chipLabel = user.id; // Or user.display if we want fancy
-    // Using user.id (patp) is safer for now as it's the actual value
 
     // We use insertHTML to put in our special span
     const chipHtml = `<span contenteditable="false" class="mention-chip" data-id="${user.id}">${user.id}</span>&nbsp;`;
-    document.execCommand('insertHTML', false, chipHtml);
+    document.execCommand("insertHTML", false, chipHtml);
 
-    // Update state to match (this might happen automatically via onInput, 
+    // Update state to match (this might happen automatically via onInput,
     // but insertHTML sometimes doesn't trigger onInput in React immediately?)
     // Actually execCommand DOES trigger onInput usually.
-    // But let's be safe and manually update state if needed, but safer to let onInput handle it 
+    // But let's be safe and manually update state if needed, but safer to let onInput handle it
     // to avoid conflict.
 
     setMentionState(null);
@@ -233,14 +291,14 @@ export default function ({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter" && e.ctrlKey) {
       e.preventDefault();
-      // Submit form potentially? Need logic from parent? 
+      // Submit form potentially? Need logic from parent?
       // The original just did requestSubmit on the form.
       // e.currentTarget is div, closest form?
       // document.forms[0]?.requestSubmit(); // risky
       // For now let's leave it, or passed down prop?
       // original: e.currentTarget.form?.requestSubmit();
       // div doesn't have form property.
-      const form = inputRef.current?.closest('form');
+      const form = inputRef.current?.closest("form");
       form?.requestSubmit();
     } else if (mentionState && mentionCandidates.length > 0) {
       if (e.key === "ArrowDown") {
@@ -263,40 +321,10 @@ export default function ({
 
   return (
     <>
-      <style>{`
-            .mention-chip {
-                background-color: #e0f2f1;
-                color: #00695c;
-                border-radius: 4px;
-                padding: 2px 4px;
-                margin: 0 2px;
-                display: inline-block;
-                font-family: monospace;
-            }
-            .input-editor {
-                border: 1px solid #ccc; /* fallback */
-                border-radius: 0.5rem;
-                padding: 0.75rem;
-                min-height: 2.5rem;
-                max-height: 8rem;
-                overflow-y: auto;
-                outline: none;
-                white-space: pre-wrap;
-                word-wrap: break-word;
-            }
-            .input-editor:focus {
-                border-color: #2a9d8f;
-                ring: 2px solid #2a9d8f;
-            }
-            .input-editor:empty:before {
-                content: attr(data-placeholder);
-                color: #aaa;
-            }
-        `}</style>
       <div
         ref={inputRef}
         contentEditable
-        className="input-editor w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+        className="input-editor"
         onInput={handleInput}
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
@@ -312,12 +340,17 @@ export default function ({
           {mentionCandidates.map((user, i) => (
             <div
               key={user.id}
-              ref={i === mentionIndex ? (el) => el?.scrollIntoView({ block: "nearest" }) : undefined}
+              ref={
+                i === mentionIndex
+                  ? (el) => el?.scrollIntoView({ block: "nearest" })
+                  : undefined
+              }
               onClick={() => selectUser(user)}
               className={`mention-item ${i === mentionIndex ? "selected" : ""}`}
               style={{
-                background: i === mentionIndex ? "#2a9d8f" : "transparent",
-                color: i === mentionIndex ? "#fff" : "#ccc",
+                background:
+                  i === mentionIndex ? "var(--color-accent)" : "transparent",
+                color: i === mentionIndex ? "white" : "var(--color-text)",
               }}
             >
               {!user.pic && user.id && user.id[0] === "~" ? (
