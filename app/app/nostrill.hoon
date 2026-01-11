@@ -94,7 +94,7 @@
   ++  handle-ws-handshake
     ^-  (quip card:agent:gall agent:gall)
     =/  order  !<([@ inbound-request:eyre] vase)
-    ~&  >>  nostrill-ws-handshake=order
+    ~&  nostrill-ws-handshake=-.order
     =/  url  url.request.order
     =/  pat=(unit path)  (rush url stap)
     ?~  pat  ~&  "pat-parsing-failed"  `this

@@ -24,6 +24,7 @@ function Settings() {
       await api?.deleteRelay(relay.wid);
       toast.success("Relay removed");
     } catch (error) {
+      console.log("WS_URL", WS_URL);
       toast.error("Failed to remove relay");
       console.error("Remove relay error:", error);
     }

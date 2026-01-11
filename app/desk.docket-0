@@ -3,9 +3,9 @@
   info+'Pater Nostr'
   color+0xff.d400
   version+[0 1 0]
-  website+'https://sortug.com'
-  license+'© 2025 ~sortug. All rights reserved.'
+  website+'https://groundwire.io'
+  license+'Noli me tangere'
   image+'https://s3.sortug.com/img/nostril-icon.png'
-  base+'nostril'
-  glob-http+['https://s3.sortug.com/globs/glob-0v1.862v7.o85ao.krj6r.v1dgc.ek27l.glob' 0v1.862v7.o85ao.krj6r.v1dgc.ek27l]
+  base+'nostrill'
+  glob-http+['https://s3.sortug.com/globs/glob-0v4.haja8.ru23n.juu6c.aurjg.c340m.glob' 0v4.haja8.ru23n.juu6c.aurjg.c340m]
 ==
