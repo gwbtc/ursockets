@@ -6,6 +6,7 @@ import Icon from "@/components/Icon";
 import "@/styles/Settings.css";
 import WebSocketWidget from "@/components/WsWidget";
 import type { RelayStats } from "@/types/nostrill";
+import { WS_URL } from "@/logic/api";
 
 function Settings() {
   const { key, relays, api } = useLocalState((s) => ({
@@ -81,7 +82,7 @@ function Settings() {
       </div>
 
       <div className="settings-content">
-        <WebSocketWidget url="ws://localhost:8090/nostrill-ui" />
+        <WebSocketWidget url={`${WS_URL}/nostrill-ui`} />
         {/* Appearance Section */}
         <div className="settings-section">
           <div className="section-header">
