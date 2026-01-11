@@ -68,7 +68,6 @@ export default function ({ user }: { user: UserType }) {
     try {
       if (isFollowing) {
         const result = await api.unfollow(user);
-        console.log(result);
         // if ("ok" in result) {
         //   toast.success(`Unfollowed ${profile?.name || userString}`);
         // } else {
@@ -76,7 +75,6 @@ export default function ({ user }: { user: UserType }) {
         // }
       } else {
         const result = await api.follow(user);
-        console.log(result);
         // if ("ok" in result) {
         //   toast.success(`Following ${profile?.name || userString}`);
         // } else {

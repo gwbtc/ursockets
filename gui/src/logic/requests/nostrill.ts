@@ -84,7 +84,7 @@ export default class IO {
     return await this.airlock.unsubscribe(sub);
   }
   // subs
-  async subscribeStore(handler: Handler) {
+  async subscribeNostrill(handler: Handler) {
     const res = await this.sub("/ui", handler);
     return res;
   }
@@ -120,7 +120,6 @@ export default class IO {
     // const path = `/j/thread/${host}/${id}/${start}/${end}/${FeedPostCount}/${order}`;
     const path = `/j/thread/${host}/${id}`;
     const res = await this.scry(path);
-    console.log("scrytherad", res);
     if ("error" in res) return res;
     const r = res.ok as { thread: PeekThreadRes };
     if (!("thread" in r)) return { error: "wrong result" };
@@ -137,7 +136,6 @@ export default class IO {
     // const res3 = await this.scry(path3, "hark");
     // const res4 = await this.scry(path4, "hark");
     // const res2 = await this.scry(path2, "hark");
-    console.log("hark scry", res);
     // console.log("hark all skeins", res3);
     // console.log("hark all latest", res4);
     return res;

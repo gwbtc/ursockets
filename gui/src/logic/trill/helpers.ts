@@ -6,14 +6,12 @@ import type { UserType } from "@/types/nostrill";
 import { decodeNostrKey } from "../nostr";
 
 export function toFlat(n: FullNode): Poast {
-  console.log("to flat", n);
   const r = {
     ...n,
     children: !n.children
       ? []
       : Object.keys(n.children).map((c) => n.children[c].id),
   };
-  console.log("flat", r);
   return r;
   // return {
   //   ...n,

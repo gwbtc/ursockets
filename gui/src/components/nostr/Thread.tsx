@@ -32,14 +32,15 @@ export default function Thread(props: Props) {
       setComposerData: s.setComposerData,
       setModal: s.setModal,
     }));
-  const { id, idString, feed, profile } = props;
+  const { id, feed, profile } = props;
 
   const poast = feed?.feed[id];
   const host = poast?.author || "";
   const [data, setData] = useState<FullFeed>();
 
   useEffect(() => {
-    const event = nostrFeed[id];
+    // TODO
+    const event = (nostrFeed as any)[id];
     if (event) {
       console.log({ event });
       const fn = eventToFn(event);
@@ -139,7 +140,7 @@ export default function Thread(props: Props) {
 
 function Loader(props: Props) {
   const { id } = props;
-  const { api, lastFact } = useLocalState((s) => ({
+  const { api } = useLocalState((s) => ({
     api: s.api,
     nostrFeed: s.nostrFeed,
     lastFact: s.lastFact,
@@ -174,9 +175,7 @@ function Loader(props: Props) {
     </>
   );
 }
-function Render({ event }: { event: NostrEvent }) {
-  return <div>wtf</div>;
-}
+
 function Head({ node, profile }: { node: FullNode; profile?: UserProfile }) {
   return (
     <>

@@ -3211,7 +3211,7 @@
   ++  handle-ws-response
     |=  [wid=@ event=websocket-event]
     ^-  [(list move) server-state]    
-    ~&   eyre-handle-ws-esponse=[wid event]
+    ~&   eyre-wsres=[wid event]
     :: TODO remove if not accepted?
     =.  connections.state
       ?.  ?=(%reject -.event)  connections.state
