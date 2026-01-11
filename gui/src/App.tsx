@@ -7,6 +7,7 @@ import spinner from "@/assets/crowspinner.gif";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "react-hot-toast";
+import NostrSignals from "@/components/NostrSignals";
 const queryClient = new QueryClient();
 
 // const isMobile = MOBILE_BROWSER_REGEX.test(navigator.userAgent);
@@ -36,6 +37,7 @@ function App() {
           {/* {isMobile ? <MobileUI /> : <DesktopUI />} */}
           <Router />
           <Toaster position="top-center" />
+          <NostrSignals />
         </QueryClientProvider>
       </ThemeProvider>
     );
