@@ -119,6 +119,14 @@
       %thread  (en-nostr-feed +.nf)
       %event   (event:en:nostr +.nf)
       %relays  (en-relays +.nf)
+      %sent    (en-nostr-sent +.nf)
+    ==
+  ++  en-nostr-sent  |=  [host=@p id=@ urls=(list @t) ev=event:nsur]  ^-  json
+    %-  pairs  :~
+      host+s+(scot %p host)
+      id+(ud:en:common id)
+      relays+a+(turn urls cord:en:common)
+      event+(event:en:nostr ev)
     ==
   ++  user-data
     |=  ud=[=fc:tf profile=(unit user-meta:nsur)]

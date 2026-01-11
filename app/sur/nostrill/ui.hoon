@@ -61,9 +61,10 @@
   ==
 +$  nostr-fact
   $%  [%feed feed=nostr-feed:sur]
-      [%user feed=nostr-feed:sur]
-      [%thread feed=nostr-feed:sur]
-      [%event event:nsur]
+      [%user feed=nostr-feed:sur]    ::  a user feed we requested
+      [%thread feed=nostr-feed:sur]  ::  a specific thread we requested
+      [%event event:nsur]            ::  some specific event
       [%relays (map @ relay-stats:nsur)]
+      [%sent host=@p id=@ relays=(list @t) event:nsur]  ::  confirmation that a post of ours was sent to a relay
   ==
 --

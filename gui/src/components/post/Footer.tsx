@@ -11,6 +11,8 @@ import type { SPID } from "@/types/ui";
 import QuoteModal from "@/components/modals/QuoteModal";
 import ReactionsModal from "@/components/modals/ReactionsModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import RelayPost from "../modals/RelayPost";
+import { generateNevent } from "@/logic/nostr";
 // TODO abstract this somehow
 
 function Footer({ user, poast, thread, refetch }: PostProps) {
@@ -145,6 +147,15 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
     Object.keys(relays).length > 0 && poast.author === api?.airlock.our;
 
   // TODO round up all helpers
+  //
+  function handleRelay() {
+    if (poast.event) {
+      const nevent = generateNevent(poast.event);
+      console.log({ nevent });
+      const href = `https://primal.net/e/${nevent}`;
+      window.open(href, "_blank");
+    } else setModal(<RelayPost poast={poast} />);
+  }
 
   return (
     <div className="footer-wrapper post-footer">
@@ -195,7 +206,7 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
           </span>
           {reactIcon}
         </div>
-        {canRelay && <NostrIcon poast={poast} />}
+        {canRelay && <NostrIcon open={handleRelay} />}
       </footer>
     </div>
   );

@@ -318,9 +318,12 @@
       =/  scry   ~(. scri [state bowl])
       =/  upoast  (get-poast:scry host.rh id.rh)
       ?~  upoast  `state
+      ~&  >>>  sending=id.rh
       =/  event  (post-to-event:evlib i.keys.state eny.bowl u.upoast)
-      =/  cs  :~((send:nclient url.relay [%event event]))
-      [cs state]
+      :_  state
+      :-    (update-ui:cardslib [%nostr %sent host.rh id.rh relays.rh event])
+      %+  turn  relays.rh  |=  url=@t
+        (send:nclient url [%event event])
     =^  cs  relay
       ?-  -.rh
           %sync    get-posts:nclient

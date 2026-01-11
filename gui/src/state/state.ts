@@ -41,6 +41,7 @@ export type LocalState = {
   feedPerms: Gate;
   contacts: UrbitContacts;
   s3: S3Config | null;
+  lastNostrEventTime: number;
 };
 
 const creator = create<LocalState>();
@@ -52,20 +53,16 @@ export const useStore = creator((set, get) => ({
   init: async () => {
     const airlock = await start();
     const api = new IO(airlock);
-    console.log({ api });
-
-    api.scryContacts().then((r) => {
-      console.log("contacts scry res", r);
+    api.scryContacts().then((_r) => {
       set({ contacts: contactsSample });
       // if ("ok" in r) {
       //   set({ contacts: r.ok });
       // }
     });
-    api.scrySettings().then((r) => {
-      console.log("settings", r);
+    api.scrySettings().then((_r) => {
+      // console.log("settings", r);
     });
     api.scryStorage().then((r) => {
-      console.log("storage scry res", r);
       if ("ok" in r) {
         set({ s3: r.ok });
       }
@@ -101,10 +98,8 @@ export const useStore = creator((set, get) => ({
         set({ notifications });
       }
     });
-    await api.subscribeStore((data) => {
-      console.log("store sub", data);
+    await api.subscribeNostrill((data) => {
       if ("state" in data) {
-        console.log("state", data.state);
         const { feed, nostr, following, following2, relays, profiles, key } =
           data.state;
         const flwing = new Map(Object.entries(following as Record<string, FC>));
@@ -164,6 +159,7 @@ export const useStore = creator((set, get) => ({
           }
         }
         if ("nostr" in fact) {
+          set({ lastNostrEventTime: Date.now() });
           console.log("nostr fact", fact);
           // if ("feed" in fact.nostr) set({ nostrFeed: fact.nostr.feed });
           if ("thread" in fact.nostr)
@@ -218,6 +214,7 @@ export const useStore = creator((set, get) => ({
     set({ notifications });
   },
   feedPerms: defaultGate,
+  lastNostrEventTime: 0,
 }));
 
 const useShallowStore = <T extends (state: LocalState) => any>(
