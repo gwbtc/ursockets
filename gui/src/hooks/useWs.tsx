@@ -294,8 +294,10 @@ export function useWebSocket(opts: UseWebSocketOptions): UseWebSocketApi {
       ) {
         try {
           ws.close(code, reason);
-        } catch {}
-        setStatus("closing");
+          setStatus("closing");
+        } catch (e) {
+          //
+        }
       }
     },
     [],

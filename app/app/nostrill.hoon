@@ -112,7 +112,8 @@
     =/  msg  message.msg.order
     ?~  msg  `this
     =/  wsdata=@t  q.data.u.msg
-    ~&  >>  ws-msg-data=[path.order wsdata]
+    ~&  >>  websocket-msg-received-from-path=path.order
+    ~&  >>  ws-data=wsdata
     |^
     ?+  path.order  `this
       [%nostrill-ui ~]  handle-ui-ws
@@ -200,7 +201,6 @@
         `this
     ==
   ++  handle-rela  |=  poke=relay-poke:ui
-    ::  TODO fix this somehow
     =^  cs  state
     ?+  -.poke  (handle-rela:mutan poke)
       %add  :_  state
@@ -212,6 +212,12 @@
   ::
   ++  debug  |=  noun=*
     ?+  noun  `this
+      [%send-ws @t]
+        ~&  here=+.noun
+        :_  this
+        =/  ws-msg=websocket-message:eyre  [1 `(as-octs:mimes:html +.noun)]  
+        (give-ws-payload-server-all:ws bowl [%message ws-msg])
+      ::
       %hark-c
       :_  this
       :~  (clear-hark:harklib bowl)

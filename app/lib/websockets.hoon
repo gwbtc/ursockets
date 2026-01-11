@@ -1,3 +1,4 @@
+/+  sr=sortug
 |%
   ++  connect  |=  [endpoint=@t =bowl:gall]
     ^-  card:agent:gall
@@ -22,6 +23,8 @@
       [%message !>(msg)]
     =/  wsid  (scot %ud wid)
     [%give %fact ~[/websocket-client/[wsid]] cage]
+
+  
   ++  close-ws-client
     |=  wid=@
     ^-  card:agent:gall
@@ -37,6 +40,21 @@
       [%websocket-response !>([wid event])]
     =/  wsid  (scot %ud wid)
     [%give %fact ~[/websocket-server/[wsid]] cage]
+  
+  ++  give-ws-payload-server-all
+    |=  [=bowl:gall event=websocket-event:eyre]
+    ^-  (list card:agent:gall)
+    =/  inc-subs  ~(tap by sup.bowl)
+    %+  roll  inc-subs  |=  [i=[=duct =ship pat=(pole knot)] acc=(list card:agent:gall)]
+      ?.  ?=([%websocket-server wid=@ ~] pat.i)  acc
+      =/  wid  (slaw:sr %ud wid.pat.i)
+      ?~  wid  acc
+      =/  =cage  [%websocket-response !>([u.wid event])]
+      =/  card  [%give %fact ~[pat.i] cage]
+      [card acc]
+
+  
+
   
   ++  accept-handshake  |=  wid=@
     =/  response  [%accept ~]
