@@ -3211,13 +3211,22 @@
   ++  handle-ws-response
     |=  [wid=@ event=websocket-event]
     ^-  [(list move) server-state]    
-    ~&   eyre-wsres=[wid event]
-    :: TODO remove if not accepted?
     =.  connections.state
-      ?.  ?=(%reject -.event)  connections.state
-      (~(del by connections.state) duct)
+      ?:  ?=(%reject -.event)  (~(del by connections.state) duct)
+      ?:  ?=(%disconnect -.event)  (~(del by connections.state) duct)
+      connections.state
+    =.  sockets.state
+      ?:  ?=(%reject -.event)  (~(del by sockets.state) wid)
+      ?:  ?=(%disconnect -.event)  (~(del by sockets.state) wid)
+      ?:  ?=(%accept -.event)
+        =/  outstanding  (~(get by connections.state) duct)
+        ?~  outstanding  ~&  >>>  eyre-ws-error=[wid event]  sockets.state
+        =/  req=inbound-request  inbound-request.u.outstanding
+        ::  TODO this is bad
+        ?>  ?=(%app -.action.u.outstanding)
+      (~(put by sockets.state) wid +.action.u.outstanding req)
+      sockets.state
     
-    :: TODO do all verification shit that handle-response is doing
     [[duct %give %websocket-response [wid event]]~ state]
 
   ++  handle-response
@@ -4019,6 +4028,16 @@
           handle-gall-error:(per-server-event event-args)
         =^  moves  server-state.ax  (handle-gall-error u.p.p.sign)
         [moves http-server-gate]
+        :: 
+      [%gall %unto %kick ~]
+        =/  handle-ws-response  handle-ws-response:(per-server-event event-args)
+        =^  moves  server-state.ax
+        :: TODO not great
+        =/  wids  (head (flop wire))
+        =/  wid  (slav %ud wids)
+          (handle-ws-response wid [%disconnect ~])
+        [moves http-server-gate]
+        ::
       [%gall %unto %fact *]
         =/  mark  p.cage.p.sign
         ?.  ?=(%websocket-response mark)
