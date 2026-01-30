@@ -11,7 +11,7 @@ There's an easy way and a hard way to do that.
 
 #### Easy way:
 
-1. Download vere-ws (for linux x64) [from this link](https://s3/sortug.com/globs/vere-ws.tar.gz).
+1. Download vere-ws (for linux x64) [from this link](https://s3.sortug.com/globs/vere-ws.tar.gz).
 2. Download the arvo-ws pill [from this link](https://s3.sortug.com/globs/nostrill.pill.tar.gz).
 3. Boot a new ship, e.g.: `vere-ws -F zod -B arvo-ws.pill`.
 
