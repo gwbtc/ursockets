@@ -5,6 +5,14 @@
 +$  upid  [=user id=@da]
 +$  user  $%([%urbit p=@p] [%nostr p=@ux])
 
++$  user-profile
+  $:  pubkey=@ux
+      following=(set user)
+      following-count=@ud
+      followers=(set user)
+      follower-count=@ud
+      user-meta:nsur
+  ==
 
 ::  Pokes are used to notify solely users of engagement. There is no data requests through pokes
 
@@ -45,7 +53,7 @@
   ==
 +$  fols-res  (deferred feed-data)
 
-+$  feed-data  [=fc:tf profile=(unit user-meta:nsur)]
++$  feed-data  [=fc:tf profile=user-profile]
 +$  thread-data
   $:  node=full-node:tp
       thread=(list full-node:tp)  ::  list of all the users consecutive posts, as in long form thread
@@ -54,13 +62,13 @@
 +$  fact
   $%  [%feed fols-res]  ::  response to follow requests
       [%post post-fact]
-      [%prof prof-fact]
+      [%prof (unit user-profile)]  ::  null to delete the profile
   ==
 ::  We wrap posts on nostr metadata if the post was also published to Nostr   
 +$  post-wrapper  [=post:tp =nostr-meta]
 +$  nostr-meta
 $:  pub=@ux
-    prof=(unit user-meta:nsur)
+    prof=(unit user-profile)
     ev-id=(unit @ux)
     relays=(list @t)
 ==
@@ -69,10 +77,5 @@ $:  pub=@ux
   $%  [%add post-wrapper]
       [%upd post-wrapper]
       [%del post-wrapper]
-  ==
-::  Updates on your user profile, or if Nostr keys have changed
-+$  prof-fact
-  $%  [%prof =user-meta:nsur]
-      [%keys pub=@ux]
   ==
 --

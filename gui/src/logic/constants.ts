@@ -44,3 +44,5 @@ export const HASHTAGS_REGEX = new RegExp(/#[a-z-]+/g);
 
 export const DEFAULT_DATE = { year: 1970, month: 1, day: 1 };
 export const RADIO = "📻";
+export const GLOBAL_RELAY_URL = "wss://nostr.sortug.com";
+// export const GLOBAL_RELAY_URL = "ws://192.168.1.110:8080";

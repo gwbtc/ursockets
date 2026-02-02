@@ -1,5 +1,4 @@
 import type { Poast } from "@/types/trill";
-import Modal from "./Modal";
 import triangles from "@/assets/triangles.svg";
 import useLocalState from "@/state/state";
 import { useEffect, useState } from "react";
@@ -39,34 +38,32 @@ export default function ({ poast }: { poast: Poast }) {
   }
 
   return (
-    <Modal close={() => setModal(null)}>
-      <div className="confirmation-dialog">
-        {event ? (
-          <div>
-            <p>Your post was sent to Nostr</p>
-            <p>Event ID:</p>
-            <CodeBlock>{event.id}</CodeBlock>
-          </div>
-        ) : status === "pending" ? (
-          <div className="loading-spinner">
-            <img src={triangles} alt="Loading..." />
-          </div>
-        ) : status === "init" ? (
-          <>
-            <p>Send this post to your Nostr Relays?</p>
+    <div className="confirmation-dialog">
+      {event ? (
+        <div>
+          <p>Your post was sent to Nostr</p>
+          <p>Event ID:</p>
+          <CodeBlock>{event.id}</CodeBlock>
+        </div>
+      ) : status === "pending" ? (
+        <div className="loading-spinner">
+          <img src={triangles} alt="Loading..." />
+        </div>
+      ) : status === "init" ? (
+        <>
+          <p>Send this post to your Nostr Relays?</p>
 
-            <div className="confirmation-buttons">
-              <button className="btn-confirm" onClick={handleConfirm}>
-                Yes
-              </button>
-              <button className="btn-cancel" onClick={() => setModal(null)}>
-                Cancel
-              </button>
-            </div>
-          </>
-        ) : null}
-      </div>
-    </Modal>
+          <div className="confirmation-buttons">
+            <button className="btn-confirm" onClick={handleConfirm}>
+              Yes
+            </button>
+            <button className="btn-cancel" onClick={() => setModal(null)}>
+              Cancel
+            </button>
+          </div>
+        </>
+      ) : null}
+    </div>
   );
 }
 

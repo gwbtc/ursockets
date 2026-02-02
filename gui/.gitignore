@@ -43,3 +43,5 @@ devenv.local.nix
 # pre-commit
 .pre-commit-config.yaml
 public
+glob.js
+contacts.json

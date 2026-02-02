@@ -739,3 +739,15 @@ h6 {
   display: flex;
   gap: 0.3rem;
 }
+
+.avatar {
+  .avatar-pic {
+    height: 100%;
+  }
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+
+}

@@ -1,5 +1,4 @@
 import type { Ship } from "@/types/urbit";
-import Modal from "./Modal";
 import Avatar from "../Avatar";
 import Icon from "@/components/Icon";
 import useLocalState from "@/state/state";
@@ -23,28 +22,26 @@ export default function ({ ship }: { ship: Ship }) {
     toast.success("Copied to clipboard");
   }
   return (
-    <Modal close={close}>
-      <div id="ship-modal">
-        <div className="flex">
-          <Avatar user={user} size={60} />
-          <Icon
-            name="copy"
-            size={20}
-            className="copy-icon cp"
-            onClick={copy}
-            title="Copy ship name"
-          />
-        </div>
-        <div className="buttons f1">
-          <button onClick={() => navigate(`/u/${ship}`)}>Feed</button>
-          <button onClick={() => navigate(`/pals/${ship}`)}>Profile</button>
-          {ship !== api!.airlock.our && (
-            <>
-              <button onClick={() => navigate(`/chat/dm/${ship}`)}>DM</button>
-            </>
-          )}
-        </div>
+    <div id="ship-modal">
+      <div className="flex">
+        <Avatar user={user} size={60} />
+        <Icon
+          name="copy"
+          size={20}
+          className="copy-icon cp"
+          onClick={copy}
+          title="Copy ship name"
+        />
       </div>
-    </Modal>
+      <div className="buttons f1">
+        <button onClick={() => navigate(`/u/${ship}`)}>Feed</button>
+        <button onClick={() => navigate(`/pals/${ship}`)}>Profile</button>
+        {ship !== api!.airlock.our && (
+          <>
+            <button onClick={() => navigate(`/chat/dm/${ship}`)}>DM</button>
+          </>
+        )}
+      </div>
+    </div>
   );
 }

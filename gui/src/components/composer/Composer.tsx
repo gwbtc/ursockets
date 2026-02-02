@@ -35,9 +35,13 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setLoading] = useState(false);
 
+  const [isGlobal, setGlobal] = useState(true);
+  function toggleGlobal() {
+    setGlobal((s) => !s);
+  }
+
   const inputRef = useRef<HTMLDivElement>(null);
 
-  console.log({ composerData });
   // Input
   useEffect(() => {
     if (composerData) {
@@ -81,7 +85,7 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
 
   async function addSimple(content: string) {
     if (!api) return;
-    return await api.addPost(content);
+    return await api.addPost(content.trim(), isGlobal, isAnon || false);
   }
 
   async function addComplex(content: string) {
@@ -159,7 +163,6 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
     document.execCommand("insertHTML", false, thumbEl);
     setModal(null);
   };
-  console.log({ input });
 
   const openS3Browser = () => {
     setModal(
@@ -238,6 +241,18 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
           )}
         </div>
         <div className="composer-controls">
+          <button
+            type="button"
+            onClick={toggleGlobal}
+            className="icon-btn"
+            title="global"
+          >
+            <Icon
+              size={20}
+              name="planet"
+              filter={isGlobal ? undefined : "opacity(0.3)"}
+            />
+          </button>
           {s3 && (
             <button
               type="button"

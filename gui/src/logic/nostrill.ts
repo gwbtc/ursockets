@@ -1,7 +1,7 @@
 import type { Event } from "@/types/nostr";
 import type { Content, Cursor, FC, FlatFeed, Poast } from "@/types/trill";
 import { defaultGate, engagementBunt } from "./bunts";
-import type { UserType } from "@/types/nostrill";
+import type { BasicProfile, UserProfile, UserType } from "@/types/nostrill";
 import type { Result } from "@/types/ui";
 import { isValidPatp } from "urbit-ob";
 import { IMAGE_SUBREGEX, URL_REGEX, VIDEO_SUBREGEX } from "./constants";
@@ -57,7 +57,8 @@ export function extractURLs(text: string): {
 }
 
 export function eventToPoast(event: Event): Poast | null {
-  if (event.kind !== 1) return null;
+  const valid = [1, 667];
+  if (!valid.includes(event.kind)) return null;
   const inl = extractURLs(event.content || "");
   const contents: Content = [
     { paragraph: inl.text },
@@ -123,6 +124,28 @@ export function eventToPoast(event: Event): Poast | null {
   return poast;
 }
 
+export function eventToProfile(event: Event): UserProfile | null {
+  try {
+    const data = JSON.parse(event.content);
+    console.log("metadata", data);
+    console.log("tags", event.tags);
+    const { name, picture, about, ...other } = data;
+    const patp = data.patp ? data.patp : null;
+    const bp: BasicProfile = { patp, name, picture, about, other };
+    const prof: UserProfile = {
+      pubkey: event.pubkey,
+      followers: [],
+      following: [],
+      followerCount: 0,
+      followingCount: 0,
+      ...bp,
+    };
+    return prof;
+  } catch (e) {
+    console.error("error parsing nostr event 0", e);
+    return null;
+  }
+}
 export function stringToUser(s: string): Result<UserType> {
   const p = isValidPatp(s);
   if (p) return { ok: { urbit: s } };
@@ -137,6 +160,10 @@ export function userToString(user: UserType): Result<string> {
     else return { error: "invalid @p" };
   } else if ("nostr" in user) return { ok: user.nostr };
   else return { error: "unknown user" };
+}
+export function userToStringSafe(user: UserType): string {
+  if ("urbit" in user) return user.urbit;
+  else return user.nostr;
 }
 // NOTE common tags:
 // imeta

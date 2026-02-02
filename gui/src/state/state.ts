@@ -4,14 +4,14 @@ import IO from "@/logic/requests/nostrill";
 import type { ComposerData } from "@/types/ui";
 import { create } from "zustand";
 import type { Fact, Relays, UserProfile } from "@/types/nostrill";
-import type { Event } from "@/types/nostr";
+import type { Event, NostrEvent } from "@/types/nostr";
 import type { FC, Gate, Poast } from "@/types/trill";
 import type { Notification } from "@/types/notifications";
 import { useShallow } from "zustand/shallow";
 import type { HarkAction, Skein } from "@/types/hark";
 import { skeinToNote } from "@/logic/notifications";
 import { defaultGate } from "@/logic/bunts";
-import { eventsToFc, addEventToFc } from "@/logic/nostrill";
+import { eventsToFc, addEventToFc, eventToProfile } from "@/logic/nostrill";
 import type { S3Config, UrbitContacts } from "@/types/urbit";
 import contactsSample from "../contacts.json";
 // TODO handle airlock connection issues
@@ -27,9 +27,11 @@ export type LocalState = {
   composerData: ComposerData | null;
   setComposerData: (c: ComposerData | null) => void;
   pubkey: string;
+  myFeed: FC;
   nostrFeed: FC;
   relays: Relays;
   profiles: Map<string, UserProfile>; // pubkey key
+  setProfiles: (m: Map<string, UserProfile>) => void; // pubkey key
   addProfile: (key: string, u: UserProfile) => void;
   following: Map<string, FC>;
   following2: FC;
@@ -41,6 +43,8 @@ export type LocalState = {
   feedPerms: Gate;
   contacts: UrbitContacts;
   s3: S3Config | null;
+  lastEose: string;
+  setEose: (s: string) => void;
   lastNostrEventTime: number;
 };
 
@@ -102,12 +106,12 @@ export const useStore = creator((set, get) => ({
       if ("state" in data) {
         const { feed, nostr, following, following2, relays, profiles, key } =
           data.state;
+        console.log("state", { relays, feed, profiles });
         const flwing = new Map(Object.entries(following as Record<string, FC>));
-        flwing.set(api!.airlock.our!, feed);
-        //  TODO do this in the backend
         const nostrFeed = eventsToFc(nostr);
         set({
           relays,
+          myFeed: feed,
           nostrFeed,
           profiles: new Map(Object.entries(profiles)),
           following: flwing,
@@ -165,6 +169,7 @@ export const useStore = creator((set, get) => ({
           if ("thread" in fact.nostr)
             console.log("nostr thread!!!", fact.nostr.thread);
           if ("relays" in fact.nostr) set({ relays: fact.nostr.relays });
+          if ("eose" in fact.nostr) set({ lastEose: fact.nostr.eose });
           if ("event" in fact.nostr) {
             // console.log("san event", fact.nostr.event);
             const event: Event = fact.nostr.event;
@@ -175,9 +180,8 @@ export const useStore = creator((set, get) => ({
             }
             if (event.kind === 0) {
               const profiles = get().profiles;
-              const data = JSON.parse(event.content);
-              const { name, picture, about, ...other } = data;
-              const prof = { name, picture, about, other };
+              const prof = eventToProfile(event);
+              if (!prof) return;
               const np = profiles.set(event.pubkey, prof);
               set({ profiles: np });
             }
@@ -196,8 +200,10 @@ export const useStore = creator((set, get) => ({
     profiles.set(key, profile);
     set({ profiles });
   },
+  setProfiles: (profiles) => set({ profiles }),
   lastFact: null,
   relays: {},
+  myFeed: { feed: {}, start: null, end: null },
   nostrFeed: { feed: {}, start: null, end: null },
   following: new Map(),
   followers: [],
@@ -214,6 +220,8 @@ export const useStore = creator((set, get) => ({
     set({ notifications });
   },
   feedPerms: defaultGate,
+  lastEose: "",
+  setEose: (lastEose) => set({ lastEose }),
   lastNostrEventTime: 0,
 }));
 

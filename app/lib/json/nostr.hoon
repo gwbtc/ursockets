@@ -84,13 +84,18 @@
 
   ++  user-meta
   |=  meta=user-meta:sur
-    %:  pairs
-        name+s+name.meta
-        picture+s+picture.meta
+    %-  pairs  (user-meta-pairs meta)
+
+  ++  user-meta-pairs
+  |=  meta=user-meta:sur  ^-  (list [@t json])
+    %+  weld  ^-  (list [@t json])
+    :~  name+s+name.meta
         about+s+about.meta
-        other+o+other.meta
-        ~
+        picture+s+picture.meta
+        :-  'patp'  ?~  patp.meta  ~  (patp:en:common u.patp.meta)
     ==
+    %+  turn  ~(tap by other.meta)  |=  a=[@t json]  a
+    
   ++  relay-msg  |=  msg=relay-msg:sur  ^-  json
   =/  head  [%s -.msg]
   :-  %a  :-  head
@@ -282,6 +287,9 @@
       %'image'
         =/  crd  (so jn)
         ?~  crd  $(fields t.fields)  $(fields t.fields, um um(picture u.crd))
+      %'patp'
+        =/  crd  ((se:de:common %p) jn)
+        $(fields t.fields, um um(patp crd))
       ==
   --
 --

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { UserProfile, UserType } from "@/types/nostrill";
+import type { BasicProfile, UserProfile, UserType } from "@/types/nostrill";
 import useLocalState from "@/state/state";
 import Icon from "@/components/Icon";
 import toast from "react-hot-toast";
@@ -20,11 +20,12 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
   userString,
   onSave,
 }) => {
-  const { api, profiles, setModal } = useLocalState((s) => ({
+  const { api, relays, profiles, setModal } = useLocalState((s) => ({
     api: s.api,
     pubkey: s.pubkey,
     profiles: s.profiles,
     setModal: s.setModal,
+    relays: s.relays,
   }));
 
   // Initialize state with existing profile or defaults
@@ -78,10 +79,11 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
         }
       });
 
-      const nprofile: UserProfile = {
+      const nprofile: BasicProfile = {
         name,
         picture,
         about,
+        patp: api?.airlock?.our || null,
         other,
       };
 
@@ -121,6 +123,10 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
   };
   console.log({ profile });
   console.log({ name, picture, customFields });
+  async function handleSend() {
+    if (!api) return;
+    const res = await api.relayProfile(Object.keys(relays));
+  }
 
   return (
     <div className="profile-editor">
@@ -224,6 +230,9 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
               className="save-btn"
             >
               {isSaving ? "Saving..." : "Save Profile"}
+            </button>
+            <button onClick={handleSend} className="send-btn">
+              Send to Relay
             </button>
             <button
               onClick={handleCancel}

@@ -50,6 +50,10 @@ function SlidingMenu() {
         <div>Notifications</div>
       </div>
       <hr />
+      <div className="opt" role="link" onClick={() => goto(`/fols`)}>
+        <Icon name="follow" size={20} />
+        <div>Follows</div>
+      </div>
 
       {/*<div
         className="opt tbd"

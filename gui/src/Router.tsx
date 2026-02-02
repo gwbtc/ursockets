@@ -3,11 +3,14 @@ import useLocalState from "@/state/state";
 import Feed from "@/pages/Feed";
 import User from "@/pages/User";
 import Settings from "@/pages/Settings";
+import Follows from "@/pages/Follows";
 import Thread, { NostrThreadLoader } from "@/pages/Thread";
 import { Switch, Router, Redirect, Route } from "wouter";
 import { P404 } from "./pages/Error";
 import WelcomeModal from "@/components/modals/WelcomeModal";
+import RelayStatusButton from "@/components/RelayStatusButton";
 import { useEffect } from "react";
+import Modal from "./components/modals/Modal";
 
 const WELCOME_SHOWN_KEY = "nostrill-welcome-shown";
 
@@ -29,16 +32,18 @@ export default function r() {
     <Switch>
       <Router base="/apps/nostrill">
         <Sidebar />
+        <RelayStatusButton />
         <main>
           <Route path="/" component={toMain} />
           <Route path="/sets" component={Settings} />
+          <Route path="/fols" component={Follows} />
           <Route path="/f" component={Feed} />
           <Route path="/f/:taip" component={Feed} />
           <Route path="/u/:user" component={User} />
           <Route path="/t/:host/:id" component={Thread} />
           <Route path="/t/:id" component={NostrThreadLoader} />
         </main>
-        {modal && modal}
+        {modal && <Modal close={() => setModal(null)}>{modal}</Modal>}
       </Router>
       <Route component={P404} />
     </Switch>

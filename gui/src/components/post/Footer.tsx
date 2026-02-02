@@ -143,8 +143,24 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
   ).winner;
   const reactIcon = stringToReact(mostCommonReact);
 
-  const canRelay =
-    Object.keys(relays).length > 0 && poast.author === api?.airlock.our;
+  function deletePoast(e: React.MouseEvent) {
+    e.stopPropagation();
+    setModal(
+      <ConfirmationDialog
+        onConfirm={doDelete}
+        onCancel={() => setModal(null)}
+      />,
+    );
+  }
+
+  async function doDelete() {
+    const r = await api!.deletePost(user, poast.id);
+    toast.success("Post deleted");
+    setModal(null);
+  }
+
+  const isMine = poast.author === api?.airlock.our;
+  const canRelay = Object.keys(relays).length > 0 && isMine;
 
   // TODO round up all helpers
   //
@@ -160,27 +176,35 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
   return (
     <div className="footer-wrapper post-footer">
       <footer>
-        <div className="icon">
-          <span role="link" onMouseUp={showReplyCount} className="reply-count">
+        <div className="icon-container">
+          <span
+            role="link"
+            onMouseUp={showReplyCount}
+            className="reply-count icon-count"
+          >
             {displayCount(childrenCount)}
           </span>
           <div className="icon-wrapper" role="link" onMouseUp={doReply}>
             <Icon name="reply" />
           </div>
         </div>
-        <div className="icon">
-          <span role="link" onMouseUp={showQuoteCount} className="quote-count">
+        <div className="icon-container">
+          <span
+            role="link"
+            onMouseUp={showQuoteCount}
+            className="quote-count icon-count"
+          >
             {displayCount(poast.engagement.quoted.length)}
           </span>
           <div className="icon-wrapper" role="link" onMouseUp={doQuote}>
             <Icon name="quote" />
           </div>
         </div>
-        <div className="icon">
+        <div className="icon-container">
           <span
             role="link"
             onMouseUp={showRepostCount}
-            className="repost-count"
+            className="repost-count icon-count"
           >
             {displayCount(poast.engagement.shared.length)}
           </span>
@@ -196,17 +220,22 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
             </div>
           )}
         </div>
-        <div className="icon" role="link" onMouseUp={doReact}>
+        <div className="icon-container" role="link" onMouseUp={doReact}>
           <span
             role="link"
             onMouseUp={showReactCount}
-            className="reaction-count"
+            className="reaction-count icon-count"
           >
             {displayCount(Object.keys(poast.engagement.reacts).length)}
           </span>
           {reactIcon}
         </div>
         {canRelay && <NostrIcon open={handleRelay} />}
+        {isMine && (
+          <div className="icon-container" role="link" onMouseUp={deletePoast}>
+            <Icon name="trash" title="delete" />
+          </div>
+        )}
       </footer>
     </div>
   );
@@ -238,14 +267,6 @@ export default Footer;
 //   }, []);
 //   const { our, setModal, setAlert } = useLocalState();
 //   const mine = our === poast.host || our === poast.author;
-//   async function doDelete(e: React.MouseEvent) {
-//     e.stopPropagation();
-//     deletePost(poast.host, poast.id);
-//     setAlert("Post deleted");
-//     setShowMenu(false);
-//     refetch();
-//     if (location.includes(poast.id)) navigate("/");
-//   }
 //   async function copyLink(e: React.MouseEvent) {
 //     e.stopPropagation();
 //     const link = trillPermalink(poast);

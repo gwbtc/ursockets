@@ -1,6 +1,5 @@
 import "@/styles/Profile.css";
 import "@/styles/UserModal.css";
-import Modal from "./Modal";
 import Avatar from "../Avatar";
 import Icon from "@/components/Icon";
 import useLocalState from "@/state/state";
@@ -8,19 +7,35 @@ import { useLocation } from "wouter";
 import toast from "react-hot-toast";
 import { generateNprofile } from "@/logic/nostr";
 import { useEffect, useState } from "react";
-import type { UserType } from "@/types/nostrill";
+import type {
+  Deferred,
+  Enbowled,
+  Fact,
+  FeedData,
+  NostrFollow,
+  UserType,
+} from "@/types/nostrill";
 
 export default function ({ user }: { user: UserType }) {
-  const { setModal, api, lastFact, pubkey, profiles, following, followers } =
-    useLocalState((s) => ({
-      setModal: s.setModal,
-      api: s.api,
-      pubkey: s.pubkey,
-      profiles: s.profiles,
-      following: s.following,
-      followers: s.followers,
-      lastFact: s.lastFact,
-    }));
+  const {
+    setModal,
+    api,
+    lastFact,
+    pubkey,
+    profiles,
+    following,
+    followers,
+    relays,
+  } = useLocalState((s) => ({
+    setModal: s.setModal,
+    api: s.api,
+    pubkey: s.pubkey,
+    profiles: s.profiles,
+    following: s.following,
+    followers: s.followers,
+    lastFact: s.lastFact,
+    relays: s.relays,
+  }));
   const [_, navigate] = useLocation();
   const [isLoading, setLoading] = useState(false);
 
@@ -44,14 +59,32 @@ export default function ({ user }: { user: UserType }) {
   const userFeed = following.get(userString);
   const postCount = userFeed ? Object.keys(userFeed.feed).length : 0;
 
-  // useEffect(() => {
-  //   if (!lastFact) return;
-  //   if (!("fols" in lastFact)) return;
-  //   if (!("new" in lastFact.fols)) return;
-  //   if (lastFact.fols.new.user === userString) setLoading(false);
-  //   const name = profile?.name || userString;
-  //   toast.success(`Followed ${name}`);
-  // }, [lastFact]);
+  useEffect(() => {
+    if (!lastFact) return;
+    if (!("fols" in lastFact)) return;
+    if ("quit" in lastFact.fols) handleQuit(lastFact.fols.quit);
+    if ("new-urbit" in lastFact.fols) followedUrbit(lastFact.fols["new-urbit"]);
+    if ("new-nostr" in lastFact.fols) followedNostr(lastFact.fols["new-nostr"]);
+  }, [lastFact]);
+  console.log({ lastFact });
+
+  function handleQuit(ustring: string) {
+    const name = profile?.name || userString;
+    if (ustring === userString) {
+      setLoading(false);
+      toast.success(`Unfollowed ${name}`);
+    }
+  }
+  function followedUrbit(data: Enbowled<Deferred<FeedData>>) {
+    // This flow is on components/trill/User.tsx
+  }
+  function followedNostr(fact: NostrFollow) {
+    if (fact.pubkey === userString) {
+      setLoading(false);
+      const name = profile?.name || userString;
+      toast.success(`Followed ${name}`);
+    }
+  }
 
   async function copy(e: React.MouseEvent) {
     e.stopPropagation();
@@ -113,93 +146,97 @@ export default function ({ user }: { user: UserType }) {
       )
     : [];
 
+  console.log({ relays });
   return (
-    <Modal close={close}>
-      <div className="user-modal">
-        {/* Banner Image */}
-        {bannerImage && (
-          <div className="user-banner">
-            <img src={bannerImage} alt="Profile banner" />
-          </div>
-        )}
+    <div className="user-modal">
+      {/* Banner Image */}
+      {bannerImage && (
+        <div className="user-banner">
+          <img src={bannerImage} alt="Profile banner" />
+        </div>
+      )}
 
-        {/* Header with Avatar and Basic Info */}
-        <div className="user-modal-header">
-          <div
-            className="user-modal-avatar-wrapper"
-            onClick={handleAvatarClick}
-            style={{ cursor: "nostr" in user ? "pointer" : "default" }}
-          >
-            <Avatar user={user} profile={profile} size={80} picOnly />
-          </div>
-
-          <div className="user-modal-info">
-            <h2 className="user-modal-name">{displayName}</h2>
-            <div className="user-modal-id-row">
-              <span className="user-modal-id" title={userString}>
-                {"urbit" in user ? user.urbit : truncatedId}
-              </span>
-              <Icon
-                name="copy"
-                size={16}
-                className="user-modal-copy-icon cp"
-                onClick={copy}
-                title="Copy to clipboard"
-              />
-            </div>
-
-            {/* User type badge */}
-            <div className="user-modal-badge">
-              {"urbit" in user ? (
-                <span className="badge badge-urbit">Urbit</span>
-              ) : (
-                <span className="badge badge-nostr">Nostr</span>
-              )}
-              {itsMe && <span className="badge badge-me">You</span>}
-              {isFollower && !itsMe && (
-                <span className="badge badge-follows">Follows you</span>
-              )}
-            </div>
-          </div>
+      {/* Header with Avatar and Basic Info */}
+      <div className="user-modal-header">
+        <div
+          className="user-modal-avatar-wrapper"
+          onClick={handleAvatarClick}
+          style={{ cursor: "nostr" in user ? "pointer" : "default" }}
+        >
+          <Avatar user={user} profile={profile} size={80} picOnly />
         </div>
 
-        {/* Profile About Section */}
-        {profile?.about && (
-          <div className="user-modal-about">
-            <p>{profile.about}</p>
+        <div className="user-modal-info">
+          <h2 className="user-modal-name">{displayName}</h2>
+          <div className="user-modal-id-row">
+            <span className="user-modal-id" title={userString}>
+              {"urbit" in user ? user.urbit : truncatedId}
+            </span>
+            <Icon
+              name="copy"
+              size={16}
+              className="user-modal-copy-icon cp"
+              onClick={copy}
+              title="Copy to clipboard"
+            />
           </div>
-        )}
 
-        {/* Stats */}
-        <div className="user-modal-stats">
-          {postCount > 0 && (
-            <div className="stat">
-              <span className="stat-value">{postCount}</span>
-              <span className="stat-label">Posts</span>
-            </div>
-          )}
-          {/* Additional stats could go here */}
+          {/* User type badge */}
+          <div className="user-modal-badge">
+            {"urbit" in user ? (
+              <span className="badge badge-urbit">Urbit</span>
+            ) : (
+              <span className="badge badge-nostr">Nostr</span>
+            )}
+            {itsMe && <span className="badge badge-me">You</span>}
+            {isFollower && !itsMe && (
+              <span className="badge badge-follows">Follows you</span>
+            )}
+          </div>
         </div>
+      </div>
 
-        {/* Custom Fields */}
-        {otherFields.length > 0 && (
-          <div className="user-modal-custom-fields">
-            <h4>Additional Info</h4>
-            {otherFields.map(([key, value]) => {
-              console.log({ key, value });
-              return (
-                <div key={key} className="custom-field-item">
-                  <span className="field-key">{key}:</span>
-                  <ProfValue value={value} />
-                </div>
-              );
-            })}
+      {/* Profile About Section */}
+      {profile?.about && (
+        <div className="user-modal-about">
+          <p>{profile.about}</p>
+        </div>
+      )}
+
+      {/* Stats */}
+      <div className="user-modal-stats">
+        {postCount > 0 && (
+          <div className="stat">
+            <span className="stat-value">{postCount}</span>
+            <span className="stat-label">Posts</span>
           </div>
         )}
+        {/* Additional stats could go here */}
+      </div>
 
-        {/* Action Buttons */}
-        <div className="user-modal-actions">
-          {!itsMe && (
+      {/* Custom Fields */}
+      {otherFields.length > 0 && (
+        <div className="user-modal-custom-fields">
+          <h4>Additional Info</h4>
+          {otherFields.map(([key, value]) => {
+            // console.log({ key, value });
+            return (
+              <div key={key} className="custom-field-item">
+                <span className="field-key">{key}:</span>
+                <ProfValue value={value} />
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="user-modal-actions">
+        {"nostr" in user && Object.keys(relays).length === 0 ? (
+          <div>Connect to a relay to follow</div>
+        ) : (
+          "nostr" in user &&
+          !itsMe && (
             <button
               className={`action-btn ${isFollowing ? "following" : "follow"}`}
               onClick={handleFollow}
@@ -208,32 +245,29 @@ export default function ({ user }: { user: UserType }) {
               <Icon name="pals" size={16} />
               {isLoading ? "..." : isFollowing ? "Following" : "Follow"}
             </button>
-          )}
-          <>
-            <button
-              className="action-btn secondary"
-              onClick={() => {
-                navigate(`/u/${userString}`);
-                close();
-              }}
-            >
-              <Icon name="home" size={16} />
-              View Feed
-            </button>
-          </>
+          )
+        )}
+        <>
+          <button
+            className="action-btn secondary"
+            onClick={() => {
+              navigate(`/u/${userString}`);
+              close();
+            }}
+          >
+            <Icon name="home" size={16} />
+            View Feed
+          </button>
+        </>
 
-          {"nostr" in user ? (
-            <button
-              className="action-btn secondary"
-              onClick={handleAvatarClick}
-            >
-              <Icon name="nostr" size={16} />
-              View on Primal
-            </button>
-          ) : null}
-        </div>
+        {"nostr" in user ? (
+          <button className="action-btn secondary" onClick={handleAvatarClick}>
+            <Icon name="nostr" size={16} />
+            View on Primal
+          </button>
+        ) : null}
       </div>
-    </Modal>
+    </div>
   );
 }
 

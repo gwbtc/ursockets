@@ -37,33 +37,31 @@ function UserFeed({
     lastFact: s.lastFact,
     pubkey: s.pubkey,
   }));
+  // auto updating on SSE doesn't work if we do shallow
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [isAccessLoading, setIsAccessLoading] = useState(false);
+  const { following } = useStore();
+
   const isMe =
     "urbit" in user
       ? user.urbit === api?.airlock.our
       : "nostr" in user
         ? pubkey === user.nostr
         : false;
-  // auto updating on SSE doesn't work if we do shallow
-  const { following } = useStore();
   const userString2 = "urbit" in user ? user.urbit : user.nostr;
   const feed = following.get(userString2);
-
-  const [isFollowLoading, setIsFollowLoading] = useState(false);
-  const [isAccessLoading, setIsAccessLoading] = useState(false);
 
   return (
     <div id="user-page">
       <Profile user={user} userString={userString} isMe={isMe} />
       {isMe ? (
-        <MyFeed our={api!.airlock.our!} />
+        <MyFeed />
       ) : "urbit" in user ? (
         <TrillFeed
           patp={user.urbit}
           feed={feed}
           isFollowLoading={isFollowLoading}
           setIsFollowLoading={setIsFollowLoading}
-          isAccessLoading={isAccessLoading}
-          setIsAccessLoading={setIsAccessLoading}
         />
       ) : "nostr" in user ? (
         <NostrFeed
@@ -82,9 +80,7 @@ function UserFeed({
 
 export default UserLoader;
 
-function MyFeed({ our }: { our: string }) {
-  const following = useLocalState((s) => s.following);
-  const feed = following.get(our);
-  if (!feed) return <ErrorPage msg="Critical error" />;
+function MyFeed() {
+  const feed = useLocalState((s) => s.myFeed);
   return <Inner feed={feed} refetch={() => {}} />;
 }

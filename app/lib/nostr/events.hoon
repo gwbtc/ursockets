@@ -15,6 +15,28 @@
             ==  .y
     $(fs t.fs)
 
+++  is-user-sub  |=  fs=(list filter:nsur)  ^-  ?
+  |-  ?~  fs  .n
+    =/  filter  i.fs
+    ?~  kinds.filter  .n
+    ?~  authors.filter  .n
+      ?:  (~(has in u.kinds.filter) 0)  .n
+        ?:  ?&  (~(has in u.kinds.filter) 1)
+                ?=(%~ ids.filter)
+            ==  .y
+    $(fs t.fs)
+
+++  is-specific-user-sub  |=  [pubkey=@ux fs=(list filter:nsur)]  ^-  ?
+  =/  must-kinds  (silt ~[1])
+  =/  must-authors  (silt ~[pubkey])
+  |-  ?~  fs  .n
+    =/  filter  i.fs
+    ?:  ?&  .=(`must-kinds kinds.filter)
+            .=(`must-authors authors.filter)
+            ?=(%~ ids.filter)
+        ==  .y
+    $(fs t.fs)
+
 ++  profs-req  |=  fs=(list filter:nsur)  ^-  ?
   |-  ?~  fs  .n
     =/  filter  i.fs
@@ -107,9 +129,10 @@
     =?  ids  ?=(^ ref)  (~(put in ids) u.ref)
     $(tags t.tags)
 
-++  build-event  |=  [=keys:nsur eny=@ time=@da content=@t]  ^-  event:nsur
+++  build-event  |=  [=keys:nsur eny=@ time=@da content=@t kind=@ud]  ^-  event:nsur
+  :: kind should  be 1 when sending to normal relays, 667 to sending to the global relay
   =/  ts  (to-unix-secs:jikan:sr time)
-  =/  raw=raw-event:nsur  [pub.keys ts 1 ~ content]
+  =/  raw=raw-event:nsur  [pub.keys ts kind ~ content]
   =/  event-id  (hash-event:nostr-keys raw)
   =/  signature  (sign-event:nostr-keys priv.keys event-id eny)
   ~&  hash-and-signed=[event-id signature]
@@ -124,11 +147,32 @@
     ==
   event
 
-++  post-to-event  |=  [=keys:nsur eny=@ p=post:post]  ^-  event:nsur
+++  profile-to-event  |=  [=keys:nsur prof=user-profile:comms eny=@ now=@da]
+  ^-  event:nsur
+  :: kind should  be 1 when sending to normal relays, 667 to sending to the global relay
+  =/  jon=json  (user-meta:en:js +>+>+.prof)
+  =/  string  (en:json:html jon)
+  =/  ts  (to-unix-secs:jikan:sr now)
+  =/  raw=raw-event:nsur  [pub.keys ts 0 ~ string]
+  =/  event-id  (hash-event:nostr-keys raw)
+  =/  signature  (sign-event:nostr-keys priv.keys event-id eny)
+  ~&  hash-and-signed=[event-id signature]
+  =/  =event:nsur  :*
+    event-id
+    pub.keys
+    created-at.raw
+    kind.raw
+    tags.raw
+    content.raw
+    signature
+    ==
+  event
+++  post-to-event  |=  [=keys:nsur eny=@ p=post:post kind=@ud]  ^-  event:nsur
+  :: kind should  be 1 when sending to normal relays, 667 to sending to the global relay
   =/  cl  (latest-post-content:trill contents.p)
   =/  string  (crip (content-list-to-md:trill cl))
   =/  ts  (to-unix-secs:jikan:sr id.p)
-  =/  raw=raw-event:nsur  [pub.keys ts 1 ~ string]
+  =/  raw=raw-event:nsur  [pub.keys ts kind ~ string]
   =/  event-id  (hash-event:nostr-keys raw)
   =/  signature  (sign-event:nostr-keys priv.keys event-id eny)
   ~&  hash-and-signed=[event-id signature]
@@ -144,7 +188,7 @@
   event
 
 ++  event-to-post
-  |=  [=event:nsur profile=(unit user-meta:nsur) relay=(unit @t)]
+  |=  [=event:nsur profile=(unit user-profile:comms) relay=(unit @t)]
     ^-  post-wrapper:comms
     ::  most people on nostr don't use markdown, they just spam links like retards
     =/  cl  (tokenize:trill content.event)

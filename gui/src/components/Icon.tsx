@@ -1,55 +1,39 @@
-import { useTheme } from "@/styles/ThemeProvider";
+import bellSvg from "@/assets/icons/bell.svg?raw";
+import cometSvg from "@/assets/icons/comet.svg?raw";
+import copySvg from "@/assets/icons/copy.svg?raw";
+import crowSvg from "@/assets/icons/crow.svg?raw";
+import emojiSvg from "@/assets/icons/emoji.svg?raw";
+import homeSvg from "@/assets/icons/home.svg?raw";
+import followSvg from "@/assets/icons/follow.svg?raw";
+import keySvg from "@/assets/icons/key.svg?raw";
+import messagesSvg from "@/assets/icons/messages.svg?raw";
+import nostrSvg from "@/assets/icons/nostr.svg?raw";
+import planetSvg from "@/assets/icons/planet.svg?raw";
+import palsSvg from "@/assets/icons/pals.svg?raw";
+import profileSvg from "@/assets/icons/profile.svg?raw";
+import quoteSvg from "@/assets/icons/quote.svg?raw";
+import radioSvg from "@/assets/icons/radio.svg?raw";
+import replySvg from "@/assets/icons/reply.svg?raw";
+import repostSvg from "@/assets/icons/rt.svg?raw";
+import rumorsSvg from "@/assets/icons/rumors.svg?raw";
+import settingsSvg from "@/assets/icons/settings.svg?raw";
+import trashSvg from "@/assets/icons/trash.svg?raw";
+import youtubeSvg from "@/assets/icons/youtube.svg?raw";
+import { colorToCSSVar, type ThemeColorsType } from "@/styles/ThemeProvider";
 
-import bellSvg from "@/assets/icons/bell.svg";
-import cometSvg from "@/assets/icons/comet.svg";
-import copySvg from "@/assets/icons/copy.svg";
-import crowSvg from "@/assets/icons/crow.svg";
-import emojiSvg from "@/assets/icons/emoji.svg";
-import homeSvg from "@/assets/icons/home.svg";
-import keySvg from "@/assets/icons/key.svg";
-import messagesSvg from "@/assets/icons/messages.svg";
-import nostrSvg from "@/assets/icons/nostr.svg";
-import palsSvg from "@/assets/icons/pals.svg";
-import profileSvg from "@/assets/icons/profile.svg";
-import quoteSvg from "@/assets/icons/quote.svg";
-import radioSvg from "@/assets/icons/radio.svg";
-import replySvg from "@/assets/icons/reply.svg";
-import repostSvg from "@/assets/icons/rt.svg";
-import rumorsSvg from "@/assets/icons/rumors.svg";
-import settingsSvg from "@/assets/icons/settings.svg";
-import youtubeSvg from "@/assets/icons/youtube.svg";
-
-export type IconName =
-  | "bell"
-  | "comet"
-  | "copy"
-  | "crow"
-  | "emoji"
-  | "home"
-  | "key"
-  | "messages"
-  | "nostr"
-  | "pals"
-  | "profile"
-  | "quote"
-  | "radio"
-  | "reply"
-  | "repost"
-  | "rumors"
-  | "settings"
-  | "youtube";
-
-const iconMap: Record<IconName, string> = {
+const icons = {
   bell: bellSvg,
   comet: cometSvg,
   copy: copySvg,
   crow: crowSvg,
   emoji: emojiSvg,
+  follow: followSvg,
   home: homeSvg,
   key: keySvg,
   messages: messagesSvg,
   nostr: nostrSvg,
   pals: palsSvg,
+  planet: planetSvg,
   profile: profileSvg,
   quote: quoteSvg,
   radio: radioSvg,
@@ -57,17 +41,20 @@ const iconMap: Record<IconName, string> = {
   repost: repostSvg,
   rumors: rumorsSvg,
   settings: settingsSvg,
+  trash: trashSvg,
   youtube: youtubeSvg,
-};
+} as const;
+
+export type IconName = keyof typeof icons;
 
 interface IconProps {
   name: IconName;
   size?: number;
   className?: string;
   title?: string;
-  onClick?: (e: React.MouseEvent) => any;
-  color?: "primary" | "text" | "textSecondary" | "textMuted" | "custom";
-  customColor?: string;
+  onClick?: (e: React.MouseEvent) => void;
+  color?: ThemeColorsType;
+  filter?: string;
 }
 
 const Icon: React.FC<IconProps> = ({
@@ -77,58 +64,55 @@ const Icon: React.FC<IconProps> = ({
   onClick,
   size,
   color = "text",
-  customColor,
+  filter,
 }) => {
-  const { theme } = useTheme();
+  const svgContent = icons[name];
 
-  // Simple filter based on theme - icons should match text
-  const getFilter = () => {
-    // For dark themes, invert the black SVGs to white
-    if (
-      theme.name === "dark" ||
-      theme.name === "noir" ||
-      theme.name === "gruvbox"
-    ) {
-      return "invert(1)";
-    }
-    // For light themes with dark text, keep as is
-    if (theme.name === "light") {
-      return "none";
-    }
-    // For colored themes, adjust brightness/contrast
-    if (theme.name === "sepia") {
-      return "sepia(1) saturate(2) hue-rotate(20deg) brightness(0.8)";
-    }
-    if (theme.name === "ocean") {
-      return "brightness(0) saturate(100%) invert(13%) sepia(95%) saturate(3207%) hue-rotate(195deg) brightness(94%) contrast(106%)";
-    }
-    if (theme.name === "forest") {
-      return "brightness(0) saturate(100%) invert(24%) sepia(95%) saturate(1352%) hue-rotate(87deg) brightness(92%) contrast(96%)";
-    }
-    return "none";
-  };
-
-  const iconUrl = iconMap[name];
-
-  if (!iconUrl) {
+  if (!svgContent) {
     console.error(`Icon "${name}" not found`);
     return null;
   }
 
+  // Remove embedded <style> tags and inline style attributes that can override our styling
+  let processedSvg = svgContent
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/\s*style="[^"]*"/gi, "");
+
+  // Replace fill/stroke with currentColor so they inherit from CSS color property
+  // Preserve fill="none" for transparent parts
+  processedSvg = processedSvg
+    .replace(/fill="(?!none)[^"]*"/g, 'fill="currentColor"')
+    .replace(/stroke="(?!none)[^"]*"/g, 'stroke="currentColor"');
+
+  // Remove existing width/height attributes
+  processedSvg = processedSvg
+    .replace(/\s*width="[^"]*"/g, "")
+    .replace(/\s*height="[^"]*"/g, "");
+
+  // Inject width/height 100% into SVG tag so it fills the wrapper
+  processedSvg = processedSvg.replace(
+    /<svg/,
+    '<svg width="100%" height="100%"',
+  );
+
+  const baseStyle: React.CSSProperties = {
+    display: "inline-flex",
+    cursor: onClick ? "pointer" : "default",
+    color: `var(${colorToCSSVar(color)})`,
+    // When size is set, use explicit dimensions; otherwise fill parent height and stay square
+    width: size ?? "auto",
+    height: size ?? "100%",
+    aspectRatio: size ? undefined : 1,
+  };
+  const style = filter ? { ...baseStyle, filter } : baseStyle;
   return (
-    <img
-      width={size}
-      src={iconUrl}
+    <span
       className={`icon ${className}`}
       onClick={onClick}
       title={title}
-      alt={title || name}
-      style={{
-        display: "inline-block",
-        cursor: onClick ? "pointer" : "default",
-        filter: getFilter(),
-        transition: "filter 0.2s ease",
-      }}
+      role={onClick ? "button" : undefined}
+      style={style}
+      dangerouslySetInnerHTML={{ __html: processedSvg }}
     />
   );
 };

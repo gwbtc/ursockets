@@ -4,34 +4,33 @@ import PostList from "@/components/feed/PostList";
 import useLocalState from "@/state/state";
 import Icon from "@/components/Icon";
 import toast from "react-hot-toast";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import type { FC } from "@/types/trill";
 import type { Ship } from "@/types/urbit";
+import { useRequestAccess } from "@/hooks/useRequestAccess";
 
 function UserFeed({
   patp,
   feed,
   isFollowLoading,
   setIsFollowLoading,
-  isAccessLoading,
-  setIsAccessLoading,
 }: {
   patp: Ship;
   feed: FC | undefined;
   isFollowLoading: boolean;
   setIsFollowLoading: (b: boolean) => void;
-  isAccessLoading: boolean;
-  setIsAccessLoading: (b: boolean) => void;
 }) {
-  const { api, addProfile, lastFact } = useLocalState((s) => ({
+  const { api, lastFact } = useLocalState((s) => ({
     api: s.api,
-    addProfile: s.addProfile,
     lastFact: s.lastFact,
   }));
+  const {
+    requestAccess,
+    isLoading: isAccessLoading,
+    feed: accessFeed,
+  } = useRequestAccess();
   const hasFeed = !feed ? false : Object.entries(feed).length > 0;
   const refetch = () => feed;
-
-  const [fc, setFC] = useState<FC>();
 
   useEffect(() => {
     console.log("fact", lastFact);
@@ -42,19 +41,20 @@ function UserFeed({
     const follow = lastFact.fols;
     if (!follow) return;
     console.log("last fact", lastFact);
-    if ("new" in follow) {
-      console.log(follow.new.user);
-      if (patp !== follow.new.user) return;
-      if (follow.new.data.data === "maybe") {
-        const toastMsg = `${follow.new.user} will review your follow request manually.`;
-        const msg = follow.new.data.msg
-          ? toastMsg + `\nHe added: ${follow.new.data.msg}.`
+    if ("new-urbit" in follow) {
+      const d = follow["new-urbit"];
+      console.log(d.user);
+      if (patp !== d.user) return;
+      if (d.data.data === "maybe") {
+        const toastMsg = `${d.user} will review your follow request manually.`;
+        const msg = d.data.msg
+          ? toastMsg + `\nHe added: ${d.data.msg}.`
           : toastMsg;
         toast.success(msg, { duration: 5000 });
-      } else if (follow.new.data.data === null) {
-        const toastMsg = `${follow.new.user} denied your follow request.`;
-        const msg = follow.new.data.msg
-          ? toastMsg + `\nHe added: ${follow.new.data.msg}.`
+      } else if (d.data.data === null) {
+        const toastMsg = `${d.user} denied your follow request.`;
+        const msg = d.data.msg
+          ? toastMsg + `\nHe added: ${d.data.msg}.`
           : toastMsg;
         toast.error(msg, { duration: 5000 });
       } else toast.success(`Now following ${patp}`);
@@ -84,45 +84,7 @@ function UserFeed({
     }
   };
 
-  const handleRequestAccess = async () => {
-    if (!api) return;
-    setIsAccessLoading(true);
-    try {
-      const res = await api.peekFeed(patp);
-      toast.success(`Access request sent to ${patp}`);
-      if ("error" in res) toast.error(res.error);
-      else {
-        console.log("peeked", res);
-        if (res.ok.data === "maybe") {
-          const toastMsg = `${patp} will review your access request manually.`;
-          const msg = res.ok.msg
-            ? toastMsg + `\nHe added: ${res.ok.msg}.`
-            : toastMsg;
-          toast.success(msg, { duration: 5000 });
-        } else if (!res.ok.data) {
-          const toastMsg = `${patp} denied your access request.`;
-          const msg = res.ok.msg
-            ? toastMsg + `\nHe added: ${res.ok.msg}.`
-            : toastMsg;
-          toast.error(msg, { duration: 5000 });
-        } else {
-          const toastMsg = `${patp} granted your access request.`;
-          const msg = res.ok.msg
-            ? toastMsg + `\nHe added: ${res.ok.msg}.`
-            : toastMsg;
-          toast.success(msg);
-          setFC(res.ok.data.feed);
-          if (res.ok.data.profile) addProfile(patp, res.ok.data.profile);
-        }
-      }
-    } catch (error) {
-      toast.error(`Failed to request access from ${patp}`);
-      console.error("Access request error:", error);
-    } finally {
-      setIsAccessLoading(false);
-    }
-  };
-  console.log({ patp, feed, fc });
+  const handleRequestAccess = () => requestAccess(patp);
 
   return (
     <>
@@ -166,11 +128,11 @@ function UserFeed({
 
       {feed && hasFeed ? (
         <Inner feed={feed} refetch={refetch} />
-      ) : fc ? (
-        <Inner feed={fc} refetch={refetch} />
+      ) : accessFeed ? (
+        <Inner feed={accessFeed} refetch={refetch} />
       ) : null}
 
-      {!feed && !fc && (
+      {!feed && !accessFeed && (
         <div id="other-user-feed">
           <div className="empty-feed-message">
             <Icon name="messages" size={48} color="textMuted" />

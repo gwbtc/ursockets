@@ -1,0 +1,536 @@
+/* Follows Page */
+.follows-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.follows-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.follows-header-content {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.follows-header-content svg {
+  color: var(--color-primary);
+}
+
+.follows-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.follows-subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.follows-count {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  background: var(--color-surface);
+  border-radius: 12px;
+}
+
+.count-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.count-label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Empty State */
+.follows-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.follows-empty svg {
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.follows-empty h3 {
+  margin: 0 0 0.5rem;
+  color: var(--color-text-secondary);
+}
+
+.follows-empty p {
+  margin: 0;
+}
+
+/* Follows Grid */
+.follows-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Follow Card */
+.follow-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 1.25rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.follow-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px var(--color-shadow);
+}
+
+.follow-card-header {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.follow-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.follow-card-name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.follow-card-id {
+  margin: 0.25rem 0 0;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-family: monospace;
+}
+
+.follow-card-about {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.follow-card-stats {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.stat-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.follow-card-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.follow-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.follow-btn.primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.follow-btn.primary:hover {
+  background: var(--color-primary-hover);
+}
+
+.follow-btn.secondary {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.follow-btn.secondary:hover {
+  background: var(--color-border);
+}
+
+.follow-btn.icon-only {
+  padding: 0.5rem;
+  background: var(--color-surface-hover);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+.follow-btn.icon-only:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+}
+
+/* SubFollows Modal */
+.subfollows-container {
+  width: 100%;
+  overflow: hidden;
+}
+
+.subfollows-slider {
+  display: flex;
+  width: 200%;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.subfollows-panel {
+  width: 50%;
+  min-height: 400px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.subfollows-header {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.subfollows-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--color-text);
+}
+
+.subfollows-count {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.subfollows-fetch-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.subfollows-fetch-btn:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.subfollows-fetch-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+}
+
+.subfollows-list {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.subfollows-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--color-border-light);
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+}
+
+.subfollows-entry:last-child {
+  border-bottom: none;
+}
+
+.subfollows-entry:hover {
+  background: var(--color-surface-hover);
+}
+
+.subfollows-entry-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.subfollows-entry-name {
+  font-weight: 500;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.subfollows-entry-id {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-family: monospace;
+}
+
+.subfollows-pubkey {
+  margin: 0;
+  font-size: 0.85rem;
+  font-family: monospace;
+  color: var(--color-text-muted);
+}
+
+/* Back Button */
+.subfollows-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  margin-bottom: 1rem;
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.subfollows-back-btn:hover {
+  opacity: 0.8;
+}
+
+/* User Modal Inline (within SubFollows) */
+.subfollows-detail {
+  padding: 0 1rem;
+}
+
+.user-modal-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.user-banner-small {
+  width: 100%;
+  height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.user-banner-small img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-modal-header-inline {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.user-modal-info-inline {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-modal-info-inline h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.user-id-inline {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-family: monospace;
+}
+
+.user-badges-inline {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.user-about-inline {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.user-stats-inline {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.5rem 0;
+}
+
+.follow-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.follow-action-btn:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.follow-action-btn.following {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.follow-action-btn.following:hover {
+  background: var(--color-error);
+  border-color: var(--color-error);
+  color: white;
+}
+
+.follow-action-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Badges (shared with UserModal) */
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge-urbit {
+  background: #4a9de0;
+  color: white;
+}
+
+.badge-nostr {
+  background: #9b59b6;
+  color: white;
+}
+
+.badge-me {
+  background: var(--color-success);
+  color: white;
+}
+
+.badge-follows {
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .follows-page {
+    padding: 1rem;
+  }
+
+  .follows-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .follows-count {
+    align-self: flex-start;
+  }
+
+  .follows-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .follow-card-actions {
+    flex-direction: column;
+  }
+
+  .follow-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

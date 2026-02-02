@@ -9,6 +9,7 @@
     njs=json-nostr,
     postlib=trill-post,
     sr=sortug,
+    constants,
     ::
     mutations-nostr,
     nostr-client,
@@ -185,8 +186,23 @@
         =/  mentions  (extract-mentions:postlib p)
         =/  mention-cards  %+  turn  mentions  |=  s=@p
           %+  poke-host:crds  s  [%eng %mention p]
+        =/  global-cards=(list card:agent:gall)  ?.  global.poke  ~
+
+          =/  mutan  ~(. mutations-nostr [state bowl])
+          =/  rl  get-nostrill-relay:mutan
+          ?~  rl  ~&  >>>  "no global relay!"  ~
+          =/  wid=@  -.u.rl
+          =/  relay=relay-stats:nsur  +.u.rl
+
+          =/  event  (post-to-event:evlib i.keys.state eny.bowl p 667)
+          =/  nclient  ~(. nostr-client [state bowl])
+          =/  relay-card  (send-card:global:nclient [%event event])
+          :~  (update-ui:cards:lib [%nostr %sent-post host.p id.p ~[global-relay:constants] event])
+              relay-card
+          ==
+        :: TODO anon feed
         :_  state
-          %+  weld  mention-cards
+          %+  weld  global-cards  %+  weld  mention-cards
           :~  ui-card
               fact-card
           ==
@@ -229,16 +245,18 @@
         ?:  ?=(%nostr -.host.poke)  
           =/  mutan  ~(. mutations-nostr [state bowl])
           =/  rl  get-relay:mutan
-          ?~  rl  ~&  >>>  "no-relay!"  `state
+          ?~  rl  ~&  >>>  "no relay!"  `state
           =/  wid=@  -.u.rl
           =/  relay=relay-stats:nsur  +.u.rl
-          =/  nclient  ~(. nostr-client [state bowl wid relay])
-          =/  ev  (build-event:evlib i.keys.state eny.bowl now.bowl content.poke)
+          =/  nclient  ~(. nostr-client [state bowl])
+          =/  rclient  ~(. relay.nclient [wid relay])
+          :: TODO look at that kind logic
+          =/  ev  (build-event:evlib i.keys.state eny.bowl now.bowl content.poke 1)
           =/  parent-id  (crip (scow:parsing:sr %ux id.poke))
           =/  reply-tag=(list @t)  ['e' parent-id url.relay 'reply' ~]
           =.  tags.ev  ~[reply-tag]
           :_  state
-          :~  (send:nclient url.relay [%event ev])
+          :~  (send-card:rclient [%event ev])
           ==
         ::
         =/  host  (user-to-atom:lib host.poke)

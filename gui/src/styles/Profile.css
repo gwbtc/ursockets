@@ -148,6 +148,7 @@
 }
 
 .save-btn,
+.send-btn,
 .cancel-btn {
   padding: 10px 20px;
   border: none;
@@ -162,15 +163,14 @@
   color: white;
 }
 
+.send-btn {
+  background: var(--color-secondary);
+  color: white;
+}
+
 .cancel-btn {
   background: var(--color-surface-hover);
   color: var(--color-text);
-}
-
-.save-btn:disabled,
-.cancel-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .save-btn:hover:not(:disabled),

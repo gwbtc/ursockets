@@ -457,3 +457,8 @@ export function checkIfClickedOutside(
   e.stopPropagation();
   if (el.contains(e.currentTarget)) close();
 }
+
+export function abbreviateHex(hex: string): string {
+  if (hex.length <= 11) return hex;
+  return `${hex.slice(0, 4)}...${hex.slice(-4)}`;
+}

@@ -63,7 +63,7 @@ function TrillPost(props: PostProps) {
     e.stopPropagation();
     setModal(<UserModal user={props.user} />);
   }
-  const avatar = profile ? (
+  const avatar = profile?.picture ? (
     <div className="avatar sigil cp" role="link" onMouseUp={openModal}>
       <img src={profile.picture} />
     </div>

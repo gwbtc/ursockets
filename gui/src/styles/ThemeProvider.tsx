@@ -39,6 +39,7 @@ export interface ThemeColors {
   shadow: string;
   overlay: string;
 }
+export type ThemeColorsType = keyof ThemeColors;
 
 export interface ThemeTypography {
   fontSizeXs: string;
@@ -365,6 +366,9 @@ interface ThemeContextType {
   setTheme: (name: ThemeName) => void;
   availableThemes: ThemeName[];
 }
+export function colorToCSSVar(key: string): string {
+  return `--color-${key.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
+}
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
@@ -402,7 +406,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 
     // Set color variables
     Object.entries(theme.colors).forEach(([key, value]) => {
-      const cssVarName = `--color-${key.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
+      const cssVarName = colorToCSSVar(key);
       root.style.setProperty(cssVarName, value);
     });
 

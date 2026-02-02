@@ -14,17 +14,23 @@
             =/  rl  get-relay:mutan
             ?~  rl  ~&   >>>  "no relay!"  `state
             =/  wid  -.u.rl
-            =/  relay  +.u.rl
-            =/  nclient  ~(. nostr-client [state bowl wid relay])  
+            =/  relay=relay-stats:nsur  +.u.rl
+            =/  relay-url=@t  url.relay
+            =/  nclient  ~(. nostr-client [state bowl])  
+            =/  rclient  ~(. relay.nclient [wid relay])  
             :: TODO now or on receival?
             =.  following.state  (~(put by following.state) user *feed:feed)
             =/  graph  (~(get by follow-graph.state) [%urbit our.bowl])
             =/  follows  ?~  graph  (silt ~[user])  (~(put in u.graph) user)
             =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] follows)
-            
-            =^  cards  relay  (get-user-feed:nclient +.user)
+            =^  cards  relay  (get-user-feed:rclient +.user)
             =.  relays.state  (~(put by relays.state) wid relay)
-            [cards state]
+            ::  ui
+            =/  profile  (~(get by profiles.state) user)
+            =/  =fact:ui  [%fols %new-nostr +.user profile ~[relay-url]]
+            =/  ui-card   (update-ui:cards:lib fact)
+            :_  state
+            [ui-card cards]
   ==
 ++  handle-del  |=  =user:sur
   ^-  (quip card:agent:gall _state)
@@ -33,13 +39,26 @@
   ?~  graph  `state
   =/  nset  (~(del in u.graph) user)
   =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] nset)
-  :_  state
-    =/  =fact:ui  [%fols %quit user]
-    =/  c1  (update-ui:cards:lib fact)
-    ?.  ?=(%urbit -.user)  :~(c1)
+  =/  =fact:ui  [%fols %quit user]
+  =/  c1  (update-ui:cards:lib fact)
+  ?:  ?=(%urbit -.user)
     ~&  >>  leaving=user
     =/  c2   (urbit-leave +.user)
+    :_  state
     :~(c1 c2)
+
+  ::  nostr
+  =/  mutan  ~(. mutations-nostr [state bowl])
+  =/  rl  get-relay:mutan
+  ?~  rl  ~&   >>>  "no relay!"  `state
+  =/  wid  -.u.rl
+  =/  relay=relay-stats:nsur  +.u.rl
+  =/  relay-url=@t  url.relay
+  =/  nclient  ~(. nostr-client [state bowl])  
+  =/  rclient  ~(. relay.nclient [wid relay])  
+  =^  cards  relay  (unfollow-user:rclient +.user)
+  :_  state
+  :-  c1  cards
 
 ++  handle-res  |=  fr=fols-res:comms
   ^-  (quip card:agent:gall _state)
@@ -55,13 +74,13 @@
     =/  fd=feed-data:comms  data.p.fr
     =.  following.state   (~(put by following.state) user feed.fc.fd)
     =.  following2.state  (add-new-feed:feedlib following2.state feed.fc.fd)
-    =?  profiles.state  ?=(^ profile.fd)  (~(put by profiles.state) user u.profile.fd)
+    =.  profiles.state  (~(put by profiles.state) user profile.fd)
     =/  graph  (~(get by follow-graph.state) [%urbit our.bowl])
     =/  follows  ?~  graph  (silt ~[user])  (~(put in u.graph) user)
     =.  follow-graph.state  (~(put by follow-graph.state) [%urbit our.bowl] follows)
     state
   ::
-  =/  =fact:ui  [%fols %new enfr]
+  =/  =fact:ui  [%fols %new-urbit enfr]
   =/  ui-card   (update-ui:cards:lib fact)
   :_  state
   :~

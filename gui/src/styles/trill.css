@@ -364,17 +364,18 @@
 
   /* transform: rotate(0deg); */
   /* the dummy transform enforces position fixed inheritance */
-  .icon {
+  .icon-container {
     cursor: pointer;
     margin: 0 0.2rem;
     display: flex;
     align-items: center;
     gap: 0.2rem;
     width: 64px;
-    height: 1.6rem;
+    height: 1.5rem;
     /* min-width: 64px; */
 
     .icon-wrapper {
+      height: 100%;
       cursor: pointer;
       display: inline-block;
       transition: transform 0.1s ease, opacity 0.1s ease;
@@ -393,11 +394,11 @@
       height: 1.6rem;
     }
 
-    span {
+    .icon-count {
       display: block;
+      height: 100%;
       width: 2rem;
       text-align: right;
-      padding-top: 0.2rem;
       margin-right: 0.4rem;
     }
 

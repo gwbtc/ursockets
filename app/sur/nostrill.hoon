@@ -6,6 +6,7 @@
   $:  %0
       :: nostr config
       relays=(map @ud relay-stats:nostr)  ::  key is the websocket id
+      global-relay-conn=(unit @ud)  :: the websocket id
       :: ws-msg-queue=(list websocket-event:eyre)
       keys=(lest keys:nostr)  :: cycled, i.keys is current one
       ::  own feed
@@ -15,9 +16,10 @@
       :: TODO deprecate and parse properly into a feed:trill
       =nostr-feed
       ::  profiles
-      profiles=(map user user-meta:nostr)
+      profiles=(map user user-profile:comms)
       following=(map user =feed:trill)
       following2=global-feed
+      ::
       =global-feed
       follow-graph=(map user (set user))
       ::  Save incoming requests to handle async

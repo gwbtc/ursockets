@@ -3,8 +3,12 @@
   ++  connect  |=  [endpoint=@t =bowl:gall]
     ^-  card:agent:gall
     =/  =task:iris  [%websocket-connect dap.bowl endpoint]
-    [%pass /ws-connect %arvo %i task]
 
+  ++  wait-for-connection  |=  [endpoint=@t =bowl:gall msg=websocket-message:eyre]
+    =/  connect-card  (connect endpoint bowl)
+    [%pass /ws-connect %arvo %i task]
+    
+  
   ++  cancel-connect  |=  wid=@ud
     ^-  card:agent:gall
     =/  =task:iris  [%cancel-websocket wid]
@@ -53,6 +57,20 @@
       =/  card  [%give %fact ~[pat.i] cage]
       [card acc]
 
+  ++  list-client-conns
+    |=  =bowl:gall  ^-  (list path)
+      =/  inc-subs  ~(tap by sup.bowl)
+      %+  roll  inc-subs  |=  [i=[=duct =ship =path] acc=(list path)]
+        ~&  bitt=i
+        ?.  ?=([%websocket-client *] path.i)  acc
+        [path.i acc]
+  ++  list-server-conns
+    |=  =bowl:gall  ^-  (list path)
+      =/  inc-subs  ~(tap by sup.bowl)
+      =/  ws-paths  %+  roll  inc-subs  |=  [i=[=duct =ship =path] acc=(list path)]
+        ~&  bitt=i
+        ?.  ?=([%websocket-server*] path.i)  acc
+        [path.i acc]
   
 
   

@@ -7,7 +7,7 @@
   /* min-width: 400px; */
   /* max-width: 500px; */
   padding: 1rem;
-  overflow: hidden;
+  overflow-y: scroll;
 }
 
 .user-modal-error {

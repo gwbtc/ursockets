@@ -1,9 +1,6 @@
-import Modal from "./Modal";
-
 export default function WelcomeModal() {
   return (
-    <Modal>
-      <div className="welcome-modal">
+    <div className="welcome-modal">
         <div className="welcome-header">
           <div className="welcome-logo-glow"></div>
           <h1>Welcome to Nostrill!</h1>
@@ -92,7 +89,6 @@ export default function WelcomeModal() {
             <span className="highlight">~polwex</span>
           </p>
         </div>
-      </div>
-    </Modal>
+    </div>
   );
 }

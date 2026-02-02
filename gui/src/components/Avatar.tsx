@@ -9,7 +9,7 @@ export default function ({
   user,
   size,
   color,
-  noClickOnName,
+  noClick,
   profile,
   picOnly = false,
   customClass,
@@ -17,7 +17,7 @@ export default function ({
   user: UserType;
   size: number;
   color?: string;
-  noClickOnName?: boolean;
+  noClick?: boolean;
   profile?: UserProfile;
   picOnly?: boolean;
   customClass?: string;
@@ -30,10 +30,10 @@ export default function ({
     ) : "urbit" in user && isValidPatp(user.urbit) ? (
       <Sigil patp={user.urbit} size={size} bg={color} />
     ) : (
-      <Icon name="comet" />
+      <Icon name="comet" size={size} />
     );
   const avatar = (
-    <div className="avatar cp" onClick={openModal}>
+    <div className="avatar-pic cp" onClick={openModal}>
       {avatarInner}
     </div>
   );
@@ -41,7 +41,7 @@ export default function ({
 
   const tooLong = (s: string) => (s.length > 15 ? " too-long" : "");
   function openModal(e: React.MouseEvent) {
-    if (noClickOnName) return;
+    if (noClick) return;
     e.stopPropagation();
     setModal(<UserModal user={user} />);
   }
@@ -59,7 +59,7 @@ export default function ({
     </div>
   );
   return (
-    <div className={customClass ? customClass : "ship-avatar"}>
+    <div className={customClass ? customClass : "avatar"}>
       {avatar}
       {name}
     </div>

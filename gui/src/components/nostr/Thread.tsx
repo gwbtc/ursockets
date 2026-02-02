@@ -140,20 +140,22 @@ export default function Thread(props: Props) {
 
 function Loader(props: Props) {
   const { id } = props;
-  const { api } = useLocalState((s) => ({
+  const { api, relays } = useLocalState((s) => ({
     api: s.api,
     nostrFeed: s.nostrFeed,
     lastFact: s.lastFact,
     composerData: s.composerData,
     setComposerData: s.setComposerData,
     setModal: s.setModal,
+    relays: s.relays,
   }));
   const [error, setError] = useState("");
 
   async function tryAgain() {
     if (!api) return;
+    const rels = Object.values(relays).map((r) => r.wid);
     setError("");
-    const res = await api.nostrThread(id);
+    const res = await api.nostrThread(id, rels);
     if (res) toast.success("Sent request to relay");
   }
 

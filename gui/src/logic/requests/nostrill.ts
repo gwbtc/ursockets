@@ -10,10 +10,10 @@ import type {
 } from "@/types/urbit";
 import { FeedPostCount } from "../constants";
 import type {
+  BasicProfile,
   PeekFeedRes,
   PeekRes,
   PeekThreadRes,
-  UserProfile,
   UserType,
 } from "@/types/nostrill";
 import type { AsyncRes } from "@/types/ui";
@@ -174,8 +174,8 @@ export default class IO {
   async pokeAlive() {
     return await this.poke({ alive: true });
   }
-  async addPost(content: string) {
-    const json = { add: { content } };
+  async addPost(content: string, global: boolean, anon: boolean) {
+    const json = { add: { content, global, anon } };
     return this.poke({ post: json });
   }
   async addReply(content: string, host: UserType, id: string, thread: string) {
@@ -250,7 +250,7 @@ export default class IO {
     return await this.poke({ fols: json });
   }
   // profiles
-  async createProfile(profile: UserProfile) {
+  async createProfile(profile: BasicProfile) {
     const json = { add: profile };
     return await this.poke({ prof: json });
   }
@@ -261,7 +261,11 @@ export default class IO {
   async cycleKeys() {
     return await this.poke({ keys: null });
   }
-  // relaying
+  async getProfiles(users: UserType[]) {
+    const json = { fetch: users };
+    return await this.poke({ prof: json });
+  }
+  // relays
   async addRelay(url: string) {
     const json = { add: url };
     return await this.poke({ rela: json });
@@ -270,18 +274,37 @@ export default class IO {
     const json = { del: wid };
     return await this.poke({ rela: json });
   }
-  async syncRelays() {
-    // TODO make it choosable?
-    const json = { sync: null };
+  // nostr writes
+  async relayPost(host: string, id: string, relays: number[]) {
+    const json = { do: { relays, action: { "send-post": { host, id } } } };
     return await this.poke({ rela: json });
   }
-  async getProfiles(users: UserType[]) {
-    const json = { fetch: users };
-    return await this.poke({ prof: json });
-  }
-  async relayPost(host: string, id: string, relays: string[]) {
-    const json = { send: { host, id, relays } };
+  async relayProfile(relays: number[]) {
+    const json = { do: { relays, action: { "send-prof": null } } };
     return await this.poke({ rela: json });
+  }
+  // nostr reads
+  //
+  async syncRelays(relays: number[]): Promise<string> {
+    const json = { relays, action: { sync: null } };
+    const res = (await this.thread("sync", json)) as string;
+    return res;
+  }
+  // async syncRelays(relays: number[]) {
+  //   const json = { do: { relays, action: { sync: null } } };
+  //   return await this.poke({ rela: json });
+  // }
+  async nostrFeed(pubkey: string, relays: number[]): AsyncRes<number> {
+    const json = { do: { relays, action: { user: pubkey } } };
+    return await this.poke({ rela: json });
+  }
+  async nostrThread(id: string, relays: number[]): AsyncRes<number> {
+    const json = { do: { relays, action: { thread: id } } };
+    return await this.poke({ rela: json });
+  }
+  async nostrProfiles(relays: number[]) {
+    const json = { relays, action: { prof: null } };
+    return (await this.thread("sync", json)) as string;
   }
   // threads
   //
@@ -307,22 +330,18 @@ export default class IO {
       return { error: `${e}` };
     }
   }
-  // nostr
-  //
-  async nostrFeed(pubkey: string): AsyncRes<number> {
-    const json = { rela: { user: pubkey } };
-    return await this.poke(json);
-  }
-  async nostrThread(id: string): AsyncRes<number> {
-    const json = { rela: { thread: id } };
-    return await this.poke(json);
-  }
-  async nostrProfiles() {
-    const json = { prof: null };
-    return await this.poke({ rela: json });
-  }
+  // async peekProfile(host: string): AsyncRes<PeekProfileRes> {
+  //   try {
+  //     const json = { begs: { prof: host } };
+  //     const res = (await this.thread("beg", json)) as PeekRes;
+  //     if (!("prof" in res)) return { error: "request error" };
+  //     else return { ok: res.prof};
+  //   } catch (e) {
+  //     return { error: `${e}` };
+  //   }
+  // }
+
+  // notifications
+
+  // mark as read
 }
-
-// notifications
-
-// mark as read
