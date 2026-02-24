@@ -30,8 +30,7 @@
   
 ++  ui-ws-res  |=  [wid=@ msg=@t]
   
-  =/  resmsg  (cat 3 msg (cat 3 msg msg))
-  =/  octs  (as-octs:mimes:html resmsg)
+  =/  octs  (as-octs:mimes:html msg)
   =/  res-event=websocket-event:eyre  [%message 1 `octs]
   :~  (give-ws-payload-server:ws wid res-event)
   ==
@@ -77,7 +76,12 @@
   ::
   ++  poke-host  |=  [sip=@p =poke:comms]  ^-  card:agent:gall
     [%pass /heads-up %agent [sip dap.bowl] %poke %noun !>(poke)]
-  ++  poke-thread  |=  [tid=@ta sub-id=@t]  ^-  card:agent:gall
+
+  ++  poke-thread  |=  [tid=@ta body=*]  ^-  card:agent:gall
+    =/  ta-now  (scot %ud `@`now.bowl)
+    [%pass /ted-res/[ta-now] %agent [our.bowl %spider] %poke %spider-input !>([tid %noun !>(body)])]
+
+  ++  poke-ui-thread  |=  [tid=@ta sub-id=@t]  ^-  card:agent:gall
     =/  ta-now  (scot %ud `@`now.bowl)
     =/  payload=ted:ui  [%res sub-id]
     [%pass /ted-res/[ta-now] %agent [our.bowl %spider] %poke %spider-input !>([tid %nostrill-ted !>(payload)])]

@@ -3,10 +3,11 @@
   ++  connect  |=  [endpoint=@t =bowl:gall]
     ^-  card:agent:gall
     =/  =task:iris  [%websocket-connect dap.bowl endpoint]
-
-  ++  wait-for-connection  |=  [endpoint=@t =bowl:gall msg=websocket-message:eyre]
-    =/  connect-card  (connect endpoint bowl)
     [%pass /ws-connect %arvo %i task]
+
+  ++  wait-for-connection  |=  [endpoint=@t =bowl:gall]
+    =/  connect-card  (connect endpoint bowl)
+    connect-card
     
   
   ++  cancel-connect  |=  wid=@ud
@@ -19,7 +20,8 @@
     =/  =path  /websocket-client/(scot %ud wid)
     =/  ws-paths  :~(path)
     [%give %fact ws-paths %disconnect !>(~)]
-  ::
+  :: 
+  :: as client
   ++  give-ws-payload-client
     |=  [wid=@ msg=websocket-message:eyre]
     ^-  card:agent:gall
@@ -32,11 +34,17 @@
   ++  close-ws-client
     |=  wid=@
     ^-  card:agent:gall
-    =/  =cage
-      [%disconnect !>(~)]
-    =/  wsid  (scot %ud wid)
-    [%give %fact ~[/websocket-client/[wsid]] cage]
+      =/  =cage
+        [%disconnect !>(~)]
+      =/  wsid  (scot %ud wid)
+      [%give %fact ~[/websocket-client/[wsid]] cage]
 
+  ++  one-off
+    |=  [endpoint=@t wmsg=websocket-message:eyre =bowl:gall]
+    ^-  card:agent:gall
+      [%pass /ws-oneoff %arvo %k %fard dap.bowl %ws noun+!>([endpoint wmsg])] 
+  :: 
+  ::  as server
   ++  give-ws-payload-server
     |=  [wid=@ event=websocket-event:eyre]
     ^-  card:agent:gall
@@ -61,16 +69,15 @@
     |=  =bowl:gall  ^-  (list path)
       =/  inc-subs  ~(tap by sup.bowl)
       %+  roll  inc-subs  |=  [i=[=duct =ship =path] acc=(list path)]
-        ~&  bitt=i
         ?.  ?=([%websocket-client *] path.i)  acc
         [path.i acc]
   ++  list-server-conns
     |=  =bowl:gall  ^-  (list path)
       =/  inc-subs  ~(tap by sup.bowl)
-      =/  ws-paths  %+  roll  inc-subs  |=  [i=[=duct =ship =path] acc=(list path)]
-        ~&  bitt=i
-        ?.  ?=([%websocket-server*] path.i)  acc
+      %+  roll  inc-subs  |=  [i=[=duct =ship =path] acc=(list path)]
+        ?.  ?=([%websocket-server *] path.i)  acc
         [path.i acc]
+      
   
 
   
@@ -94,6 +101,7 @@
     |=  [url=@t =bowl:gall]  ^-  (unit socket)
     =/  scry-path=path  /(scot %p our.bowl)/ws/(scot %da now.bowl)/url/[url]
     .^((unit socket) %ix scry-path)
+
   ++  list-connected
     |=  =bowl:gall  ^-  (list socket)
     =/  scry-path=path  /(scot %p our.bowl)/ws/(scot %da now.bowl)/app

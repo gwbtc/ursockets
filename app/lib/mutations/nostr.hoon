@@ -346,6 +346,7 @@
 
   ++  call-relay  |=  [wid=@ud relay-url=@t ro=relay-order:ui]
     ^-  (quip card _state)
+    =/  nclient  ~(. nostr-client [state bowl])
     =/  urelay  (~(get by relays.state) wid)
     ?~  urelay
       ~&  >>>  not-connected-to-relay=wid
@@ -355,9 +356,9 @@
     =/  rclient  ~(. relay.nclient [wid relay])
     ::
     =/  d=[(list card) _relay]
-    ?-  -.action.rh
-      %user      (get-user-feed:rclient +.action.rh)
-      %thread    (get-thread:rclient +.action.rh)
+    ?+  -.ro  !!
+      %user      (get-user-feed:rclient +.ro)
+      %thread    (get-thread:rclient +.ro)
       %sync       get-posts:rclient
       %prof       get-profiles:rclient      
     ==
@@ -366,8 +367,8 @@
     
   ++  test-reconnection  |=  [relay-url=@t ro=relay-order:ui]
     ^-  (quip card _state)
-    =/  d  (wait-for-connection relay-url bowl)
-    `state`
+    =/  d  (wait-for-connection:ws relay-url bowl)
+    `state
     
 
 
@@ -399,7 +400,7 @@
       =.  reqs.relay  (~(put by reqs.relay) sub-id.d rs.d)
       =.  relays.state  (~(put by relays.state) wid relay)
       =/  cs=(list card)
-        :~  (poke-thread:cards:lib tid sub-id.d)
+        :~  (poke-ui-thread:cards:lib tid sub-id.d)
             card.d
         ==
       =/  ncss  (weld cs css)
