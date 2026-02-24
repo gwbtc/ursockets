@@ -55,6 +55,11 @@
     ?~  global-relay-conn.state  ~&  >>>  "not connected to global relay"  !!
     u.global-relay-conn.state
   ::
+  ++  send-and-close  |=  req=client-msg:nsur  ^-  card
+    =/  wmsg  (req-to-msg req)
+    (one-off:ws global-relay:constants wmsg bowl)    
+
+
   ++  send-card  |=  req=client-msg:nsur  ^-  card
     =/  wmsg  (req-to-msg req)
     =/  wid  get-wid

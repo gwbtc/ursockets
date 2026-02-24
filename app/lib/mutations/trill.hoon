@@ -188,18 +188,28 @@
           %+  poke-host:crds  s  [%eng %mention p]
         =/  global-cards=(list card:agent:gall)  ?.  global.poke  ~
 
-          =/  mutan  ~(. mutations-nostr [state bowl])
-          =/  rl  get-nostrill-relay:mutan
-          ?~  rl  ~&  >>>  "no global relay!"  ~
-          =/  wid=@  -.u.rl
-          =/  relay=relay-stats:nsur  +.u.rl
-
-          =/  event  (post-to-event:evlib i.keys.state eny.bowl p 667)
           =/  nclient  ~(. nostr-client [state bowl])
-          =/  relay-card  (send-card:global:nclient [%event event])
-          :~  (update-ui:cards:lib [%nostr %sent-post host.p id.p ~[global-relay:constants] event])
+          =/  event  (post-to-event:evlib i.keys.state eny.bowl p 667)
+          =/  mutan  ~(. mutations-nostr [state bowl])
+
+          
+          =/  rl  get-nostrill-relay:mutan
+
+          =/  relay-card
+            ?~  rl  ~&  >>>  "not connected to global relay, running thread"
+               (send-and-close:global:nclient [%event event])
+
+               (send-card:global:nclient [%event event])
+
+        ::   ::
+        ::   =/  wid=@  -.u.rl
+        ::   =/  relay=relay-stats:nsur  +.u.rl
+
+          =/  ui-fact  [%nostr %sent-post host.p id.p ~[global-relay:constants] event]
+          :~  (update-ui:cards:lib ui-fact)
               relay-card
           ==
+        
         :: TODO anon feed
         :_  state
           %+  weld  global-cards  %+  weld  mention-cards

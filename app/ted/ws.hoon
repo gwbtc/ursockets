@@ -8,13 +8,7 @@
 |=  arg=vase
   =/  m  (strand ,vase)  ^-  form:m
   ;<  =bowl:spider  bind:m  get-bowl:strandio
-  =|  retries=@ud
-  ~&  "ted!!"
   =/  args  !<([@t websocket-message:eyre] arg)
-  ~&  >>  ted-args=args
-  :: ~&  >>  args=args
-  :: =/  endpoint  -.args
-  :: =/  wmsg  +.args
   =/  endpoint  -.args
   |^
   
@@ -22,14 +16,8 @@
   =/  =task:iris  [%websocket-connect q.byk.bowl endpoint]
   =/  iris-card  [%pass /ws-connect %arvo %i task]
   ;<  ~  bind:m  (send-raw-card:strandio iris-card)
-  :: ~&  >  "sleeping..."
-  :: ;<  ~  bind:m  (sleep:strandio ~s3)
-  :: ~&  >  "woke up..."
-  :: ::
-  :: =*  wid-scry  get-wid
-  ;<  wid=@ud  bind:m  %+  (retry:strandio @ud)  `7  get-wid
-  :: ;<  wid=@ud  bind:m  (rescry (list socket) /ix/ws/app)
-  ~&  >>  wid=wid
+  ;<  wid=@ud  bind:m  %+  (retry:strandio @ud)  `5  get-wid
+  ~&  >>  ted-found-wid=wid
   ::  NOTE: can't directly send cards to Iris, Iris is subscribed to the agent, not the Thread, hence won't receive them. Poke the agent instead
   =/  pok=poke:comms  [%ted wid %msg +.args]
   ;<  ~  bind:m  (poke-our:strandio %nostrill %noun !>(pok))
@@ -44,30 +32,7 @@
   (pure:m !>(~))
   
   :: ==
-    +$  socket  [wid=@ud url=@t status=$?(%accepted %pending)]
-    ++  rescry
-      ~&  >>>  "rescry"
-      |*  [=mold =path]
-      =/  m  (strand ,mold)
-      ^-  form:m
-      ?>  ?=(^ path)
-      ?>  ?=(^ t.path)
-      =*  loop  $
-        ?:  (gte retries 3)  (strand-fail %retry-too-many ~)
-        ~&  looping=retries
-
-        =/  sockets  .^((list socket) i.path (scot %p our.bowl) i.t.path (scot %da now.bowl) t.t.path)
-        ?~  sockets
-          ~&  "sleeping..."
-          ;<  ~  bind:m  (sleep:strandio ~s2)
-          loop(retries +(retries))
-        |-  ?~  sockets  loop(retries +(retries))
-          ?.  .=(url.i.sockets endpoint)
-            $(sockets t.sockets)
-          ?.  ?=(%accepted status.i.sockets)
-            $(sockets t.sockets)
-          (pure:m `wid.i.sockets)
-    
+    +$  socket  [wid=@ud url=@t status=$?(%accepted %pending)]    
     ++  get-wid
       ~&  >  "hey hey getting wid"
       =/  m  (strand ,(unit @))
