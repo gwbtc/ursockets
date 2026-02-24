@@ -166,9 +166,7 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
 
   const openS3Browser = () => {
     setModal(
-      <Modal>
-        <S3Browser onSelect={handleS3Select} onClose={() => setModal(null)} />
-      </Modal>,
+      <S3Browser onSelect={handleS3Select} onClose={() => setModal(null)} />,
     );
   };
 

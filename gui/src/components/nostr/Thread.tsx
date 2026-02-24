@@ -73,16 +73,7 @@ export default function Thread(props: Props) {
 
   useEffect(() => {
     console.log({ composerData });
-    if (composerData)
-      setModal(
-        <Modal
-          close={() => {
-            setComposerData(null);
-          }}
-        >
-          <Composer />
-        </Modal>,
-      );
+    if (composerData) setModal(<Composer />);
   }, [composerData]);
   // useTimeout(() => {
   //   if (!data) setError("Request timed out");

@@ -13,7 +13,7 @@ import { skeinToNote } from "@/logic/notifications";
 import { defaultGate } from "@/logic/bunts";
 import { eventsToFc, addEventToFc, eventToProfile } from "@/logic/nostrill";
 import type { S3Config, UrbitContacts } from "@/types/urbit";
-import contactsSample from "../contacts.json";
+// import contactsSample from "../contacts.json";
 // TODO handle airlock connection issues
 // the SSE pipeline has a "status-update" event FWIW
 // type AirlockState = "connecting" | "connected" | "failed";
@@ -57,8 +57,9 @@ export const useStore = creator((set, get) => ({
   init: async () => {
     const airlock = await start();
     const api = new IO(airlock);
-    api.scryContacts().then((_r) => {
-      set({ contacts: contactsSample });
+    api.scryContacts().then((r) => {
+      console.log("contacts", r);
+      // set({ contacts: contactsSample });
       // if ("ok" in r) {
       //   set({ contacts: r.ok });
       // }
@@ -141,13 +142,19 @@ export const useStore = creator((set, get) => ({
         if ("post" in fact) {
           if ("add" in fact.post) {
             const post: Poast = fact.post.add.post;
-            const following = get().following;
-            const curr = following.get(post.author);
-            const fc = curr ? curr : { feed: {}, start: null, end: null };
-            fc.feed[post.id] = post;
-            following.set(post.author, fc);
+            const { api, following, myFeed } = get();
+            const our = api?.airlock?.our;
+            if (post.author === our) {
+              myFeed.feed[post.id] = post;
+              set({ myFeed });
+            } else {
+              const curr = following.get(post.author);
+              const fc = curr ? curr : { feed: {}, start: null, end: null };
+              fc.feed[post.id] = post;
+              following.set(post.author, fc);
 
-            set({ following });
+              set({ following });
+            }
           }
           if ("del" in fact.post) {
             const post: Poast = fact.post.del.post;

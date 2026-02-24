@@ -43,11 +43,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   function openFeedSettings() {
-    setModal(
-      <Modal>
-        <FeedSettings />
-      </Modal>,
-    );
+    setModal(<FeedSettings />);
   }
 
   const handleAddCustomField = () => {
@@ -125,6 +121,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
   console.log({ name, picture, customFields });
   async function handleSend() {
     if (!api) return;
+    // TODO this will crash
     const res = await api.relayProfile(Object.keys(relays));
   }
 

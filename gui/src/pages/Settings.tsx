@@ -84,24 +84,6 @@ function Settings() {
 
       <div className="settings-content">
         <WebSocketWidget url={`${WS_URL}/nostrill-ui`} />
-        {/* Appearance Section */}
-        <div className="settings-section">
-          <div className="section-header">
-            <Icon name="settings" size={20} />
-            <h2>Appearance</h2>
-          </div>
-          <div className="section-content">
-            <div className="setting-item">
-              <div className="setting-info">
-                <label>Theme</label>
-                <p>Choose your preferred color theme</p>
-              </div>
-              <div className="setting-control">
-                <ThemeSwitcher />
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Identity Section */}
         <div className="settings-section">
