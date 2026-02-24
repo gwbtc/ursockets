@@ -130,7 +130,9 @@
   ::
     ++  handle-ui-ws  
       ^-  (quip card:agent:gall agent:gall)
-      =/  cs  (ui-ws-res:lib -.order wsdata)  
+      =/  resmsg  (cat 3 wsdata (cat 3 '---' wsdata))
+
+      =/  cs  (ui-ws-res:lib -.order resmsg)  
       [cs this]
 
     ++  handle-nostr-client-ws 
@@ -533,6 +535,17 @@
         ~&  >>>  ~(val by relays)
         =/  l  (list-connected:ws bowl)
         %+  turn  l  |=  [wid=@ url=@t status=*]  (cancel-connect:ws wid)
+        ::
+      [%ws-ui @]  :: status
+        :_  this
+        =/  pats  (list-server-conns:ws bowl)
+        ?~  pats  ~&  >>>   "no connections to this ws server"  ~
+        =/  pol=(pole knot)  (tail i.pats)
+        ?.  ?=([wids=@ ~] pol)  ~&  >>>  "weird"  ~
+        =/  wid  (slav %ud wids.pol)
+        ~&  wid=wid
+        (ui-ws-res:lib wid +.noun)
+        :: 
       %irisf
         :_  this
         =/  inc-subs  ~(tap by sup.bowl)
