@@ -126,7 +126,7 @@ pub fn build(b: *std.Build) !void {
     const tracy_no_exit = b.option(bool, "tracy-no-exit", "Wait for profiler connection before exiting") orelse false;
 
     // Parse short git rev
-    var file = try std.fs.cwd().openFile(".git/logs/HEAD", .{});
+    var file = try std.fs.cwd().openFile("../.git/logs/HEAD", .{});
     defer file.close();
     var buf_reader = std.io.bufferedReader(file.reader());
     var in_stream = buf_reader.reader();
