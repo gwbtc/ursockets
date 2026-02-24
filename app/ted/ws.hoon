@@ -1,55 +1,96 @@
-/-  spider, nsur=nostr
-/+  strandio
+/-  spider, ui=nostrill-ui
+/+  strandio, jsonlib=json-nostrill, sr=sortug, lib=nostrill
 =,  strand=strand:spider
+=,  strand-fail=strand-fail:libstrand:spider
 ^-  thread:spider
+::  One Off WebSockets message thread
+::  Connets to WebSockets server, awaits the connection to be open, sends message, awaits confirmation, then closes connection
 |=  arg=vase
-=/  m  (strand ,vase)
-|^
-^-  form:m
-:: =/  [url=@t req=client-msg:nsur]  (need !<((unit [@t client-msg:nsur]) arg))
-=/  ujon  !<((unit json) arg)
-:: ~&  ujon=ujon
-?~  ujon  (pure:m !>(bail))
-:: =/  req  (ui:de:jsonlib u.ujon)
-=/  jstring  (en:json:html u.ujon)
-~&  >>  jstring=jstring
-:: ;<  =bowl:spider  bind:m  get-bowl:strandio
-:: =/  desk  q.byk.bowl
-:: =/  =task:iris  [%websocket-connect desk url]
-:: =/  =card:agent:gall  [%pass /ws-req/nostrill %arvo %i task]
-:: ;<  ~  bind:m  (send-raw-card:strandio card)
-:: ;<  res=(pair wire sign-arvo)  bind:m  take-sign-arvo:strandio
-:: ~&  >  res=res
-:: :: confirm connection was established
-:: ?.  ?=([%iris %websocket-response id=@ud websocket-event:eyre] q.res)
-::       (strand-fail:strand %bad-sign ~)
-:: ~&  >  ted-ws-res=+>+<.q.res
-:: ?.  ?=(%accept +>+<.q.res)
-::   (pure:m !>([%ng '']))
-::       :: (strand-fail:strand %bad-sign ~)
+  =/  m  (strand ,vase)  ^-  form:m
+  ;<  =bowl:spider  bind:m  get-bowl:strandio
+  =|  retries=@ud
+  :: =/  args  !<([@t websocket-message:eyre] arg)
+  :: ~&  >>  args=args
+  :: =/  endpoint  -.args
+  :: =/  wmsg  +.args
+  ~&  >>  arg=arg
+  =/  dev  !<((unit @t) arg)
+  =/  endpoint  (need dev)
+  |^
+  
+  ::
+  =/  =task:iris  [%websocket-connect q.byk.bowl endpoint]
+  =/  iris-card  [%pass /ws-connect %arvo %i task]
+  ;<  ~  bind:m  (send-raw-card:strandio iris-card)
+  :: ~&  >  "sleeping..."
+  :: ;<  ~  bind:m  (sleep:strandio ~s3)
+  :: ~&  >  "woke up..."
+  :: ::
+  ;<  wid=@ud  bind:m  %+  (retry:strandio @ud)  `7  (get-wid)
+  :: ;<  wid=@ud  bind:m  (rescry (list socket) /ix/ws/app)
+  ~&  >>  wid=wid
+  :: =/  uwid=(unit @ud)
+  ::   |-  ?~  skets  ~
+  ::     ?:  .=(url.i.skets endpoint)  `wid.i.skets
+  ::     $(skets t.skets)
+  :: ?~  uwid  (pure:m !>(~))
 
-:: ~&  "ws connection accepted, sending ws msg"
-:: ~&  >>>  "sleeping"
-:: ;<  ~  bind:m  (sleep:strandio ~s3)
-:: ~&  >>>  "slept"
-:: =/  card2=card:agent:gall
-::   [%pass /ws/proxy %agent [our.bowl desk] %poke %websocket-thread !>([id.q.res wmsg])]
-:: ;<  ~  bind:m  (send-raw-card:strandio card2)
-:: ;<  res2=(pair wire sign-arvo)  bind:m  take-sign-arvo:strandio
+  
+  (pure:m !>(~))
+  :: ?+  -.action.req  (pure:m !>(bail))
+  ::   %sync
+  ::     ;<  =bowl:spider  bind:m  get-bowl:strandio
+  ::     =/  desk  q.byk.bowl
 
+  ::     ~&  >  ship=ship
+  ::     =/  =user:sur  (atom-to-user:lib ship)
+  ::     (pure:m !>(j))
+  :: ==
+    +$  socket  [wid=@ud url=@t status=$?(%accepted %pending)]
+    ++  rescry
+      ~&  >>>  "rescry"
+      |*  [=mold =path]
+      =/  m  (strand ,mold)
+      ^-  form:m
+      ?>  ?=(^ path)
+      ?>  ?=(^ t.path)
+      =*  loop  $
+        ?:  (gte retries 3)  (strand-fail %retry-too-many ~)
+        ~&  looping=retries
 
-:: :: =/  subwire=path  /websocket-server/(scot %ud id.q.res)
-:: :: =/  =cage  [%websocket-response !>(+>.q.res)]
-:: :: =/  gf=gift:agent:gall  [%fact :~(subwire) cage]
-:: :: =/  =card:agent:gall  [%give gf]
-:: :: ~&  >>  ws-ted-ok-sending-msg=id.q.res
-:: :: ;<  ~  bind:m  (send-raw-card:strandio card)
-:: :: ;<  res2=(pair wire sign-arvo)  bind:m  take-sign-arvo:strandio
-:: :: ?.  ?=([%iris %websocket-response id=@ud %message wm=websocket-message:eyre] q.res2)
-:: ::       (strand-fail:strand %bad-sign ~)
-:: :: =/  wm=websocket-message:eyre  +>+>.q.res2
-  :: (pure:m !>([%ok id.q.res]))
-  ++  bail  ^-  json
-  %+  frond:enjs:format  %error
-  s+'error'
---
+        =/  sockets  .^((list socket) i.path (scot %p our.bowl) i.t.path (scot %da now.bowl) t.t.path)
+        ?~  sockets
+          ~&  "sleeping..."
+          ;<  ~  bind:m  (sleep:strandio ~s2)
+          loop(retries +(retries))
+        |-  ?~  sockets  loop(retries +(retries))
+          ?.  .=(url.i.sockets endpoint)
+            $(sockets t.sockets)
+          ?.  ?=(%accepted status.i.sockets)
+            $(sockets t.sockets)
+          (pure:m `wid.i.sockets)
+    
+    ++  get-wid
+      |.
+      ~&  >  "hey hey getting wid"
+      =/  m  (strand ,(unit @))
+      ^-  form:m
+      =/  sockets  .^((list socket) %ix (scot %p our.bowl) %ws (scot %da now.bowl) /app)
+      ~&  >>>  get-wid=sockets
+      ?~  sockets  (pure:m ~)
+      =/  l=(list socket)  sockets
+      |-  ?~  l  (pure:m ~)
+        =/  =socket  i.l
+        ?.  .=(url.socket endpoint)
+          $(l t.l)
+        ?.  ?=(%accepted status.socket)
+          $(l t.l)
+        (pure:m `wid.socket)
+
+    ++  bail
+    %-  pure:m   !>
+      ^-  json
+      %+  frond:enjs:format  %error
+      s+'error'
+      
+  --
