@@ -1,4 +1,4 @@
-/+  sr=sortug
+/+  sr=sortug, server
 |%
   ++  connect  |=  [endpoint=@t =bowl:gall]
     ^-  card:agent:gall
@@ -17,6 +17,7 @@
 
   ++  disconnect  |=  wid=@ud
     ^-  card:agent:gall
+    ~&  >>>  disconnecting=wid
     =/  =path  /websocket-client/(scot %ud wid)
     =/  ws-paths  :~(path)
     [%give %fact ws-paths %disconnect !>(~)]
@@ -24,6 +25,9 @@
   :: as client
   ++  give-ws-payload-client
     |=  [wid=@ msg=websocket-message:eyre]
+    ~&  >  "sending-ws-to-client"
+    ~&  wid
+    ~&  msg=msg
     ^-  card:agent:gall
     =/  =cage
       [%message !>(msg)]
@@ -78,7 +82,12 @@
         ?.  ?=([%websocket-server *] path.i)  acc
         [path.i acc]
       
-  
+  ::
+  ++  string-message
+    |=  s=@t  ^-  websocket-message:eyre
+      =/  octs  (json-to-octs:server %s s)
+      =/  wmsg=websocket-message:eyre  [1 `octs]
+      wmsg
 
   
   ++  accept-handshake  |=  wid=@

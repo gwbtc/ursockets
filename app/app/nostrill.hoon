@@ -156,6 +156,7 @@
     ?~  pok  ~&  huh=pok  `this
     =/  pok  u.pok
     ?:  ?=(%dbug -.pok)  (debug +.pok)
+    ?:  ?=(%ted -.pok)   (ws-proxy +.pok)
     =^  cs  state  (handle-eng:mutat +.pok)
     [cs this]
   ::
@@ -239,6 +240,18 @@
     ==
     [cs this]
   ::
+  ++  ws-proxy  |=  [wid=@ud w=ws-proxy:comms]
+    ~&  >  ws=proxy=[wid w]
+    ?-  -.w
+      %msg
+        :_  this
+        :~  (give-ws-payload-client:ws wid +.w)
+        ==
+      %disconnect
+        :_  this
+        :~  (disconnect:ws wid)
+        ==
+    ==
   ++  debug  |=  noun=*
     ?+  noun  `this
       %hark-c
@@ -505,11 +518,19 @@
         :_  this
         :~  (connect:ws endpoint bowl)
         ==
-      [%send-ws @t]
+      [%wsms @t]
         ~&  here=+.noun
         :_  this
         =/  ws-msg=websocket-message:eyre  [1 `(as-octs:mimes:html +.noun)]  
         (give-ws-payload-server-all:ws bowl [%message ws-msg])
+      ::
+      [%wsmc @ @t]
+        =/  wid  +<.noun
+        =/  cord  +>.noun
+        :_  this
+        =/  wmsg=websocket-message:eyre  [1 `(as-octs:mimes:html cord)]  
+        :~  (give-ws-payload-client:ws wid wmsg)
+        ==
       ::
       [%wso @t]
         :_  this
@@ -545,6 +566,12 @@
         =/  wid  (slav %ud wids.pol)
         ~&  wid=wid
         (ui-ws-res:lib wid +.noun)
+      %wst  :: status
+        :_  this
+        ~&  "testing ws thread"
+        =/  wmsg  (string-message:ws '試行中')
+        :~  (one-off:ws 'ws://localhost:9000' wmsg bowl)
+        ==
         :: 
       %irisf
         :_  this
@@ -732,21 +759,23 @@
   ^-  (quip card:agent:gall agent:gall)
   ~&  >>>  on-leave=pole
   ?+  pole  `this
-    [%websocket-client wids=@ ~]  :: Connection with Relay dropped from the relay. Not a refusal to connect, the connection was working
-      ~&  websocket-client-connection-dropped=`@t`wids.pole
-      =/  wid  (slav %ud wids.pole)
-      ::  check if it's the global relay
-      =/  is-global  .=  `wid  global-relay-conn  
-      ?:  is-global
-        ~&  reconnecting-to-global=wid
-        :_  this  :~((connect:ws global-relay:constants bowl))
-      ::
-      =/  relay  (~(get by relays) wid)
-      ?~  relay  `this  :: that would be weird
-      :_  this
-      ~&  reconnecting=url.u.relay
-      :~  (connect:ws url.u.relay bowl)
-      ==
+    [%websocket-client wids=@ ~]
+      ::  reconnect logic requires knowing which side dropped the connection, which is... tricky
+      `this
+      :: ~&  websocket-client-connection-dropped=`@t`wids.pole
+      :: =/  wid  (slav %ud wids.pole)
+      :: ::  check if it's the global relay
+      :: =/  is-global  .=  `wid  global-relay-conn  
+      :: ?:  is-global
+      ::   ~&  reconnecting-to-global=wid
+      ::   :_  this  :~((connect:ws global-relay:constants bowl))
+      :: ::
+      :: =/  relay  (~(get by relays) wid)
+      :: ?~  relay  `this  :: that would be weird
+      :: :_  this
+      :: ~&  reconnecting=url.u.relay
+      :: :~  (connect:ws url.u.relay bowl)
+      :: ==
       
   ==
 ::
@@ -801,6 +830,14 @@
     :: ~&  >  +.sign-arvo
     `this
   ?+  wire  `this
+    [%ws-oneoff *]
+      ?>  ?=([%khan %arow *] sign-arvo)
+      ~&  >>>  -.p.sign-arvo
+      ?:  ?=(%| -.p.sign-arvo)  `this
+      =/  =cage  +.p.sign-arvo
+      =/  v=vase  q.cage
+      ~&  cage=cage
+      `this
     [%ws %to-nostr-relay *]  
       ?>  ?=([%khan %arow *] sign-arvo)
       ?:  ?=(%| -.p.sign-arvo)  `this

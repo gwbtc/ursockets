@@ -19,7 +19,12 @@
 +$  poke
   $%
       [%eng engagement]
+      [%ted wid=@ud ws-proxy]
       [%dbug *]
+  ==
++$  ws-proxy
+  $%  [%msg msg=websocket-message:eyre]
+      [%disconnect ~]
   ==
 +$  engagement
   $%  [%reply parent=@da child=post:tp]
