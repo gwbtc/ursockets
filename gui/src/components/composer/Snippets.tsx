@@ -35,10 +35,10 @@ export function ComposerSnippet({
 }
 function PostSnippet({ post }: { post: SPID }) {
   if (!post) return <div className="snippet-error">No post data</div>;
-  
+
   try {
     if ("trill" in post) return <Quote data={post.trill} nest={0} />;
-    else if ("nostr" in post) return <NostrSnippet {...post.nostr} />;
+    else if ("nostr" in post) return <NostrSnippet meta={post.nostr} />;
     // else if ("twatter" in post)
     //   return (
     //     <div id={`composer-${type}`}>
@@ -64,7 +64,7 @@ function PostSnippet({ post }: { post: SPID }) {
 
 export function ReplySnippet({ post }: { post: SPID }) {
   if (!post) return <div className="snippet-error">No post to reply to</div>;
-  
+
   try {
     if ("trill" in post)
       return (
@@ -75,10 +75,13 @@ export function ReplySnippet({ post }: { post: SPID }) {
     else if ("nostr" in post)
       return (
         <div id="reply" className="reply-snippet">
-          <NostrSnippet {...post.nostr} />
+          <NostrSnippet meta={post.nostr} />
         </div>
       );
-    else return <div className="snippet-error">Cannot reply to this post type</div>;
+    else
+      return (
+        <div className="snippet-error">Cannot reply to this post type</div>
+      );
   } catch (error) {
     console.error("Error rendering reply snippet:", error);
     return <div className="snippet-error">Failed to load reply context</div>;

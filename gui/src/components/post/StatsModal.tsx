@@ -5,8 +5,17 @@ import Post from "./Post";
 import RP from "./RP";
 import Avatar from "../Avatar";
 import { stringToReact } from "./Reactions";
+import type { UserType } from "@/types/nostrill";
 
-function StatsModal({ poast, close }: { close: any; poast: Poast }) {
+function StatsModal({
+  poast,
+  close,
+  user,
+}: {
+  close: any;
+  poast: Poast;
+  user: UserType;
+}) {
   const [tab, setTab] = useState("replies");
   const replies = poast.children || [];
   const quotes = poast.engagement.quoted;
@@ -20,7 +29,7 @@ function StatsModal({ poast, close }: { close: any; poast: Poast }) {
   return (
     <Modal close={close}>
       <div id="stats-modal">
-        <Post poast={poast} refetch={() => {}} />
+        <Post poast={poast} user={user} refetch={() => {}} />
         <div id="tabs">
           <div
             role="link"
@@ -56,13 +65,7 @@ function StatsModal({ poast, close }: { close: any; poast: Poast }) {
             <div id="replies">
               {replies.map((p) => (
                 <div key={p} className="reply-stat">
-                  <RP
-                    host={poast.host}
-                    id={p}
-                    rter={undefined}
-                    rtat={undefined}
-                    rtid={undefined}
-                  />
+                  <RP host={poast.host} id={p} />
                 </div>
               ))}
             </div>
@@ -70,13 +73,7 @@ function StatsModal({ poast, close }: { close: any; poast: Poast }) {
             <div id="quotes">
               {quotes.map((p) => (
                 <div key={p.pid.id} className="quote-stat">
-                  <RP
-                    host={p.pid.ship}
-                    id={p.pid.id}
-                    rter={undefined}
-                    rtat={undefined}
-                    rtid={undefined}
-                  />
+                  <RP host={p.pid.ship} id={p.pid.id} />
                 </div>
               ))}
             </div>
@@ -84,7 +81,7 @@ function StatsModal({ poast, close }: { close: any; poast: Poast }) {
             <div id="reposts">
               {reposts.map((p) => (
                 <div key={p.pid.id} className="repost-stat">
-                  <Avatar p={p.pid.ship} size={40} />
+                  <Avatar user={{ urbit: p.pid.ship }} size={40} />
                 </div>
               ))}
             </div>
@@ -92,7 +89,7 @@ function StatsModal({ poast, close }: { close: any; poast: Poast }) {
             <div id="reacts">
               {Object.keys(reacts).map((p) => (
                 <div key={p} className="react-stat btw">
-                  <Avatar p={p} size={32} />
+                  <Avatar user={{ urbit: p }} size={32} />
                   {stringToReact(reacts[p])}
                 </div>
               ))}

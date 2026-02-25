@@ -30,8 +30,9 @@ export default function ({ poast }: { poast: Poast }) {
   async function handleConfirm() {
     setStatus("pending");
     try {
-      const urls = Object.keys(relays);
-      await api!.relayPost(poast.host, poast.id, urls);
+      const wids = Object.keys(relays);
+      const widnums = wids.map((w) => Number(w));
+      await api!.relayPost(poast.host, poast.id, widnums);
     } finally {
       // setStatus("done");
     }

@@ -66,7 +66,8 @@ export default function RelayDashboard() {
 
     setIsSyncing(true);
     try {
-      await api.syncRelays();
+      const rels = Object.values(relays).map((r) => r.wid);
+      await api.syncRelays(rels);
       toast.success("Sync initiated");
     } catch (error) {
       toast.error("Failed to sync");
@@ -95,107 +96,105 @@ export default function RelayDashboard() {
   };
 
   return (
-    <Modal>
-      <div className="relay-dashboard">
-        <div className="relay-dashboard-header">
-          <div className="relay-dashboard-title">
-            <Radio size={20} />
-            <h2>Relay Connections</h2>
-          </div>
-          <button
-            className="relay-close-btn"
-            onClick={() => setModal(null)}
-            aria-label="Close"
-          >
-            <X size={20} />
-          </button>
+    <div className="relay-dashboard">
+      <div className="relay-dashboard-header">
+        <div className="relay-dashboard-title">
+          <Radio size={20} />
+          <h2>Relay Connections</h2>
         </div>
-
-        <div className="relay-dashboard-actions">
-          <button
-            className="relay-action-btn"
-            onClick={handleSyncAll}
-            disabled={isSyncing || relayEntries.length === 0}
-          >
-            <RefreshCw size={16} className={isSyncing ? "spinning" : ""} />
-            {isSyncing ? "Syncing..." : "Sync All"}
-          </button>
-          <button
-            className="relay-action-btn primary"
-            onClick={() => setShowAddForm(!showAddForm)}
-          >
-            <Plus size={16} />
-            Add Relay
-          </button>
-        </div>
-
-        {showAddForm && (
-          <form className="relay-add-form" onSubmit={handleAddRelay}>
-            <input
-              type="text"
-              placeholder="wss://relay.example.com"
-              value={newRelayUrl}
-              onChange={(e) => setNewRelayUrl(e.target.value)}
-              disabled={isAdding}
-              autoFocus
-            />
-            <button type="submit" disabled={isAdding || !newRelayUrl.trim()}>
-              {isAdding ? "Adding..." : "Add"}
-            </button>
-            <button
-              type="button"
-              className="cancel"
-              onClick={() => {
-                setShowAddForm(false);
-                setNewRelayUrl("");
-              }}
-            >
-              Cancel
-            </button>
-          </form>
-        )}
-
-        <div className="relay-list">
-          {relayEntries.length === 0 ? (
-            <div className="relay-empty">
-              <Radio size={32} strokeWidth={1.5} />
-              <p>No relays configured</p>
-              <span>Add a relay to connect to the Nostr network</span>
-            </div>
-          ) : (
-            relayEntries.map(([url, stats]) => (
-              <div key={url} className="relay-item">
-                <div className="relay-status-indicator connected" />
-                <div className="relay-info">
-                  <div className="relay-url">{url}</div>
-                  <div className="relay-meta">
-                    <span className="relay-stat">
-                      Uptime: {formatUptime(stats.start)}
-                    </span>
-                    <span className="relay-stat">
-                      Requests: {Object.keys(stats.reqs).length}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  className="relay-delete-btn"
-                  onClick={() => handleDeleteRelay(url, stats.wid)}
-                  title="Remove relay"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="relay-dashboard-footer">
-          <span className="relay-count">
-            {relayEntries.length} relay{relayEntries.length !== 1 ? "s" : ""}{" "}
-            configured
-          </span>
-        </div>
+        <button
+          className="relay-close-btn"
+          onClick={() => setModal(null)}
+          aria-label="Close"
+        >
+          <X size={20} />
+        </button>
       </div>
-    </Modal>
+
+      <div className="relay-dashboard-actions">
+        <button
+          className="relay-action-btn"
+          onClick={handleSyncAll}
+          disabled={isSyncing || relayEntries.length === 0}
+        >
+          <RefreshCw size={16} className={isSyncing ? "spinning" : ""} />
+          {isSyncing ? "Syncing..." : "Sync All"}
+        </button>
+        <button
+          className="relay-action-btn primary"
+          onClick={() => setShowAddForm(!showAddForm)}
+        >
+          <Plus size={16} />
+          Add Relay
+        </button>
+      </div>
+
+      {showAddForm && (
+        <form className="relay-add-form" onSubmit={handleAddRelay}>
+          <input
+            type="text"
+            placeholder="wss://relay.example.com"
+            value={newRelayUrl}
+            onChange={(e) => setNewRelayUrl(e.target.value)}
+            disabled={isAdding}
+            autoFocus
+          />
+          <button type="submit" disabled={isAdding || !newRelayUrl.trim()}>
+            {isAdding ? "Adding..." : "Add"}
+          </button>
+          <button
+            type="button"
+            className="cancel"
+            onClick={() => {
+              setShowAddForm(false);
+              setNewRelayUrl("");
+            }}
+          >
+            Cancel
+          </button>
+        </form>
+      )}
+
+      <div className="relay-list">
+        {relayEntries.length === 0 ? (
+          <div className="relay-empty">
+            <Radio size={32} strokeWidth={1.5} />
+            <p>No relays configured</p>
+            <span>Add a relay to connect to the Nostr network</span>
+          </div>
+        ) : (
+          relayEntries.map(([url, stats]) => (
+            <div key={url} className="relay-item">
+              <div className="relay-status-indicator connected" />
+              <div className="relay-info">
+                <div className="relay-url">{url}</div>
+                <div className="relay-meta">
+                  <span className="relay-stat">
+                    Uptime: {formatUptime(stats.start)}
+                  </span>
+                  <span className="relay-stat">
+                    Requests: {Object.keys(stats.reqs).length}
+                  </span>
+                </div>
+              </div>
+              <button
+                className="relay-delete-btn"
+                onClick={() => handleDeleteRelay(url, stats.wid)}
+                title="Remove relay"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div className="relay-dashboard-footer">
+        <span className="relay-count">
+          {relayEntries.length} relay{relayEntries.length !== 1 ? "s" : ""}{" "}
+          configured
+        </span>
+      </div>
+    </div>
   );
 }

@@ -124,8 +124,8 @@ export const useStore = creator((set, get) => ({
         set({ lastFact: fact });
         if ("fols" in fact) {
           const { following, profiles } = get();
-          if ("new" in fact.fols) {
-            const { user, data } = fact.fols.new;
+          if ("new-urbit" in fact.fols) {
+            const { user, data } = fact.fols["new-urbit"];
             if (data.data === "maybe") return;
             if (data.data) {
               const { feed, profile } = data.data;

@@ -1,4 +1,4 @@
-import type { NostrPost } from "@/types/nostrill";
+import type { NostrMetadata, NostrPost } from "@/types/nostrill";
 import Post from "../Post";
 import useLocalState from "@/state/state";
 
@@ -16,6 +16,10 @@ function NostrPost({ data }: { data: NostrPost }) {
   );
 }
 
-export function NostrSnippet({ eventId, pubkey, relay, post }: NostrPost) {
-  return <Post user={{ nostr: pubkey }} poast={post} />;
+export function NostrSnippet({ meta }: { meta: NostrMetadata }) {
+  const user = { nostr: meta.pubkey };
+  // TODO need a PostData sort of loader here
+
+  if (meta.post) return <Post user={user} poast={meta.post} />;
+  else return <div className="nostr snippet">{meta.eventId}</div>;
 }

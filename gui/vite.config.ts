@@ -19,9 +19,10 @@ export default defineConfig({
         assetFileNames: (a) => {
           let hash = createHash("sha256");
           hash.update(a.source);
-          hash.update(a.name);
+          const name = a.names.join("-");
+          hash.update(name);
           const str = hash.digest("hex").slice(0, 16);
-          return `assets/${str}-${a.name.toLowerCase()}`;
+          return `assets/${str}-${name.toLowerCase()}`;
         },
         entryFileNames: (c) => {
           let hash = createHash("sha256");

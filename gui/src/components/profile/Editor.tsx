@@ -122,7 +122,9 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
   async function handleSend() {
     if (!api) return;
     // TODO this will crash
-    const res = await api.relayProfile(Object.keys(relays));
+    const res = await api.relayProfile(
+      Object.keys(relays).map((w) => Number(w)),
+    );
   }
 
   return (

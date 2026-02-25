@@ -12,7 +12,7 @@ import type {
 import type { Ship } from "@/types/urbit";
 import anyAscii from "any-ascii";
 import type { ReactGrouping, SPID } from "@/types/ui";
-import { openLock } from "./bunts";
+import { defaultPerms, openLock } from "./bunts";
 import { isValidPatp, patp2dec } from "urbit-ob";
 import { REF_REGEX } from "./constants";
 
@@ -222,23 +222,23 @@ export function wait(ms: number) {
   });
 }
 
-export function quoteToReference(d: SPID): Reference | ExternalContent {
-  if (d.service === "twatter")
-    return {
-      json: {
-        origin: "twatter",
-        content: JSON.stringify(d.post),
-      },
-    };
-  else
-    return {
-      ref: {
-        type: "trill",
-        ship: d.post.host,
-        path: `/${d.post.id}`,
-      },
-    };
-}
+// export function quoteToReference(d: SPID): Reference | ExternalContent {
+//   if (d.service === "twatter")
+//     return {
+//       json: {
+//         origin: "twatter",
+//         content: JSON.stringify(d.post),
+//       },
+//     };
+//   else
+//     return {
+//       ref: {
+//         type: "trill",
+//         ship: d.post.host,
+//         path: `/${d.post.id}`,
+//       },
+//     };
+// }
 
 export function trillPermalink(t: Poast) {
   return `urbit://trill/${t.host}/${t.id}`;
@@ -338,8 +338,8 @@ export function buildPost(
     thread: null,
     parent: null,
     contents: [{ paragraph: [{ text: s }] }],
-    read: openLock,
-    write: openLock,
+    perms: defaultPerms,
+    hash: "",
     tags: [],
     id,
     time,
