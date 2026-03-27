@@ -104,15 +104,15 @@
   +$  socket  [wid=@ud url=@t status=$?(%accepted %pending)]
   ++  get-url
     |=  [wid=@ud =bowl:gall]  ^-  (unit socket)
-    =/  scry-path=path  /(scot %p our.bowl)/ws/(scot %da now.bowl)/id/(scot %ud wid)
+    =/  scry-path=path  /(scot %p our.bowl)//(scot %da now.bowl)/ws/[dap.bowl]/id/(scot %ud wid)
     .^((unit socket) %ix scry-path)
   ++  check-connected
     |=  [url=@t =bowl:gall]  ^-  (unit socket)
-    =/  scry-path=path  /(scot %p our.bowl)/ws/(scot %da now.bowl)/url/[url]
+    =/  scry-path=path  /(scot %p our.bowl)//(scot %da now.bowl)/ws/[dap.bowl]/url/[url]
     .^((unit socket) %ix scry-path)
 
   ++  list-connected
     |=  =bowl:gall  ^-  (list socket)
-    =/  scry-path=path  /(scot %p our.bowl)/ws/(scot %da now.bowl)/app
+    =/  scry-path=path  /(scot %p our.bowl)//(scot %da now.bowl)/ws/[dap.bowl]
     .^((list socket) %ix scry-path)
 --
