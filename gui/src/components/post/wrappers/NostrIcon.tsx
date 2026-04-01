@@ -6,9 +6,11 @@ export default function ({ open }: { open: () => void }) {
     open();
   }
   return (
-    <div className="icon" role="link" onMouseUp={handleClick}>
-      <span />
-      <Icon name="nostr" title="relay to nostr" />
+    <div className="icon-container">
+      <span className="icon-count" />
+      <div className="icon-wrapper" role="link" onMouseUp={handleClick}>
+        <Icon name="nostr2" title="relay to nostr" />
+      </div>
     </div>
   );
 }

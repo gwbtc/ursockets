@@ -72,98 +72,92 @@ const NotificationCenter = () => {
   }
   const unreadNotifications = notifications.filter((n) => n.unread);
   return (
-    <Modal close={() => setModal(null)}>
-      <div className="notification-center">
-        <div className="notification-header">
-          <h2>Notifications</h2>
-          <div className="notification-actions">
-            {unreadNotifications.length > 0 && (
-              <button
-                className="mark-all-read-btn"
-                onClick={markAllNotificationsRead}
-              >
-                Mark all as read
-              </button>
-            )}
-            {notifications.length > 0 && (
-              <button className="clear-all-btn" onClick={dismissAll}>
-                Clear all
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="notification-filters">
-          <button
-            className={`filter-btn ${filter === "all" ? "active" : ""}`}
-            onClick={() => setFilter("all")}
-          >
-            All ({notifications.length})
-          </button>
-          <button
-            className={`filter-btn ${filter === "unread" ? "active" : ""}`}
-            onClick={() => setFilter("unread")}
-          >
-            Unread ({unreadNotifications.length})
-          </button>
-        </div>
-
-        <div className="notification-list">
-          {filteredNotifications.length === 0 ? (
-            <div className="no-notifications">
-              <Icon name="bell" size={48} color="textMuted" />
-              <p>No {filter === "unread" ? "unread " : ""}notifications</p>
-            </div>
-          ) : (
-            filteredNotifications.map((notification) => (
-              <div
-                key={notification.id}
-                className={`notification-item ${notification.unread ? "unread" : ""}`}
-                onClick={() => handleNotificationClick(notification)}
-              >
-                <div className="notification-icon">
-                  <Icon
-                    name={getNotificationIcon(notification.type)}
-                    size={20}
-                    color={notification.unread ? "primary" : "textSecondary"}
-                  />
-                </div>
-
-                <div className="notification-content">
-                  <div className="notification-user">
-                    {notification.from && (
-                      <Avatar
-                        user={notification.from}
-                        size={32}
-                        picOnly={true}
-                      />
-                    )}
-                    <div className="notification-text">
-                      {notification.message.map((m, i) => (
-                        <p key={m.toString() + i}>
-                          {typeof m === "string" ? (
-                            <span>{m}</span>
-                          ) : "ship" in m ? (
-                            <span className="ship">{m.ship}</span>
-                          ) : (
-                            <strong>{m.emph}</strong>
-                          )}
-                        </p>
-                      ))}
-                      <span className="notification-time">
-                        {formatTimestamp(notification.timestamp)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {notification.unread && <div className="unread-indicator" />}
-              </div>
-            ))
+    <div className="notification-center">
+      <div className="notification-header">
+        <h2>Notifications</h2>
+        <div className="notification-actions">
+          {unreadNotifications.length > 0 && (
+            <button
+              className="mark-all-read-btn"
+              onClick={markAllNotificationsRead}
+            >
+              Mark all as read
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button className="clear-all-btn" onClick={dismissAll}>
+              Clear all
+            </button>
           )}
         </div>
       </div>
-    </Modal>
+
+      <div className="notification-filters">
+        <button
+          className={`filter-btn ${filter === "all" ? "active" : ""}`}
+          onClick={() => setFilter("all")}
+        >
+          All ({notifications.length})
+        </button>
+        <button
+          className={`filter-btn ${filter === "unread" ? "active" : ""}`}
+          onClick={() => setFilter("unread")}
+        >
+          Unread ({unreadNotifications.length})
+        </button>
+      </div>
+
+      <div className="notification-list">
+        {filteredNotifications.length === 0 ? (
+          <div className="no-notifications">
+            <Icon name="bell" size={48} color="textMuted" />
+            <p>No {filter === "unread" ? "unread " : ""}notifications</p>
+          </div>
+        ) : (
+          filteredNotifications.map((notification) => (
+            <div
+              key={notification.id}
+              className={`notification-item ${notification.unread ? "unread" : ""}`}
+              onClick={() => handleNotificationClick(notification)}
+            >
+              <div className="notification-icon">
+                <Icon
+                  name={getNotificationIcon(notification.type)}
+                  size={20}
+                  color={notification.unread ? "primary" : "textSecondary"}
+                />
+              </div>
+
+              <div className="notification-content">
+                <div className="notification-user">
+                  {notification.from && (
+                    <Avatar user={notification.from} size={32} picOnly={true} />
+                  )}
+                  <div className="notification-text">
+                    {notification.message.map((m, i) => (
+                      <p key={m.toString() + i}>
+                        {typeof m === "string" ? (
+                          <span>{m}</span>
+                        ) : "ship" in m ? (
+                          <span className="ship">{m.ship}</span>
+                        ) : (
+                          <strong>{m.emph}</strong>
+                        )}
+                      </p>
+                    ))}
+                    <span className="notification-time">
+                      {formatTimestamp(notification.timestamp)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {notification.unread && <div className="unread-indicator" />}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
   );
 };
 

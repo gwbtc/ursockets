@@ -4,6 +4,7 @@ import { isValidPatp } from "urbit-ob";
 import type { UserProfile, UserType } from "@/types/nostrill";
 import Icon from "@/components/Icon";
 import UserModal from "./modals/UserModal";
+import { abbreviatePatp } from "@/logic/utils";
 
 export default function ({
   user,
@@ -51,7 +52,7 @@ export default function ({
         <p>{profile.name}</p>
       ) : "urbit" in user ? (
         <p className={"p-only" + tooLong(user.urbit)}>
-          {user.urbit.length > 28 ? "Anon" : user.urbit}
+          {abbreviatePatp(user.urbit)}
         </p>
       ) : (
         <p className={"p-only" + tooLong(user.nostr)}>{user.nostr}</p>

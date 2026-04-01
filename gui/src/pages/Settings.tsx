@@ -79,7 +79,7 @@ function Settings() {
     <div className="settings-page">
       <div className="settings-header">
         <h1>Settings</h1>
-        <p>Manage your Nostrill configuration and preferences</p>
+        <p>Manage your Trill configuration and preferences</p>
       </div>
 
       <div className="settings-content">

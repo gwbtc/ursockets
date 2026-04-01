@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import Avatar from "../Avatar";
 import FeedSettings from "./FeedSettings";
 import Modal from "../modals/Modal";
+import { abbreviateHex, abbreviatePatp, abbreviateUser } from "@/logic/utils";
 
 interface ProfileEditorProps {
   user: UserType;
@@ -131,12 +132,6 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
     <div className="profile-editor">
       <div className="profile-header">
         <h2>Edit Profile</h2>
-        {!isEditing && (
-          <button onClick={() => setIsEditing(true)} className="edit-btn">
-            <Icon name="settings" size={16} />
-            Edit
-          </button>
-        )}
       </div>
 
       {isEditing ? (
@@ -249,7 +244,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
           </div>
 
           <div className="profile-info">
-            <h2>{name}</h2>
+            {profile?.name ? <h2>{name}</h2> : <Name user={user} />}
             {about && <p className="profile-about">{about}</p>}
 
             {customFields.length > 0 && (
@@ -264,7 +259,11 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
               </div>
             )}
           </div>
-
+          <button onClick={() => setIsEditing(true)} className="edit-btn">
+            <Icon name="settings" size={16} />
+            Edit
+          </button>
+          {/* TODO enable later
           <div style={{ marginTop: "20px" }}>
             <button
               onClick={openFeedSettings}
@@ -283,7 +282,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
               <Icon name="settings" size={14} />
               Feed Settings
             </button>
-          </div>
+          </div>*/}
         </div>
       )}
     </div>
@@ -291,3 +290,25 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 };
 
 export default ProfileEditor;
+
+function Name({ user }: { user: UserType }) {
+  if ("urbit" in user) {
+    const abbrv = abbreviatePatp(user.urbit);
+    if (abbrv === user.urbit) return <h2>{user.urbit}</h2>;
+    else
+      return (
+        <>
+          <h2>{abbrv}</h2> <h4>{user.urbit}</h4>
+        </>
+      );
+  } else {
+    const abbrv = abbreviateHex(user.nostr);
+    if (abbrv === user.nostr) return <h2>{user.nostr}</h2>;
+    else
+      return (
+        <>
+          <h2>{abbrv}</h2> <h4>{user.nostr}</h4>
+        </>
+      );
+  }
+}

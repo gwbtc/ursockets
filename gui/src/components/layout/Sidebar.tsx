@@ -1,7 +1,6 @@
-import { RADIO, versionNum } from "@/logic/constants";
 import { useLocation } from "wouter";
 import useLocalState from "@/state/state";
-import logo from "@/assets/icons/logo.png";
+import logo from "@/assets/icons/logo.svg";
 import Icon from "@/components/Icon";
 import { ThemeSwitcher } from "@/styles/ThemeSwitcher";
 
@@ -31,9 +30,8 @@ function SlidingMenu() {
     <div id="left-menu">
       <div id="logo">
         <img src={logo} />
-        <h3> Nostrill </h3>
+        <h3> Trill </h3>
       </div>
-      <h3>Feeds</h3>
       <div className="opt" role="link" onClick={() => goto(`/f`)}>
         <Icon name="home" size={20} />
         <div>Home</div>

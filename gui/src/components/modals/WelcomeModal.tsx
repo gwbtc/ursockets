@@ -3,7 +3,7 @@ export default function WelcomeModal() {
     <div className="welcome-modal">
       <div className="welcome-header">
         <div className="welcome-logo-glow"></div>
-        <h1>Welcome to Nostrill!</h1>
+        <h1>Welcome to New Trill!</h1>
         <p className="welcome-tagline">
           Your sovereign social experience begins here
         </p>
@@ -11,8 +11,8 @@ export default function WelcomeModal() {
 
       <div className="welcome-intro">
         <p>
-          Nostrill is a truly free and sovereign social media platform, powered
-          by Urbit and connected to the wider Nostr network.
+          Trill is a truly free and sovereign social media platform, powered by
+          Urbit and now connected to the wider Nostr network.
         </p>
       </div>
 
@@ -66,6 +66,10 @@ export default function WelcomeModal() {
       <div className="welcome-tips">
         <h4>Quick Tips</h4>
         <ul>
+          <li>
+            <span className="tip-icon">👤</span> Set your public profile in the
+            Profile page
+          </li>
           <li>
             <span className="tip-icon">🦅</span> Click the crow icon to browse
             different feeds

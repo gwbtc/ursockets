@@ -5,9 +5,11 @@ import crowSvg from "@/assets/icons/crow.svg?raw";
 import emojiSvg from "@/assets/icons/emoji.svg?raw";
 import homeSvg from "@/assets/icons/home.svg?raw";
 import followSvg from "@/assets/icons/follow.svg?raw";
+import groundwireSvg from "@/assets/icons/groundwire.svg?raw";
 import keySvg from "@/assets/icons/key.svg?raw";
 import messagesSvg from "@/assets/icons/messages.svg?raw";
 import nostrSvg from "@/assets/icons/nostr.svg?raw";
+import nostrSvg2 from "@/assets/icons/Ostrich.svg?raw";
 import planetSvg from "@/assets/icons/planet.svg?raw";
 import palsSvg from "@/assets/icons/pals.svg?raw";
 import profileSvg from "@/assets/icons/profile.svg?raw";
@@ -28,10 +30,12 @@ const icons = {
   crow: crowSvg,
   emoji: emojiSvg,
   follow: followSvg,
+  groundwire: groundwireSvg,
   home: homeSvg,
   key: keySvg,
   messages: messagesSvg,
   nostr: nostrSvg,
+  nostr2: nostrSvg2,
   pals: palsSvg,
   planet: planetSvg,
   profile: profileSvg,

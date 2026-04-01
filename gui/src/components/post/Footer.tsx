@@ -220,7 +220,7 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
             </div>
           )}
         </div>
-        <div className="icon-container" role="link" onMouseUp={doReact}>
+        <div className="icon-container">
           <span
             role="link"
             onMouseUp={showReactCount}
@@ -228,12 +228,17 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
           >
             {displayCount(Object.keys(poast.engagement.reacts).length)}
           </span>
-          {reactIcon}
+          <div className="icon-wrapper" role="link" onMouseUp={doReact}>
+            {reactIcon}
+          </div>
         </div>
         {canRelay && <NostrIcon open={handleRelay} />}
         {isMine && (
-          <div className="icon-container" role="link" onMouseUp={deletePoast}>
-            <Icon name="trash" title="delete" />
+          <div className="icon-container">
+            <span className="icon-count" />
+            <div className="icon-wrapper" role="link" onMouseUp={deletePoast}>
+              <Icon name="trash" title="delete" />
+            </div>
           </div>
         )}
       </footer>
