@@ -1,8 +1,8 @@
 import Urbit from "urbit-api";
 
-export const URL = import.meta.env.PROD ? "" : "http://localhost:8090";
+export const URL = import.meta.env.PROD ? "" : "http://localhost:8080";
 export const WS_URL = !import.meta.env.PROD
-  ? "ws://localhost:8090"
+  ? "ws://localhost:8080"
   : `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}`;
 
 console.log("WS_URL", WS_URL);

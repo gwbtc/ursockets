@@ -1,4 +1,4 @@
-import type { NostrEvent } from "./nostr";
+import type { Wevent as NostrEvent } from "./nostr";
 import type { FC, FullNode, Poast } from "./trill";
 
 export type UserType = { urbit: string } | { nostr: string };

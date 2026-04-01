@@ -15,9 +15,10 @@ import Modal from "./components/modals/Modal";
 const WELCOME_SHOWN_KEY = "nostrill-welcome-shown";
 
 export default function r() {
-  const { modal, setModal } = useLocalState((s) => ({
+  const { modal, setModal, profiles } = useLocalState((s) => ({
     modal: s.modal,
     setModal: s.setModal,
+    profiles: s.profiles,
   }));
 
   useEffect(() => {
@@ -40,8 +41,8 @@ export default function r() {
           <Route path="/f" component={Feed} />
           <Route path="/f/:taip" component={Feed} />
           <Route path="/u/:user" component={User} />
-          <Route path="/t/:host/:id" component={Thread} />
-          <Route path="/t/:id" component={NostrThreadLoader} />
+          <Route path="/t/u/:host/:id" component={Thread} />
+          <Route path="/t/n/:id" component={NostrThreadLoader} />
         </main>
         {modal && <Modal close={() => setModal(null)}>{modal}</Modal>}
       </Router>

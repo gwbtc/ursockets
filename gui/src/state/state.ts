@@ -4,7 +4,7 @@ import IO from "@/logic/requests/nostrill";
 import type { ComposerData } from "@/types/ui";
 import { create } from "zustand";
 import type { Fact, Relays, UserProfile } from "@/types/nostrill";
-import type { Event, NostrEvent } from "@/types/nostr";
+import type { Wevent } from "@/types/nostr";
 import type { FC, Gate, Poast } from "@/types/trill";
 import type { Notification } from "@/types/notifications";
 import { useShallow } from "zustand/shallow";
@@ -28,6 +28,8 @@ export type LocalState = {
   setComposerData: (c: ComposerData | null) => void;
   pubkey: string;
   myFeed: FC;
+  globalFeed: FC;
+  setGlobal: (s: FC) => void;
   nostrFeed: FC;
   relays: Relays;
   profiles: Map<string, UserProfile>; // pubkey key
@@ -179,7 +181,7 @@ export const useStore = creator((set, get) => ({
           if ("eose" in fact.nostr) set({ lastEose: fact.nostr.eose });
           if ("event" in fact.nostr) {
             // console.log("san event", fact.nostr.event);
-            const event: Event = fact.nostr.event;
+            const event: Wevent = fact.nostr.event;
             if (event.kind === 1) {
               const nostrFeed = get().nostrFeed;
               const nf = addEventToFc(event, nostrFeed);
@@ -211,6 +213,8 @@ export const useStore = creator((set, get) => ({
   lastFact: null,
   relays: {},
   myFeed: { feed: {}, start: null, end: null },
+  globalFeed: { feed: {}, start: null, end: null },
+  setGlobal: (s) => set({ globalFeed: s }),
   nostrFeed: { feed: {}, start: null, end: null },
   following: new Map(),
   followers: [],

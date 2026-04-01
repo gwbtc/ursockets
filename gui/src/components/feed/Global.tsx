@@ -1,4 +1,4 @@
-import { NPool, NRelay1, type NostrEvent } from "@nostrify/nostrify";
+import { NRelay1 } from "@nostrify/nostrify";
 import PostList from "@/components/feed/PostList";
 import useLocalState from "@/state/state";
 import spinner from "@/assets/triangles.svg";
@@ -7,12 +7,13 @@ import Icon from "@/components/Icon";
 import toast from "react-hot-toast";
 import { Contact, RefreshCw } from "lucide-react";
 import { addEventToFc, eventsToFc, eventToProfile } from "@/logic/nostrill";
-import type { FC } from "@/types/trill";
 import { GLOBAL_RELAY_URL } from "@/logic/constants";
 
 export default function Global() {
-  const { addProfile } = useLocalState((s) => ({
+  const { addProfile, setGlobal, globalFeed } = useLocalState((s) => ({
     addProfile: s.addProfile,
+    setGlobal: s.setGlobal,
+    globalFeed: s.globalFeed,
   }));
 
   const relayRef = useRef<NRelay1>(undefined);
@@ -22,11 +23,6 @@ export default function Global() {
     fetchGlobal();
   }, []);
 
-  const [globalFeed, setFeed] = useState<FC>({
-    start: null,
-    end: null,
-    feed: {},
-  });
   const fetchGlobal = async () => {
     setIsLoading(true);
     // TODO
@@ -37,8 +33,9 @@ export default function Global() {
       console.log("relay msg", msg);
       if (msg[0] === "EVENT") {
         const event = msg[2];
-        const nf = addEventToFc(event, globalFeed);
-        setFeed(nf);
+        const wevent = { ...event, relays: [GLOBAL_RELAY_URL] };
+        const nf = addEventToFc(wevent, globalFeed);
+        setGlobal(nf);
       }
       if (msg[0] === "EOSE") {
         setIsLoading(false);
@@ -82,8 +79,8 @@ export default function Global() {
         <div className="empty-content">
           <h3>No Posts</h3>
           <p>
-            Your Nostrill feed appears to be empty. Click the button below to
-            sync with the global Nostril feed
+            Your Trill feed appears to be empty. Click the button below to sync
+            with the global Trill feed
           </p>
           <button
             onClick={fetchGlobal}

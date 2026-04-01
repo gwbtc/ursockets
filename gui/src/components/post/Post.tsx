@@ -10,6 +10,7 @@ import UserModal from "../modals/UserModal";
 import type { Ship } from "@/types/urbit";
 import Sigil from "../Sigil";
 import type { UserProfile, UserType } from "@/types/nostrill";
+import { getThreadPath } from "@/logic/utils";
 
 export interface PostProps {
   poast: Poast;
@@ -50,8 +51,7 @@ function TrillPost(props: PostProps) {
   const [_, navigate] = useLocation();
   function openThread(_e: React.MouseEvent) {
     const sel = window.getSelection()?.toString();
-    const id = "urbit" in props.user ? poast.id : poast.hash;
-    const path = `/t/${poast.host}/${id}`;
+    const path = getThreadPath(poast);
     if (poast.hash.includes("000000")) {
       console.log("bad hash", poast);
       return;

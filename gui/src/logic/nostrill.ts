@@ -1,4 +1,4 @@
-import type { Event } from "@/types/nostr";
+import type { Wevent, Event } from "@/types/nostr";
 import type { Content, Cursor, FC, FlatFeed, Poast } from "@/types/trill";
 import { defaultGate, engagementBunt } from "./bunts";
 import type { BasicProfile, UserProfile, UserType } from "@/types/nostrill";
@@ -7,9 +7,9 @@ import { isValidPatp } from "urbit-ob";
 import { IMAGE_SUBREGEX, URL_REGEX, VIDEO_SUBREGEX } from "./constants";
 import { decodeNostrKey } from "./nostr";
 
-export function eventsToFc(postEvents: Event[]): FC {
+export function eventsToFc(postEvents: Wevent[]): FC {
   const fc = postEvents.reduce(
-    (acc: FC, event: Event) => {
+    (acc: FC, event: Wevent) => {
       const p = eventToPoast(event);
       if (!p) return acc;
       acc.feed[p.id] = p;
@@ -21,7 +21,7 @@ export function eventsToFc(postEvents: Event[]): FC {
   );
   return fc;
 }
-export function addEventToFc(event: Event, fc: FC): FC {
+export function addEventToFc(event: Wevent, fc: FC): FC {
   const p = eventToPoast(event);
   if (!p) return fc;
   fc.feed[p.id] = p;
@@ -56,7 +56,7 @@ export function extractURLs(text: string): {
   return { text: tokens, pics, vids };
 }
 
-export function eventToPoast(event: Event): Poast | null {
+export function eventToPoast(event: Wevent): Poast | null {
   const valid = [1, 667];
   if (!valid.includes(event.kind)) return null;
   const inl = extractURLs(event.content || "");
@@ -87,6 +87,7 @@ export function eventToPoast(event: Event): Poast | null {
     if (!f) continue;
     const ff = f.toLowerCase();
     // console.log("tag", ff);
+    if (ff === "patp") poast.author = tag[1];
     if (ff === "e") {
       const [, eventId, _relayURL, marker, _pubkey, ..._] = tag;
       // TODO

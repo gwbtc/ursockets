@@ -1,7 +1,7 @@
 import useLocalState from "@/state/state";
 import Icon from "@/components/Icon";
 import spinner from "@/assets/triangles.svg";
-import type { FC, FullFeed, FullNode } from "@/types/trill";
+import type { FC, FullFeed, FullNode, Poast } from "@/types/trill";
 import Composer from "@/components/composer/Composer";
 import type { UserProfile } from "@/types/nostrill";
 import { useEffect, useState } from "react";
@@ -11,19 +11,14 @@ import { toFlat } from "../post/RP";
 import type { NostrEvent } from "@/types/nostr";
 import { createCache } from "@/logic/cache";
 import Post from "../post/Post";
-import Modal from "../modals/Modal";
 
 type Props = {
-  idString: string; // before decoding, nevent or hex or whatever
-  host: string;
-  id: string;
-  feed?: FC;
-  profile?: UserProfile;
+  event: NostrEvent;
+  relays: string[];
 };
-const cache = createCache({ dbName: "nostrill", storeName: "nosted" });
 
-export default function Thread(props: Props) {
-  const { api, nostrFeed, composerData, setComposerData, setModal, lastFact } =
+export default function Thread({ event, relays }: Props) {
+  const { profiles, composerData, setComposerData, setModal, lastFact } =
     useLocalState((s) => ({
       api: s.api,
       nostrFeed: s.nostrFeed,
@@ -31,70 +26,17 @@ export default function Thread(props: Props) {
       composerData: s.composerData,
       setComposerData: s.setComposerData,
       setModal: s.setModal,
+      profiles: s.profiles,
     }));
-  const { id, feed, profile } = props;
 
-  const poast = feed?.feed[id];
-  const host = poast?.author || "";
-  const [data, setData] = useState<FullFeed>();
-
-  useEffect(() => {
-    // TODO
-    const event = (nostrFeed as any)[id];
-    if (event) {
-      console.log({ event });
-      const fn = eventToFn(event);
-      const ff = eventsToFF([fn]);
-      setData(ff);
-    }
-  }, [id, nostrFeed]);
-
-  useEffect(() => {
-    if (!lastFact) return;
-    if (!("nostr" in lastFact)) return;
-    if (!("thread" in lastFact.nostr)) return;
-    const thread = lastFact.nostr.thread;
-    console.log({ thread, id });
-    // TODO
-    // thread can be an empty array. relays are unreliable like that
-    // nevent to hex conversion works well, that's not the issue
-    // might want to track which relay is providing what nostr data in the UI too so we can juggle different ones
-
-    // toast.success("thread fetched succesfully, rendering");
-    // cache.set("evs", lastFact.nostr.thread);
-    // const nodes = lastFact.nostr.thread.map(eventToFn);
-    // const ff = eventsToFF(nodes);
-    // setData(ff);
-  }, [lastFact]);
-
-  console.log("nostr event", data);
-
-  // if (event) return <Render event={}
+  const fn = eventToFn(event);
+  const ff = eventsToFF([fn]);
+  const profile = profiles.get(event.pubkey);
 
   useEffect(() => {
     console.log({ composerData });
     if (composerData) setModal(<Composer />);
   }, [composerData]);
-  // useTimeout(() => {
-  //   if (!data) setError("Request timed out");
-  // }, 10_000);
-  //
-
-  useEffect(() => {
-    if (!api) return;
-    const init = async () => {
-      const cached: NostrEvent[] | null = await cache.get("evs");
-      console.log("cached events", cached);
-      // if (cached) {
-      //   const nodes = cached.map(eventToFn);
-      //   const ff = eventsToFF(nodes);
-      //   setData(ff);
-      // }
-    };
-    init();
-  }, [id]);
-
-  console.log({ data });
 
   return (
     <>
@@ -111,60 +53,14 @@ export default function Thread(props: Props) {
         </div>
         <h2>Nostr Thread</h2>
         <div className="thread-info">
-          <span className="thread-host">{host}</span>
+          <span className="thread-host">{relays[0]}</span>
           <span className="thread-separator">•</span>
-          <span className="thread-id">#{id}</span>
+          <span className="thread-id">#{event.id}</span>
         </div>
       </div>
       <div id="feed-proper">
-        {data ? (
-          <>
-            <Head node={data[id]} profile={profile} />
-          </>
-        ) : (
-          <Loader {...props} />
-        )}
+        <Head node={fn} profile={profile} />
       </div>
-    </>
-  );
-}
-
-function Loader(props: Props) {
-  const { id } = props;
-  const { api, relays } = useLocalState((s) => ({
-    api: s.api,
-    nostrFeed: s.nostrFeed,
-    lastFact: s.lastFact,
-    composerData: s.composerData,
-    setComposerData: s.setComposerData,
-    setModal: s.setModal,
-    relays: s.relays,
-  }));
-  const [error, setError] = useState("");
-
-  async function tryAgain() {
-    if (!api) return;
-    const rels = Object.values(relays).map((r) => r.wid);
-    setError("");
-    const res = await api.nostrThread(id, rels);
-    if (res) toast.success("Sent request to relay");
-  }
-
-  return !error ? (
-    <div className="text-center m-10 text-2xl">
-      <h2>Error Loading Thread</h2>
-      <p className="error">{error}</p>
-      <button className="cycle-btn mx-auto my-8" onClick={tryAgain}>
-        Try Again
-      </button>
-    </div>
-  ) : (
-    <>
-      <h2 className="text-center my-8">Loading Thread...</h2>
-      <div className="loading-container">
-        <img className="x-center" src={spinner} alt="Loading" />
-      </div>
-      <button onClick={() => setError("timeout")}>Give Up </button>
     </>
   );
 }

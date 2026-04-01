@@ -15,8 +15,8 @@ import Global from "@/components/feed/Global";
 type FeedType = "global" | "following" | "nostr";
 function Loader() {
   const params = useParams();
-  if (!params.taip) return <FeedPage t="nostr" />;
-  // if (params.taip === "urbit") return <FeedPage t={"urbit"} />;
+  if (!params.taip) return <FeedPage t="global" />;
+  if (params.taip === "global") return <FeedPage t={"global"} />;
   if (params.taip === "following") return <FeedPage t={"following"} />;
   if (params.taip === "nostr") return <FeedPage t={"nostr"} />;
   // else if (param === FeedType.Rumors) return <Rumors />;
