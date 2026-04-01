@@ -29,7 +29,7 @@ export default function Thread({ event, relays }: Props) {
       profiles: s.profiles,
     }));
 
-  const fn = eventToFn(event);
+  const fn = eventToFn({ ...event, relays });
   const ff = eventsToFF([fn]);
   const profile = profiles.get(event.pubkey);
 

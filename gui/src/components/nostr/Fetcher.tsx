@@ -78,8 +78,8 @@ export default function Thread({ id }: { id: string }) {
   if (data) return <NostrThread event={data} relays={data.relays} />;
   // else return <Loader {...props} />;
 }
-
-function Loader(props: Props) {
+type LoaderProps = { id: string };
+function Loader(props: LoaderProps) {
   const { id } = props;
   const { api, relays } = useLocalState((s) => ({
     api: s.api,

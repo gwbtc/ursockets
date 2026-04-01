@@ -1,4 +1,4 @@
-import type { NostrEvent } from "@/types/nostr";
+import type { NostrEvent, Wevent } from "@/types/nostr";
 import type { FlatFeed, FullFeed, FullNode, Poast } from "@/types/trill";
 import { eventToPoast } from "../nostrill";
 import { isValidPatp } from "urbit-ob";
@@ -54,7 +54,7 @@ export function findReplies(n: Poast, f: FlatFeed): Poast[] {
   return kids;
 }
 
-export function eventToFn(ev: NostrEvent) {
+export function eventToFn(ev: Wevent) {
   const p = eventToPoast(ev)!;
   const fn: FullNode = { ...p, children: {} };
   return fn;
