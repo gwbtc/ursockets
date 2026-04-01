@@ -1,11 +1,11 @@
 :~
-  title+'Nostrill'
+  title+'Trill 2'
   info+'Pater Nostr'
   color+0xff.d400
-  version+[0 1 0]
-  website+'https://groundwire.io'
+  version+[0 1 1]
+  website+'https://groundwire.dev'
   license+'Noli me tangere'
-  image+'https://s3.sortug.com/img/nostril-icon.png'
+  image+'https://s3.sortug.com/img/nostrill-tile.png'
   base+'nostrill'
   glob-http+['https://s3.sortug.com/globs/glob-0v2.1kqjk.mrtef.odn8j.npqii.2hqkf.glob' 0v2.1kqjk.mrtef.odn8j.npqii.2hqkf]
 ==
