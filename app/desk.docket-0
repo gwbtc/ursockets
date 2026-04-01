@@ -7,5 +7,5 @@
   license+'Noli me tangere'
   image+'https://s3.sortug.com/img/nostrill-tile.png'
   base+'nostrill'
-  glob-http+['https://s3.sortug.com/globs/glob-0v2.1kqjk.mrtef.odn8j.npqii.2hqkf.glob' 0v2.1kqjk.mrtef.odn8j.npqii.2hqkf]
+  glob-http+['https://s3.sortug.com/globs/glob-0v2.0n7m8.g69ms.uejn8.dkget.1jm7v.glob' 0v2.0n7m8.g69ms.uejn8.dkget.1jm7v]
 ==
