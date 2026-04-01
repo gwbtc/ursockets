@@ -189,17 +189,11 @@
         =/  global-cards=(list card:agent:gall)  ?.  global.poke  ~
 
           =/  nclient  ~(. nostr-client [state bowl])
-          =/  event  (post-to-event:evlib i.keys.state eny.bowl p 667)
+          =/  tag=(list @t)  :~('patp' (scot %p our.bowl))
+          =/  tags  :~(tag)
+          =/  event  (post-to-event:evlib i.keys.state eny.bowl p 667 tags)
           =/  mutan  ~(. mutations-nostr [state bowl])
-
-          
-          =/  rl  get-nostrill-relay:mutan
-
-          =/  relay-card
-            ?~  rl  ~&  >>>  "not connected to global relay, running thread"
-               (send-and-close:global:nclient [%event event])
-
-               (send-card:global:nclient [%event event])
+          =/  relay-card  (send-card:global:nclient [%event event])
 
         ::   ::
         ::   =/  wid=@  -.u.rl

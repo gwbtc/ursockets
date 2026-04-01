@@ -51,10 +51,15 @@
 
 ++  global
   |%
-  ++  get-wid
-    ?~  global-relay-conn.state  ~&  >>>  "not connected to global relay"  !!
-    u.global-relay-conn.state
+  ++  get-wid  ^-  (unit @)
+    =/  usocket  (check-connected:ws global-relay:constants bowl)
+    ?~  usocket  ~
+    %-  some  -.u.usocket
+    :: ?~  global-relay-conn.state  ~&  >>>  "not connected to global relay"  !!
+    :: u.global-relay-conn.state
   ::
+  :: TODO not fucking working
+  :: guess it doesn't await for %pending to resolve properly
   ++  send-and-close  |=  req=client-msg:nsur  ^-  card
     =/  wmsg  (req-to-msg req)
     (one-off:ws global-relay:constants wmsg bowl)    
@@ -63,7 +68,10 @@
   ++  send-card  |=  req=client-msg:nsur  ^-  card
     =/  wmsg  (req-to-msg req)
     =/  wid  get-wid
-    (give-ws-payload-client:ws wid wmsg)
+    ?~  wid  ~&  >>>  "not connected to global relay, running thread"
+             (send-and-close req)
+             (give-ws-payload-client:ws u.wid wmsg)
+
   ::  filter builders
   ++  get-profiles-from-global
     ^-  (list card)
@@ -217,7 +225,7 @@
     =|  missing-profs=(set @ux)
     =/  pubkeys=(set @ux)
       |-  ?~  npoasts  missing-profs
-        =/  poast=event:nsur  +.i.npoasts
+        =/  poast=event:nsur  +>.i.npoasts
         =/  have  (~(has by profiles.state) [%nostr pubkey.poast])
         =?  missing-profs  !have  (~(put in missing-profs) pubkey.poast)
       $(npoasts t.npoasts)

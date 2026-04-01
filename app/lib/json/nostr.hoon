@@ -37,6 +37,13 @@
       a+(turn tags tag)
       s+content
     ==
+  ++  wevent
+  |=  w=wevent:sur  ^-  json
+    %:  pairs
+      relays+a+(turn relays.w cord:en:common)
+      event+(event +.w)
+      ~
+    ==
   ++  event
   =/  nostr=?  .n
   |=  e=event:sur  ^-  json

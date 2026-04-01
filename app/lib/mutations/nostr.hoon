@@ -32,14 +32,7 @@
   =/  rls  ~(tap by relays.state)
   ?~  rls  ~
   `i.rls
-++  get-nostrill-relay  ^-  (unit [wid=@ud relay=relay-stats:nsur])
-  =/  rls  ~(tap by relays.state)
-  |-  ?~  rls  ~
-    =/  relay=relay-stats:nsur  +.i.rls
-    ?:   .=  url.relay  global-relay:constants
-      `i.rls
-      $(rls t.rls)
-
+  
 ++  set-relay  |=  wid=@ud
   ^-  (quip card _state)
   =/  socket  (get-url:ws wid bowl)
@@ -70,9 +63,10 @@
 :: events
 ++  handle-client-event  |=  [wid=@ =event:nsur]  ^-  (quip card _state)
   ~&  handling-client-event=event
-  =.  nostr-feed.state  (put:norm:sur nostr-feed.state created-at.event event)
-  =/  profile  (~(get by profiles.state) [%nostr pubkey.event])
-  :: TODO save if we're following?
+  :: =/  wevent  :-  :~('our')  event
+  :: =.  nostr-feed.state  (put:norm:sur nostr-feed.state created-at.event wevent)
+  :: =/  profile  (~(get by profiles.state) [%nostr pubkey.event])
+  :: :: TODO save if we're following?
   :: =/  pw  (event-to-post:nlib event profile)
   =/  response  (ok-client-event:nreq event .n 'we\'re full')
   =/  cs  (ws-response:nreq wid response)
@@ -199,7 +193,8 @@
     ++  parse-poast
     ^-  (quip card _state)
     
-      =.  nostr-feed.state  (put:norm:sur nostr-feed.state created-at.event event)
+      =/  wevent  :-  :~(url.relay)  event
+      =.  nostr-feed.state  (put:norm:sur nostr-feed.state created-at.event wevent)
       =/  user  [%nostr pubkey.event]
       =/  user-feed  (~(get by following.state) user)
       =/  profile  (~(get by profiles.state) user)
@@ -285,7 +280,7 @@
         ?:  (gth ~(wyt in users) 0)
           ~&  >>>  "eose on user feed request"
           =/  poasts  (tap:norm:sur nostr-feed.state)
-          =/  subset  %+  skim  poasts  |=  [* ev=event:nsur]  (~(has in users) pubkey.ev)
+          =/  subset  %+  skim  poasts  |=  [* ev=wevent:nsur]  (~(has in users) pubkey.ev)
           =/  f  (gas:norm:sur *nostr-feed:sur subset)
           =/  c  (update-ui:cardslib [%nostr %user f])
           [:~(c) relay]
@@ -293,9 +288,9 @@
         ?^  thread-id
           ~&  >>>  "eose on thread request"
           =/  poasts  (tap:norm:sur nostr-feed.state)
-          =/  subset  %+  skim  poasts  |=  [* ev=event:nsur]
+          =/  subset  %+  skim  poasts  |=  [* ev=wevent:nsur]
             ?|  .=(u.thread-id id.ev)
-                =/  refs  (get-references:evlib ev)
+                =/  refs  (get-references:evlib +.ev)
                 (~(has in refs) u.thread-id)
             ==
           =/  f  (gas:norm:sur *nostr-feed:sur subset)
@@ -445,7 +440,9 @@
       =/  scry   ~(. scri [state bowl])
       =/  upoast  (get-poast:scry host id)
       ?~  upoast  ~&  >>>  post-to-relay-not-found=[host id]  ~
-      =/  event  (post-to-event:evlib i.keys.state eny.bowl u.upoast 1)
+      :: TODO
+      =/  tags=(list (list @t))  ~
+      =/  event  (post-to-event:evlib i.keys.state eny.bowl u.upoast 1 tags)
       ~&  >>>  sending=id
       =|  urls=(list @t)
       =/  cards=(list card)

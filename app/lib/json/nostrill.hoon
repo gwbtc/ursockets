@@ -40,8 +40,8 @@
     ==
   ++  en-nostr-feed
   |=  feed=nostr-feed:sur  ^-  json
-    :-  %a  %+  turn  (tap:norm:sur feed)  |=  [id=@ud ev=event:nsur]
-      (event:en:nostr ev)
+    :-  %a  %+  turn  (tap:norm:sur feed)  |=  [id=@ud wev=wevent:nsur]
+      (wevent:en:nostr wev)
 
   ++  en-relays
   |=  r=(map @ relay-stats:nsur)  ^-  json

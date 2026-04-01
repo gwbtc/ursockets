@@ -167,12 +167,12 @@
     signature
     ==
   event
-++  post-to-event  |=  [=keys:nsur eny=@ p=post:post kind=@ud]  ^-  event:nsur
+++  post-to-event  |=  [=keys:nsur eny=@ p=post:post kind=@ud tags=(list tag:nsur)]  ^-  event:nsur
   :: kind should  be 1 when sending to normal relays, 667 to sending to the global relay
   =/  cl  (latest-post-content:trill contents.p)
   =/  string  (crip (content-list-to-md:trill cl))
   =/  ts  (to-unix-secs:jikan:sr id.p)
-  =/  raw=raw-event:nsur  [pub.keys ts kind ~ string]
+  =/  raw=raw-event:nsur  [pub.keys ts kind tags string]
   =/  event-id  (hash-event:nostr-keys raw)
   =/  signature  (sign-event:nostr-keys priv.keys event-id eny)
   ~&  hash-and-signed=[event-id signature]

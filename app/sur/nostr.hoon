@@ -1,5 +1,9 @@
 |%
 +$  keys  [pub=@ priv=@]
++$  wevent
+  $:  relays=(list @t)
+      event
+  ==
 +$  event
 $:  id=@ux           :: 32bytes
     pubkey=@ux       ::  32bytes

@@ -540,6 +540,24 @@
         :_  this
         :~  (connect:ws global-relay:constants bowl)
         ==
+      [%wsgp @t]
+        =/  sp  (build-sp:postlib our.bowl our.bowl +.noun ~ ~)
+        =/  p   (build-post:postlib now.bowl pub.i.keys sp)
+        =/  tag=(list @t)  :~('patp' (scot %p our.bowl))
+        =/  tags  :~(tag)
+        =/  event  (post-to-event:evlib i.keys eny.bowl p 667 tags)
+        :: =/  p-cord  (scot %p our.bowl)
+        :: =/  str  (cat 3 'urbit:' p-cord)
+        :: =/  tag=(list @t)  :~('i' str)
+        =/  crd
+       :: (send-and-close:global:nclient [%event event])
+
+          =/  nclient  ~(. nostr-client [state bowl])
+         (send-card:global:nclient [%event event])
+        
+        :_  this
+        :~  crd
+        ==
       %wss  :: status
         ~&  global=global-relay-conn
         ~&  relays=~(tap by relays)
@@ -618,7 +636,7 @@
       %nf
         =/  nf  (tap:norm:sur nostr-feed)
         =/  nff  |-  ?~  nf  ~
-          =/  ev=event:nsur  +.i.nf
+          =/  ev=wevent:nsur  +.i.nf
           ~&  meta=[kind=kind.ev id=id.ev pubkey=pubkey.ev ts=created-at.ev]
           ~&  >>  ev-txt=content.ev
           
