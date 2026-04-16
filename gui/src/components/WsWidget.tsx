@@ -41,7 +41,23 @@ export default function WebSocketWidget({ url, protocols }: WidgetProps) {
     <div className="w-full max-w-xl mx-auto p-4 grid gap-3">
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">WebSocketWidget</h1>
-        <span className="text-sm px-2 py-1 rounded-full border">
+        <span
+          className="text-sm px-2 py-1 rounded-full border"
+          style={{
+            backgroundColor:
+              status === "open"
+                ? "green"
+                : status === "closed"
+                  ? "red"
+                  : "transparent",
+            color:
+              status === "open"
+                ? "white"
+                : status === "closed"
+                  ? "white"
+                  : "var(--text-color)",
+          }}
+        >
           {status.toUpperCase()} {retryCount ? `(retry ${retryCount})` : ""}
         </span>
       </header>

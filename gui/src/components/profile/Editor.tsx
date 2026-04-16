@@ -1,10 +1,12 @@
 import { useState } from "react";
-import type { UserProfile, UserType } from "@/types/nostrill";
+import type { BasicProfile, UserProfile, UserType } from "@/types/nostrill";
 import useLocalState from "@/state/state";
 import Icon from "@/components/Icon";
 import toast from "react-hot-toast";
 import Avatar from "../Avatar";
 import FeedSettings from "./FeedSettings";
+import Modal from "../modals/Modal";
+import { abbreviateHex, abbreviatePatp, abbreviateUser } from "@/logic/utils";
 
 interface ProfileEditorProps {
   user: UserType;
@@ -19,10 +21,12 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
   userString,
   onSave,
 }) => {
-  const { api, profiles } = useLocalState((s) => ({
+  const { api, relays, profiles, setModal } = useLocalState((s) => ({
     api: s.api,
     pubkey: s.pubkey,
     profiles: s.profiles,
+    setModal: s.setModal,
+    relays: s.relays,
   }));
 
   // Initialize state with existing profile or defaults
@@ -39,7 +43,9 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
   );
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [showFeedSettings, setShowFeedSettings] = useState(false);
+  function openFeedSettings() {
+    setModal(<FeedSettings />);
+  }
 
   const handleAddCustomField = () => {
     setCustomFields([...customFields, { key: "", value: "" }]);
@@ -70,10 +76,11 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
         }
       });
 
-      const nprofile: UserProfile = {
+      const nprofile: BasicProfile = {
         name,
         picture,
         about,
+        patp: api?.airlock?.our || null,
         other,
       };
 
@@ -113,17 +120,18 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
   };
   console.log({ profile });
   console.log({ name, picture, customFields });
+  async function handleSend() {
+    if (!api) return;
+    // TODO this will crash
+    const res = await api.relayProfile(
+      Object.keys(relays).map((w) => Number(w)),
+    );
+  }
 
   return (
     <div className="profile-editor">
       <div className="profile-header">
         <h2>Edit Profile</h2>
-        {!isEditing && (
-          <button onClick={() => setIsEditing(true)} className="edit-btn">
-            <Icon name="settings" size={16} />
-            Edit
-          </button>
-        )}
       </div>
 
       {isEditing ? (
@@ -217,6 +225,9 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
             >
               {isSaving ? "Saving..." : "Save Profile"}
             </button>
+            <button onClick={handleSend} className="send-btn">
+              Send to Relay
+            </button>
             <button
               onClick={handleCancel}
               disabled={isSaving}
@@ -233,7 +244,7 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
           </div>
 
           <div className="profile-info">
-            <h3>{name}</h3>
+            {profile?.name ? <h2>{name}</h2> : <Name user={user} />}
             {about && <p className="profile-about">{about}</p>}
 
             {customFields.length > 0 && (
@@ -248,10 +259,14 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
               </div>
             )}
           </div>
-
+          <button onClick={() => setIsEditing(true)} className="edit-btn">
+            <Icon name="settings" size={16} />
+            Edit
+          </button>
+          {/* TODO enable later
           <div style={{ marginTop: "20px" }}>
             <button
-              onClick={() => setShowFeedSettings(!showFeedSettings)}
+              onClick={openFeedSettings}
               style={{
                 background: "transparent",
                 border: "1px solid #444",
@@ -265,11 +280,9 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
               }}
             >
               <Icon name="settings" size={14} />
-              {showFeedSettings ? "Hide Feed Settings" : "Feed Settings"}
+              Feed Settings
             </button>
-
-            {showFeedSettings && <FeedSettings />}
-          </div>
+          </div>*/}
         </div>
       )}
     </div>
@@ -277,3 +290,25 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
 };
 
 export default ProfileEditor;
+
+function Name({ user }: { user: UserType }) {
+  if ("urbit" in user) {
+    const abbrv = abbreviatePatp(user.urbit);
+    if (abbrv === user.urbit) return <h2>{user.urbit}</h2>;
+    else
+      return (
+        <>
+          <h2>{abbrv}</h2> <h4>{user.urbit}</h4>
+        </>
+      );
+  } else {
+    const abbrv = abbreviateHex(user.nostr);
+    if (abbrv === user.nostr) return <h2>{user.nostr}</h2>;
+    else
+      return (
+        <>
+          <h2>{abbrv}</h2> <h4>{user.nostr}</h4>
+        </>
+      );
+  }
+}

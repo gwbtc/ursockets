@@ -27,6 +27,13 @@
   ++  se  |=  aur=@tas  |=  jon=json
     ?.  ?=(%s -.jon)  ~
     (slaw aur p.jon)
+  ++  string-ud
+    |=  jon=json  ^-  (unit @)
+    ?.  ?=([%s @t] jon)  ~
+    (rush p.jon dem)
+
+  :: ++  un  |*  wit=fist  |=  jon=json  ^-  (unit *)
+  ::   ?~  jon  ~
   --
 
 --

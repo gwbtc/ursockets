@@ -1,4 +1,3 @@
-import Modal from "./Modal";
 import { useLocation } from "wouter";
 import type { Poast } from "@/types/trill";
 
@@ -7,10 +6,13 @@ interface ReactionsModalProps {
   onClose: () => void;
 }
 
-export default function ReactionsModal({ poast, onClose }: ReactionsModalProps) {
+export default function ReactionsModal({
+  poast,
+  onClose,
+}: ReactionsModalProps) {
   const [_, navigate] = useLocation();
 
-  function handleNavigate(e: React.MouseEvent, routerPath: string){
+  function handleNavigate(e: React.MouseEvent, routerPath: string) {
     e.preventDefault();
     e.stopPropagation();
     navigate(routerPath);
@@ -18,27 +20,28 @@ export default function ReactionsModal({ poast, onClose }: ReactionsModalProps) 
   }
 
   return (
-    <Modal close={onClose}>
+    <div>
+      <h3>Reactions</h3>
       <div>
-        <h3>Reactions</h3>
-        <div>
-          {Object.entries(poast.engagement.reacts).map(([ship, emoji]) => {
-            const userPath = `/apps/nostrill/u/${ship}`;
-            const routerPath = `/u/${ship}`;
-            return (
-              <div key={ship} style={{ display: 'flex', gap: '10px' }}>
-                <span>{emoji}</span>
-                <a
-                  href={userPath}
-                  role="link"
-                  onClick={(e) => { handleNavigate(e, routerPath) }}>
-                  {ship}
-                </a>
-              </div>
-            );
-          })}
-        </div>
+        {Object.entries(poast.engagement.reacts).map(([ship, emoji]) => {
+          const userPath = `/apps/nostrill/u/${ship}`;
+          const routerPath = `/u/${ship}`;
+          return (
+            <div key={ship} style={{ display: "flex", gap: "10px" }}>
+              <span>{emoji}</span>
+              <a
+                href={userPath}
+                role="link"
+                onClick={(e) => {
+                  handleNavigate(e, routerPath);
+                }}
+              >
+                {ship}
+              </a>
+            </div>
+          );
+        })}
       </div>
-    </Modal>
+    </div>
   );
 }

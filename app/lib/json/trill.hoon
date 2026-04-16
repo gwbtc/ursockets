@@ -271,6 +271,11 @@
   ++  de
   =,  dejs-soft:format
     |%
+    ++  pid
+      %-  ot
+      :~  host+(se:de:common %p)
+          id+string-ud:de:common
+      ==
     ++  perms 
       %-  ot
       :~  read+gate

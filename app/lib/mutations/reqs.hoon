@@ -1,5 +1,5 @@
 /-  *wrap, sur=nostrill, nsur=nostr, comms=nostrill-comms, feed=trill-feed, post=trill-post, notif=nostrill-notif
-/+  js=json-nostr, sr=sortug,constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill, lib=nostrill, mutations-trill, harklib=hark
+/+  js=json-nostr, sr=sortug,constants, gatelib=trill-gate, feedlib=trill-feed, jsonlib=json-nostrill, lib=nostrill, mutations-trill, harklib=hark, scri
 |_  [=state:sur =bowl:gall]
 
 ++  handle-req  |=  [=req:comms pat=path]
@@ -70,7 +70,9 @@
         =/  lp  latest-page:feedlib
         =/  lp2  lp(count backlog.feed-perms.state)
         =/  =fc:feed  (lp2 feed.state)
-        =/  prof  (~(get by profiles.state) [%urbit our.bowl])
+        =/  uprof  (~(get by profiles.state) [%urbit our.bowl])
+        =/  prof  ?^  uprof  u.uprof
+          ~(default-profile scri [state bowl])
         =/  fd=feed-data:comms  [fc prof]
         =/  fr=fols-res:comms  [msg.decision %done %ok fd]
         :_  state

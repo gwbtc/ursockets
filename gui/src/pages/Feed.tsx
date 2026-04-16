@@ -8,13 +8,15 @@ import { useState } from "react";
 import Composer from "@/components/composer/Composer";
 import { ErrorPage } from "@/pages/Error";
 import NostrFeed from "@/components/nostr/Feed";
-import { consolidateFeeds, disaggregate } from "@/logic/nostrill";
+import { consolidateFeeds } from "@/logic/nostrill";
+import toast from "react-hot-toast";
+import Global from "@/components/feed/Global";
 
-type FeedType = "urbit" | "following" | "nostr";
+type FeedType = "global" | "following" | "nostr";
 function Loader() {
   const params = useParams();
-  if (!params.taip) return <FeedPage t="nostr" />;
-  // if (params.taip === "urbit") return <FeedPage t={"urbit"} />;
+  if (!params.taip) return <FeedPage t="global" />;
+  if (params.taip === "global") return <FeedPage t={"global"} />;
   if (params.taip === "following") return <FeedPage t={"following"} />;
   if (params.taip === "nostr") return <FeedPage t={"nostr"} />;
   // else if (param === FeedType.Rumors) return <Rumors />;
@@ -27,10 +29,10 @@ function FeedPage({ t }: { t: FeedType }) {
     <>
       <div id="top-tabs">
         <div
-          className={active === "urbit" ? "active" : ""}
-          onClick={() => setActive("urbit")}
+          className={active === "global" ? "active" : ""}
+          onClick={() => setActive("global")}
         >
-          Urbit
+          Global
         </div>
         <div
           className={active === "following" ? "active" : ""}
@@ -47,8 +49,8 @@ function FeedPage({ t }: { t: FeedType }) {
       </div>
       <div id="feed-proper">
         <Composer />
-        {active === "urbit" ? (
-          <Urbit />
+        {active === "global" ? (
+          <Global />
         ) : active === "following" ? (
           <Following />
         ) : active === "nostr" ? (
@@ -59,15 +61,6 @@ function FeedPage({ t }: { t: FeedType }) {
   );
 }
 
-function Urbit() {
-  const following = useLocalState((s) => s.following);
-  const feed = disaggregate(following, "urbit");
-  return (
-    <div>
-      <PostList data={feed} refetch={() => {}} />
-    </div>
-  );
-}
 function Following() {
   const following = useLocalState((s) => s.following);
   const feed = consolidateFeeds(following);

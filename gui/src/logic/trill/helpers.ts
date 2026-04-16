@@ -1,4 +1,4 @@
-import type { NostrEvent } from "@/types/nostr";
+import type { NostrEvent, Wevent } from "@/types/nostr";
 import type { FlatFeed, FullFeed, FullNode, Poast } from "@/types/trill";
 import { eventToPoast } from "../nostrill";
 import { isValidPatp } from "urbit-ob";
@@ -6,14 +6,12 @@ import type { UserType } from "@/types/nostrill";
 import { decodeNostrKey } from "../nostr";
 
 export function toFlat(n: FullNode): Poast {
-  console.log("to flat", n);
   const r = {
     ...n,
     children: !n.children
       ? []
       : Object.keys(n.children).map((c) => n.children[c].id),
   };
-  console.log("flat", r);
   return r;
   // return {
   //   ...n,
@@ -56,7 +54,7 @@ export function findReplies(n: Poast, f: FlatFeed): Poast[] {
   return kids;
 }
 
-export function eventToFn(ev: NostrEvent) {
+export function eventToFn(ev: Wevent) {
   const p = eventToPoast(ev)!;
   const fn: FullNode = { ...p, children: {} };
   return fn;
@@ -246,3 +244,5 @@ export function userFromAuthor(userString: string): UserType {
 }
 
 // http://localhost:5173/apps/nostrill/t/nevent1qqsp3faj5jy9fpc6779rcs9kdccc0mxwlv2pnhymwqtjmletn72u5echttguv
+//
+// nevent1qqszs4v3a8n9rupfskuucczkv7kp2rmu7c2r2s0zahcm64g67ppvz0qj4c2ka

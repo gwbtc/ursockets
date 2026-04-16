@@ -1,55 +1,59 @@
-/-  spider, nsur=nostr
-/+  strandio
+/-  spider, ui=nostrill-ui, comms=nostrill-comms
+/+  strandio, jsonlib=json-nostrill, sr=sortug, lib=nostrill, ws=websockets
 =,  strand=strand:spider
+=,  strand-fail=strand-fail:libstrand:spider
 ^-  thread:spider
+::  One Off WebSockets message thread
+::  Connets to WebSockets server, awaits the connection to be open, sends message, awaits confirmation, then closes connection
 |=  arg=vase
-=/  m  (strand ,vase)
-|^
-^-  form:m
-:: =/  [url=@t req=client-msg:nsur]  (need !<((unit [@t client-msg:nsur]) arg))
-=/  ujon  !<((unit json) arg)
-:: ~&  ujon=ujon
-?~  ujon  (pure:m !>(bail))
-:: =/  req  (ui:de:jsonlib u.ujon)
-=/  jstring  (en:json:html u.ujon)
-~&  >>  jstring=jstring
-:: ;<  =bowl:spider  bind:m  get-bowl:strandio
-:: =/  desk  q.byk.bowl
-:: =/  =task:iris  [%websocket-connect desk url]
-:: =/  =card:agent:gall  [%pass /ws-req/nostrill %arvo %i task]
-:: ;<  ~  bind:m  (send-raw-card:strandio card)
-:: ;<  res=(pair wire sign-arvo)  bind:m  take-sign-arvo:strandio
-:: ~&  >  res=res
-:: :: confirm connection was established
-:: ?.  ?=([%iris %websocket-response id=@ud websocket-event:eyre] q.res)
-::       (strand-fail:strand %bad-sign ~)
-:: ~&  >  ted-ws-res=+>+<.q.res
-:: ?.  ?=(%accept +>+<.q.res)
-::   (pure:m !>([%ng '']))
-::       :: (strand-fail:strand %bad-sign ~)
+  =/  m  (strand ,vase)  ^-  form:m
+  ;<  =bowl:spider  bind:m  get-bowl:strandio
+  =/  args  !<([@t websocket-message:eyre] arg)
+  =/  endpoint  -.args
+  |^
+  
+  ::
+  =/  =task:iris  [%websocket-connect q.byk.bowl endpoint]
+  =/  iris-card  [%pass /ws-connect %arvo %i task]
+  ;<  ~  bind:m  (send-raw-card:strandio iris-card)
+  ;<  wid=@ud  bind:m  %+  (retry:strandio @ud)  `5  get-wid
+  ~&  >>  ted-found-wid=wid
+  ::  NOTE: can't directly send cards to Iris, Iris is subscribed to the agent, not the Thread, hence won't receive them. Poke the agent instead
+  =/  pok=poke:comms  [%ted wid %msg +.args]
+  ;<  ~  bind:m  (poke-our:strandio %nostrill %noun !>(pok))
+  ;<  ~  bind:m  (sleep:strandio ~s2)
 
-:: ~&  "ws connection accepted, sending ws msg"
-:: ~&  >>>  "sleeping"
-:: ;<  ~  bind:m  (sleep:strandio ~s3)
-:: ~&  >>>  "slept"
-:: =/  card2=card:agent:gall
-::   [%pass /ws/proxy %agent [our.bowl desk] %poke %websocket-thread !>([id.q.res wmsg])]
-:: ;<  ~  bind:m  (send-raw-card:strandio card2)
-:: ;<  res2=(pair wire sign-arvo)  bind:m  take-sign-arvo:strandio
+  =/  pok=poke:comms  [%ted wid %disconnect ~]
+  ;<  ~  bind:m  (poke-our:strandio %nostrill %noun !>(pok))
 
+  
+  
+  
+  (pure:m !>(~))
+  
+  :: ==
+    +$  socket  [wid=@ud url=@t status=$?(%accepted %pending)]    
+    ++  get-wid
+      ~&  >  "hey hey getting wid"
+      =/  m  (strand ,(unit @))
+      ^-  form:m
+      ;<  sockets=(list socket)  bind:m  (scry:strandio (list socket) /ix/ws/app)
+      :: =/  sockets  .^((list socket) %ix (scot %p our.bowl) %ws (scot %da now.bowl) /app)
+      ~&  >>>  get-wid=sockets
+      ?~  sockets  (pure:m ~)
+      =/  l=(list socket)  sockets
+      |-  ?~  l  (pure:m ~)
+        =/  =socket  i.l
+        ?.  .=(url.socket endpoint)
+          $(l t.l)
+        ?.  ?=(%accepted status.socket)
+          $(l t.l)
+        (pure:m `wid.socket)
 
-:: :: =/  subwire=path  /websocket-server/(scot %ud id.q.res)
-:: :: =/  =cage  [%websocket-response !>(+>.q.res)]
-:: :: =/  gf=gift:agent:gall  [%fact :~(subwire) cage]
-:: :: =/  =card:agent:gall  [%give gf]
-:: :: ~&  >>  ws-ted-ok-sending-msg=id.q.res
-:: :: ;<  ~  bind:m  (send-raw-card:strandio card)
-:: :: ;<  res2=(pair wire sign-arvo)  bind:m  take-sign-arvo:strandio
-:: :: ?.  ?=([%iris %websocket-response id=@ud %message wm=websocket-message:eyre] q.res2)
-:: ::       (strand-fail:strand %bad-sign ~)
-:: :: =/  wm=websocket-message:eyre  +>+>.q.res2
-  :: (pure:m !>([%ok id.q.res]))
-  ++  bail  ^-  json
-  %+  frond:enjs:format  %error
-  s+'error'
---
+    ++  bail
+    %-  pure:m   !>
+      ^-  json
+      %+  frond:enjs:format  %error
+      s+'error'
+      
+  --

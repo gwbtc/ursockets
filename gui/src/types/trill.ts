@@ -1,4 +1,4 @@
-import type { Event } from "./nostr";
+import type { Wevent } from "./nostr";
 import type { Ship } from "./urbit";
 
 export type SortugRef = {
@@ -48,7 +48,7 @@ export type Poast = {
   engagement: Engagement;
   tlonRumor?: boolean;
   json?: { origin: ExternalApp; content: string }; // for rumor quoting
-  event?: Event; // for Nostr posts
+  event?: Wevent;
 };
 export type FullNode = Omit<Poast, "children"> & {
   children: FullFeed;

@@ -49,7 +49,7 @@ export default function LockEditor({ lock, onChange, label }: LockEditorProps) {
   ) => {
     onChange({
       ...lock,
-      [type]: { ...lock[type as keyof Lock], locked: val },
+      [type]: { ...lock, locked: val },
     });
   };
 

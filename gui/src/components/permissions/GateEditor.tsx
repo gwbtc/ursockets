@@ -54,7 +54,7 @@ export default function GateEditor({ gate, onChange, label }: GateEditorProps) {
           <input
             type="text"
             style={{ border: "1px solid black" }}
-            disabled={gate.lock.pass === null}
+            // disabled={gate.lock.pass === null}
             onChange={(e) => {
               onChange({
                 ...gate,

@@ -24,9 +24,10 @@ export default function NostrUser({
   isAccessLoading: boolean;
   setIsAccessLoading: (b: boolean) => void;
 }) {
-  const { api, lastFact } = useLocalState((s) => ({
+  const { api, lastFact, relays } = useLocalState((s) => ({
     api: s.api,
     lastFact: s.lastFact,
+    relays: s.relays,
   }));
   const [fc, setFC] = useState<FC>();
 
@@ -71,10 +72,10 @@ export default function NostrUser({
   }
   async function handleRequestAccess() {
     if (!api) return;
-
+    const rels = Object.values(relays).map((r) => r.wid);
     setIsAccessLoading(true);
     try {
-      await api.nostrFeed(pubkey);
+      await api.nostrFeed(pubkey, rels);
     } catch (error) {
       toast.error(`Failed to request access from ${pubkey}`);
       console.error("Access request error:", error);

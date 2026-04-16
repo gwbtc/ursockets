@@ -13,7 +13,8 @@ export type ThemeName =
   | "noir"
   | "ocean"
   | "forest"
-  | "gruvbox";
+  | "gruvbox"
+  | "christmas";
 
 export interface ThemeColors {
   primary: string;
@@ -38,6 +39,7 @@ export interface ThemeColors {
   shadow: string;
   overlay: string;
 }
+export type ThemeColorsType = keyof ThemeColors;
 
 export interface ThemeTypography {
   fontSizeXs: string;
@@ -326,6 +328,36 @@ const themes: Record<ThemeName, Theme> = {
     radius: commonRadius,
     transitions: commonTransitions,
   },
+  christmas: {
+    name: "christmas",
+    colors: {
+      primary: "#D42426",
+      primaryHover: "#B81E20",
+      secondary: "#146B3A",
+      accent: "#F8B229",
+      accentHover: "#DDA025",
+      background: "#FFFAFA",
+      surface: "#F0F5F2",
+      surfaceHover: "#E6EFEC",
+      text: "#1A1A1A",
+      textSecondary: "#2F2F2F",
+      textMuted: "#4A4A4A",
+      border: "#146B3A",
+      borderLight: "#A0CEB6",
+      success: "#2E8B57",
+      warning: "#DAA520",
+      error: "#B22222",
+      info: "#20B2AA",
+      link: "#146B3A",
+      linkHover: "#0F522C",
+      shadow: "rgba(20, 107, 58, 0.15)",
+      overlay: "rgba(20, 107, 58, 0.2)",
+    },
+    typography: commonTypography,
+    spacing: commonSpacing,
+    radius: commonRadius,
+    transitions: commonTransitions,
+  },
 };
 
 interface ThemeContextType {
@@ -333,6 +365,9 @@ interface ThemeContextType {
   themeName: ThemeName;
   setTheme: (name: ThemeName) => void;
   availableThemes: ThemeName[];
+}
+export function colorToCSSVar(key: string): string {
+  return `--color-${key.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -371,13 +406,17 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
 
     // Set color variables
     Object.entries(theme.colors).forEach(([key, value]) => {
-      const cssVarName = `--color-${key.replace(/([A-Z])/g, "-$1").toLowerCase()}`;
+      const cssVarName = colorToCSSVar(key);
       root.style.setProperty(cssVarName, value);
     });
 
     // Set typography variables
     Object.entries(theme.typography).forEach(([key, value]) => {
-      const cssVarName = `--${key.replace(/([A-Z])/g, "-$1").toLowerCase().replace("font-", "font-").replace("size", "").replace("weight", "")}`;
+      const cssVarName = `--${key
+        .replace(/([A-Z])/g, "-$1")
+        .toLowerCase()
+        .replace("size-", "")
+        .replace("weight-", "")}`;
       root.style.setProperty(cssVarName, value);
     });
 
@@ -400,8 +439,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     });
 
     // Legacy variables for backward compatibility
-    root.style.setProperty('--text-color', theme.colors.text);
-    root.style.setProperty('--background-color', theme.colors.background);
+    root.style.setProperty("--text-color", theme.colors.text);
+    root.style.setProperty("--background-color", theme.colors.background);
 
     localStorage.setItem("theme", themeName);
   }, [themeName, theme]);

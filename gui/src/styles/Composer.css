@@ -1,5 +1,5 @@
 #composer {
-  padding: 16px;
+  padding: 8px;
   display: flex;
   gap: 0.75rem;
   transition: all 0.3s ease;
@@ -30,7 +30,7 @@
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    width: 80%;
   }
 
   & .composer-context {
@@ -123,12 +123,25 @@
   }
 
   & .composer-input-row {
+    position: relative;
     display: flex;
     gap: 12px;
     align-items: center;
   }
 
-  & input {
+
+  .mention-chip {
+    background-color: var(--color-secondary);
+    color: var(--color-surface);
+    border-radius: 4px;
+    padding: 2px 4px;
+    margin: 0 2px;
+    display: inline-block;
+    font-family: monospace;
+  }
+
+
+  & .input-editor {
     background-color: transparent;
     color: var(--color-text);
     flex-grow: 1;
@@ -139,8 +152,21 @@
     border-bottom: 2px solid transparent;
     transition: border-color 0.2s;
 
+    /* fallback */
+    min-height: 2.5rem;
+    max-height: 35rem;
+    overflow-y: auto;
+    outline: none;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+
     &:focus {
       border-bottom-color: var(--color-accent, #2a9d8f);
+    }
+
+    &:empty:before {
+      content: attr(data-placeholder);
+      color: #aaa;
     }
 
     &::placeholder {
@@ -170,4 +196,45 @@
       cursor: not-allowed;
     }
   }
+
+  .mention-autocomplete {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    background: var(--color-surface);
+    border: 1px solid #333;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    max-height: 200px;
+    overflow-y: auto;
+    min-width: 200px;
+  }
+
+  .mention-item {
+
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.composer-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+
+  button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+}
+
+.img-thumb {
+  display: inline-block;
+  margin: 0 1ch 0 1ch;
+  width: 80px;
 }

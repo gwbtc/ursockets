@@ -19,15 +19,26 @@
   border-top: 1px solid var(--text-color);
 }
 
+.trill-post:first-child {
+  border-top: none;
+}
+
+/* trill-post:last-child { */
+/* border-bottom: 1px solid var(--text-color); */
+/* } */
+
+
+
+
 .trill-post {
   position: relative;
   display: flex;
   padding: 0.5rem;
 
-  a {
-    text-decoration: 0;
-    color: var(--text-color);
-  }
+  /* a { */
+  /* text-decoration: 0; */
+  /* color: var(--text-color); */
+  /* } */
 
   /* min-height: 150px; */
 
@@ -48,9 +59,8 @@
 
   header {
     display: flex;
-    /* justify-content: space-between; */
+    justify-content: space-between;
     align-items: center;
-    justify-content: left;
 
     p {
       margin: 0 0.3rem;
@@ -134,12 +144,13 @@
       word-break: break-word;
     }
 
-    -paragraph {
+    .paragraph {
       margin-block-start: 1em;
       margin-block-end: 1em;
     }
 
     .body-text a {
+      margin: 0 0.5ch 0 0.5ch;
       text-decoration: underline;
     }
 
@@ -163,16 +174,12 @@
       line-height: 1rem;
       color: var(--text);
     }
-  }
 
-  trill-post:first-child {
-    border-top: none;
+    .inline-pic {
+      max-width: 80%;
+      max-height: 250px;
+    }
   }
-
-  trill-post:last-child {
-    border-bottom: 1px solid var(--text-color);
-  }
-
 
 
 
@@ -246,10 +253,12 @@
   border: 1px solid grey;
   border-radius: 0.5rem;
   cursor: pointer;
-}
 
-.quote-in-post header {
-  display: flex;
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 }
 
 .mention {
@@ -276,12 +285,16 @@
   margin: 0.5rem 0;
 }
 
+.trill-post-card.ref-card {
+  margin-top: 1rem;
+  margin-left: 1rem;
+}
+
 .trill-post-card-logo {
   position: absolute;
-  width: 25px;
-  height: 25px;
   top: -17px;
   left: -17px;
+
 }
 
 #post-menu {
@@ -351,17 +364,18 @@
 
   /* transform: rotate(0deg); */
   /* the dummy transform enforces position fixed inheritance */
-  .icon {
+  .icon-container {
     cursor: pointer;
     margin: 0 0.2rem;
     display: flex;
     align-items: center;
     gap: 0.2rem;
     width: 64px;
-    height: 1.6rem;
+    height: 1.5rem;
     /* min-width: 64px; */
 
     .icon-wrapper {
+      height: 100%;
       cursor: pointer;
       display: inline-block;
       transition: transform 0.1s ease, opacity 0.1s ease;
@@ -380,11 +394,11 @@
       height: 1.6rem;
     }
 
-    span {
+    .icon-count {
       display: block;
+      height: 100%;
       width: 2rem;
       text-align: right;
-      padding-top: 0.2rem;
       margin-right: 0.4rem;
     }
 
@@ -552,11 +566,6 @@
   overflow-y: scroll;
 }
 
-.btw {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 
 #stats-modal .react-stat img {
   width: 32px;

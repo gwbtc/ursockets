@@ -6,23 +6,25 @@ import Icon from "@/components/Icon";
 import "@/styles/Settings.css";
 import WebSocketWidget from "@/components/WsWidget";
 import type { RelayStats } from "@/types/nostrill";
+import { WS_URL } from "@/logic/api";
 
 function Settings() {
-  const { key, relays, api, addNotification } = useLocalState((s) => ({
+  const { key, relays, api } = useLocalState((s) => ({
     key: s.pubkey,
     relays: s.relays,
     api: s.api,
-    addNotification: s.addNotification,
   }));
+  console.log(key);
   const [newRelay, setNewRelay] = useState("");
   const [isAddingRelay, setIsAddingRelay] = useState(false);
   const [isCyclingKey, setIsCyclingKey] = useState(false);
 
-  async function removeRelay(url: string, relay: RelayStats) {
+  async function removeRelay(_url: string, relay: RelayStats) {
     try {
       await api?.deleteRelay(relay.wid);
       toast.success("Relay removed");
     } catch (error) {
+      console.log("WS_URL", WS_URL);
       toast.error("Failed to remove relay");
       console.error("Remove relay error:", error);
     }
@@ -73,68 +75,15 @@ function Settings() {
     }
   };
 
-  async function testHark() {
-    // const types = ["follow", "reply", "react", "mention", "access_request"];
-    // const randomType = types[Math.floor(Math.random() * types.length)] as any;
-    // addNotification({
-    //   type: randomType,
-    //   from: "~sampel-palnet",
-    //   message: "This is a test notification",
-    //   reaction: randomType === "react" ? "👍" : undefined,
-    // });
-    // toast.success("Test notification sent!");
-    const res = await api?.scryHark();
-  }
-
   return (
     <div className="settings-page">
       <div className="settings-header">
         <h1>Settings</h1>
-        <p>Manage your Nostrill configuration and preferences</p>
+        <p>Manage your Trill configuration and preferences</p>
       </div>
 
       <div className="settings-content">
-        <WebSocketWidget url="ws://localhost:8090/nostrill-ui" />
-        {/* Notifications Test Section - Remove in production */}
-        <div className="settings-section">
-          <div className="section-header">
-            <Icon name="bell" size={20} />
-            <h2>Test Notifications</h2>
-          </div>
-          <div className="section-content">
-            <div className="setting-item">
-              <div className="setting-info">
-                <label>Test Notification System</label>
-                <p>Generate test notifications to see how they work</p>
-              </div>
-              <div className="setting-control">
-                <button className="test-notification-btn" onClick={testHark}>
-                  <Icon name="bell" size={16} />
-                  Send Test Notification
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Appearance Section */}
-        <div className="settings-section">
-          <div className="section-header">
-            <Icon name="settings" size={20} />
-            <h2>Appearance</h2>
-          </div>
-          <div className="section-content">
-            <div className="setting-item">
-              <div className="setting-info">
-                <label>Theme</label>
-                <p>Choose your preferred color theme</p>
-              </div>
-              <div className="setting-control">
-                <ThemeSwitcher />
-              </div>
-            </div>
-          </div>
-        </div>
+        <WebSocketWidget url={`${WS_URL}/nostrill-ui`} />
 
         {/* Identity Section */}
         <div className="settings-section">

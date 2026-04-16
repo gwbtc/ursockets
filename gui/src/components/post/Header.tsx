@@ -1,10 +1,14 @@
-import { date_diff } from "@/logic/utils";
+import {
+  abbreviatePatp,
+  abbreviateUser,
+  date_diff,
+  getThreadPath,
+} from "@/logic/utils";
 import type { PostProps } from "./Post";
 import { useLocation } from "wouter";
 function Header(props: PostProps) {
   const [_, navigate] = useLocation();
   const { profile } = props;
-  console.log(props);
   // console.log("profile", profile);
   // console.log(props.poast.author.length, "length");
   function go(e: React.MouseEvent) {
@@ -14,16 +18,15 @@ function Header(props: PostProps) {
   function openThread(e: React.MouseEvent) {
     e.stopPropagation();
     const sel = window.getSelection()?.toString();
-    const id = "urbit" in props.user ? poast.id : poast.hash;
-    if (!sel) navigate(`/t/${poast.host}/${id}`);
+    const path = getThreadPath(props.poast);
+    if (!sel) navigate(path);
   }
   const { poast } = props;
   const name = profile ? (
     profile.name
-  ) : "urbit" in props.user ? (
-    <p className="p-only">{props.user.urbit}</p>
   ) : (
-    <p className="p-only">{props.user.nostr}</p>
+    // <p className="p-only">{abbreviateUser(props.user)}</p>
+    <p className="p-only">{abbreviatePatp(props.poast.author)}</p>
   );
   return (
     <header>

@@ -3,10 +3,11 @@ import type { Ship } from "@/types/urbit";
 import type { Poast, FullNode, ID } from "@/types/trill";
 import PostData from "./Loader";
 import { userFromAuthor } from "@/logic/trill/helpers";
+
 export default function (props: {
   host: string;
   id: string;
-  rp: { ship: Ship; time: number; id: ID };
+  rp?: { ship: Ship; time: number; id: ID };
   refetch?: Function;
 }) {
   return PostData(props)(RP);

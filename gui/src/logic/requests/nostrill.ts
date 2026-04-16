@@ -1,18 +1,23 @@
 import type Urbit from "urbit-api";
-import type { Cursor, FullNode, Gate, PostID, PostPerms } from "@/types/trill";
-import type { Ship } from "@/types/urbit";
+import type { Cursor, Gate, PostID, PostPerms } from "@/types/trill";
+import type {
+  S3Config,
+  SettingsRes,
+  Ship,
+  StorageConfigurationRes,
+  StorageCredentialsRes,
+  UrbitContacts,
+} from "@/types/urbit";
 import { FeedPostCount } from "../constants";
 import type {
-  Deferred,
+  BasicProfile,
   PeekFeedRes,
   PeekRes,
   PeekThreadRes,
-  ThreadData,
-  UserProfile,
   UserType,
 } from "@/types/nostrill";
 import type { AsyncRes } from "@/types/ui";
-import type { Skein } from "../hark";
+import type { Skein } from "@/types/hark";
 
 // Subscribe
 type Handler = (date: any) => void;
@@ -79,7 +84,7 @@ export default class IO {
     return await this.airlock.unsubscribe(sub);
   }
   // subs
-  async subscribeStore(handler: Handler) {
+  async subscribeNostrill(handler: Handler) {
     const res = await this.sub("/ui", handler);
     return res;
   }
@@ -115,7 +120,6 @@ export default class IO {
     // const path = `/j/thread/${host}/${id}/${start}/${end}/${FeedPostCount}/${order}`;
     const path = `/j/thread/${host}/${id}`;
     const res = await this.scry(path);
-    console.log("scrytherad", res);
     if ("error" in res) return res;
     const r = res.ok as { thread: PeekThreadRes };
     if (!("thread" in r)) return { error: "wrong result" };
@@ -132,10 +136,37 @@ export default class IO {
     // const res3 = await this.scry(path3, "hark");
     // const res4 = await this.scry(path4, "hark");
     // const res2 = await this.scry(path2, "hark");
-    console.log("hark scry", res);
     // console.log("hark all skeins", res3);
     // console.log("hark all latest", res4);
     return res;
+  }
+
+  async scryContacts(): AsyncRes<UrbitContacts> {
+    const path = "/all";
+    const res = await this.scry(path, "contacts");
+    return res;
+  }
+  async scrySettings(): AsyncRes<SettingsRes> {
+    const path = "/all";
+    const res = await this.scry(path, "settings");
+    return res;
+  }
+  async scryStorage(): AsyncRes<S3Config> {
+    const path = "/credentials";
+    const path2 = "/configuration";
+    const res = await this.scry(path, "storage");
+    const res2 = await this.scry(path2, "storage");
+    if ("error" in res) return res;
+    if ("error" in res2) return res2;
+    const creds: StorageCredentialsRes = res.ok;
+    if (!creds["storage-update"].credentials.endpoint)
+      return { error: "no credentials" };
+    const conf: StorageConfigurationRes = res2.ok;
+    const ret = {
+      ...creds["storage-update"].credentials,
+      ...conf["storage-update"].configuration,
+    };
+    return { ok: ret };
   }
 
   // pokes
@@ -143,8 +174,8 @@ export default class IO {
   async pokeAlive() {
     return await this.poke({ alive: true });
   }
-  async addPost(content: string) {
-    const json = { add: { content } };
+  async addPost(content: string, global: boolean, anon: boolean) {
+    const json = { add: { content, global, anon } };
     return this.poke({ post: json });
   }
   async addReply(content: string, host: UserType, id: string, thread: string) {
@@ -219,7 +250,7 @@ export default class IO {
     return await this.poke({ fols: json });
   }
   // profiles
-  async createProfile(profile: UserProfile) {
+  async createProfile(profile: BasicProfile) {
     const json = { add: profile };
     return await this.poke({ prof: json });
   }
@@ -230,7 +261,11 @@ export default class IO {
   async cycleKeys() {
     return await this.poke({ keys: null });
   }
-  // relaying
+  async getProfiles(users: UserType[]) {
+    const json = { fetch: users };
+    return await this.poke({ prof: json });
+  }
+  // relays
   async addRelay(url: string) {
     const json = { add: url };
     return await this.poke({ rela: json });
@@ -239,18 +274,37 @@ export default class IO {
     const json = { del: wid };
     return await this.poke({ rela: json });
   }
-  async syncRelays() {
-    // TODO make it choosable?
-    const json = { sync: null };
+  // nostr writes
+  async relayPost(host: string, id: string, relays: number[]) {
+    const json = { do: { relays, action: { "send-post": { host, id } } } };
     return await this.poke({ rela: json });
   }
-  async getProfiles(users: UserType[]) {
-    const json = { fetch: users };
-    return await this.poke({ prof: json });
-  }
-  async relayPost(host: string, id: string, relays: string[]) {
-    const json = { send: { host, id, relays } };
+  async relayProfile(relays: number[]) {
+    const json = { do: { relays, action: { "send-prof": null } } };
     return await this.poke({ rela: json });
+  }
+  // nostr reads
+  //
+  async syncRelays(relays: number[]): Promise<string> {
+    const json = { relays, action: { sync: null } };
+    const res = (await this.thread("sync", json)) as string;
+    return res;
+  }
+  // async syncRelays(relays: number[]) {
+  //   const json = { do: { relays, action: { sync: null } } };
+  //   return await this.poke({ rela: json });
+  // }
+  async nostrFeed(pubkey: string, relays: number[]): AsyncRes<number> {
+    const json = { do: { relays, action: { user: pubkey } } };
+    return await this.poke({ rela: json });
+  }
+  async nostrThread(id: string, relays: number[]): AsyncRes<number> {
+    const json = { do: { relays, action: { thread: id } } };
+    return await this.poke({ rela: json });
+  }
+  async nostrProfiles(relays: number[]) {
+    const json = { relays, action: { prof: null } };
+    return (await this.thread("sync", json)) as string;
   }
   // threads
   //
@@ -276,22 +330,18 @@ export default class IO {
       return { error: `${e}` };
     }
   }
-  // nostr
-  //
-  async nostrFeed(pubkey: string): AsyncRes<number> {
-    const json = { rela: { user: pubkey } };
-    return await this.poke(json);
-  }
-  async nostrThread(id: string): AsyncRes<number> {
-    const json = { rela: { thread: id } };
-    return await this.poke(json);
-  }
-  async nostrProfiles() {
-    const json = { prof: null };
-    return await this.poke({ rela: json });
-  }
+  // async peekProfile(host: string): AsyncRes<PeekProfileRes> {
+  //   try {
+  //     const json = { begs: { prof: host } };
+  //     const res = (await this.thread("beg", json)) as PeekRes;
+  //     if (!("prof" in res)) return { error: "request error" };
+  //     else return { ok: res.prof};
+  //   } catch (e) {
+  //     return { error: `${e}` };
+  //   }
+  // }
+
+  // notifications
+
+  // mark as read
 }
-
-// notifications
-
-// mark as read

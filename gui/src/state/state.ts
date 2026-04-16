@@ -4,13 +4,16 @@ import IO from "@/logic/requests/nostrill";
 import type { ComposerData } from "@/types/ui";
 import { create } from "zustand";
 import type { Fact, Relays, UserProfile } from "@/types/nostrill";
-import type { Event } from "@/types/nostr";
+import type { Wevent } from "@/types/nostr";
 import type { FC, Gate, Poast } from "@/types/trill";
 import type { Notification } from "@/types/notifications";
 import { useShallow } from "zustand/shallow";
 import type { HarkAction, Skein } from "@/types/hark";
 import { skeinToNote } from "@/logic/notifications";
 import { defaultGate } from "@/logic/bunts";
+import { eventsToFc, addEventToFc, eventToProfile } from "@/logic/nostrill";
+import type { S3Config, UrbitContacts } from "@/types/urbit";
+// import contactsSample from "../contacts.json";
 // TODO handle airlock connection issues
 // the SSE pipeline has a "status-update" event FWIW
 // type AirlockState = "connecting" | "connected" | "failed";
@@ -24,9 +27,13 @@ export type LocalState = {
   composerData: ComposerData | null;
   setComposerData: (c: ComposerData | null) => void;
   pubkey: string;
-  nostrFeed: Event[];
+  myFeed: FC;
+  globalFeed: FC;
+  setGlobal: (s: FC) => void;
+  nostrFeed: FC;
   relays: Relays;
   profiles: Map<string, UserProfile>; // pubkey key
+  setProfiles: (m: Map<string, UserProfile>) => void; // pubkey key
   addProfile: (key: string, u: UserProfile) => void;
   following: Map<string, FC>;
   following2: FC;
@@ -36,16 +43,38 @@ export type LocalState = {
   setNotifications: (n: Notification[]) => void;
   lastFact: Fact | null;
   feedPerms: Gate;
+  contacts: UrbitContacts;
+  s3: S3Config | null;
+  lastEose: string;
+  setEose: (s: string) => void;
+  lastNostrEventTime: number;
 };
 
 const creator = create<LocalState>();
 export const useStore = creator((set, get) => ({
   isNew: false,
+  contacts: {},
+  s3: null,
   api: null,
   init: async () => {
     const airlock = await start();
     const api = new IO(airlock);
-    console.log({ api });
+    api.scryContacts().then((r) => {
+      console.log("contacts", r);
+      // set({ contacts: contactsSample });
+      // if ("ok" in r) {
+      //   set({ contacts: r.ok });
+      // }
+    });
+    api.scrySettings().then((_r) => {
+      // console.log("settings", r);
+    });
+    api.scryStorage().then((r) => {
+      if ("ok" in r) {
+        set({ s3: r.ok });
+      }
+    });
+
     api.scryHark().then((r) => {
       console.log("hark scry res", r);
       if ("ok" in r) {
@@ -76,28 +105,29 @@ export const useStore = creator((set, get) => ({
         set({ notifications });
       }
     });
-    await api.subscribeStore((data) => {
+    await api.subscribeNostrill((data) => {
       if ("state" in data) {
-        console.log("state", data.state);
-        const { feed, nostr, following, following2, relays, profiles, pubkey } =
+        const { feed, nostr, following, following2, relays, profiles, key } =
           data.state;
+        console.log("state", { relays, feed, profiles });
         const flwing = new Map(Object.entries(following as Record<string, FC>));
-        flwing.set(api!.airlock.our!, feed);
+        const nostrFeed = eventsToFc(nostr);
         set({
           relays,
-          nostrFeed: nostr,
+          myFeed: feed,
+          nostrFeed,
           profiles: new Map(Object.entries(profiles)),
           following: flwing,
           following2,
-          pubkey,
+          pubkey: key,
         });
       } else if ("fact" in data) {
         const fact: Fact = data.fact;
         set({ lastFact: fact });
         if ("fols" in fact) {
           const { following, profiles } = get();
-          if ("new" in fact.fols) {
-            const { user, data } = fact.fols.new;
+          if ("new-urbit" in fact.fols) {
+            const { user, data } = fact.fols["new-urbit"];
             if (data.data === "maybe") return;
             if (data.data) {
               const { feed, profile } = data.data;
@@ -114,43 +144,53 @@ export const useStore = creator((set, get) => ({
         if ("post" in fact) {
           if ("add" in fact.post) {
             const post: Poast = fact.post.add.post;
-            const following = get().following;
-            const curr = following.get(post.author);
-            const fc = curr ? curr : { feed: {}, start: null, end: null };
-            fc.feed[post.id] = post;
-            following.set(post.author, fc);
+            const { api, following, myFeed } = get();
+            const our = api?.airlock?.our;
+            if (post.author === our) {
+              myFeed.feed[post.id] = post;
+              set({ myFeed });
+            } else {
+              const curr = following.get(post.author);
+              const fc = curr ? curr : { feed: {}, start: null, end: null };
+              fc.feed[post.id] = post;
+              following.set(post.author, fc);
 
-            set({ following });
+              set({ following });
+            }
           }
           if ("del" in fact.post) {
             const post: Poast = fact.post.del.post;
             const following = get().following;
             const curr = following.get(post.author);
-            
+
             if (curr && curr.feed[post.id]) {
               delete curr.feed[post.id];
               following.set(post.author, curr);
-              
+
               set({ following });
             }
           }
         }
         if ("nostr" in fact) {
+          set({ lastNostrEventTime: Date.now() });
           console.log("nostr fact", fact);
-          if ("feed" in fact.nostr) set({ nostrFeed: fact.nostr.feed });
+          // if ("feed" in fact.nostr) set({ nostrFeed: fact.nostr.feed });
+          if ("thread" in fact.nostr)
+            console.log("nostr thread!!!", fact.nostr.thread);
           if ("relays" in fact.nostr) set({ relays: fact.nostr.relays });
+          if ("eose" in fact.nostr) set({ lastEose: fact.nostr.eose });
           if ("event" in fact.nostr) {
             // console.log("san event", fact.nostr.event);
-            const event: Event = fact.nostr.event;
+            const event: Wevent = fact.nostr.event;
             if (event.kind === 1) {
               const nostrFeed = get().nostrFeed;
-              set({ nostrFeed: [...nostrFeed, event] });
+              const nf = addEventToFc(event, nostrFeed);
+              set({ nostrFeed: nf });
             }
             if (event.kind === 0) {
               const profiles = get().profiles;
-              const data = JSON.parse(event.content);
-              const { name, picture, about, ...other } = data;
-              const prof = { name, picture, about, other };
+              const prof = eventToProfile(event);
+              if (!prof) return;
               const np = profiles.set(event.pubkey, prof);
               set({ profiles: np });
             }
@@ -169,9 +209,13 @@ export const useStore = creator((set, get) => ({
     profiles.set(key, profile);
     set({ profiles });
   },
+  setProfiles: (profiles) => set({ profiles }),
   lastFact: null,
   relays: {},
-  nostrFeed: [],
+  myFeed: { feed: {}, start: null, end: null },
+  globalFeed: { feed: {}, start: null, end: null },
+  setGlobal: (s) => set({ globalFeed: s }),
+  nostrFeed: { feed: {}, start: null, end: null },
   following: new Map(),
   followers: [],
   following2: { feed: {}, start: "", end: "" },
@@ -187,6 +231,9 @@ export const useStore = creator((set, get) => ({
     set({ notifications });
   },
   feedPerms: defaultGate,
+  lastEose: "",
+  setEose: (lastEose) => set({ lastEose }),
+  lastNostrEventTime: 0,
 }));
 
 const useShallowStore = <T extends (state: LocalState) => any>(

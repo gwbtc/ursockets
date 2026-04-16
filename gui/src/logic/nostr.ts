@@ -1,4 +1,5 @@
 // import { generateSecretKey, getPublicKey } from "nostr-tools/pure";
+import { NPool, NRelay1, type NostrEvent } from "@nostrify/nostrify";
 import * as nip19 from "nostr-tools/nip19";
 import type { Event } from "@/types/nostr";
 
@@ -46,6 +47,42 @@ function uint8ArrayToHexString(uint8Array: Uint8Array) {
   return Array.from(uint8Array)
     .map((byte) => byte.toString(16).padStart(2, "0"))
     .join("");
+}
+
+export async function fetchProfiles(relayURL: string, pubkeys: string[]) {
+  //
+  //
+  const relay = new NRelay1(relayURL);
+  const res = relay.req([{ kinds: [0], authors: pubkeys }]);
+  return res;
+}
+export async function fetchFollows(relayURL: string, pubkey: string) {
+  //
+  //
+  const relay = new NRelay1(relayURL);
+  const res = relay.req([{ kinds: [3], authors: [pubkey] }]);
+  let ret: string[] = [];
+  for await (const msg of res) {
+    console.log("follow list", msg);
+    if (msg[0] === "EVENT") {
+      //
+      ret = msg[2].tags.map((t) => t[1]);
+    }
+    if (msg[0] === "EOSE") {
+      break;
+    }
+  }
+  return ret;
+}
+export async function fetchFollowers(relayURL: string, pubkey: string) {
+  //
+  //
+  const relay = new NRelay1(relayURL);
+  console.log("fetching followers", relayURL);
+  // const res = await relay.count([{ kinds: [3], "#p": [pubkey] }]);
+  const res = await relay.query([{ kinds: [3], "#p": [pubkey] }]);
+  console.log({ res });
+  return res.map((ev) => ev.pubkey);
 }
 
 // let pk = getPublicKey(generateSecretKey())

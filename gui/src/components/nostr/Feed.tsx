@@ -1,49 +1,63 @@
 import PostList from "@/components/feed/PostList";
 import useLocalState from "@/state/state";
 import spinner from "@/assets/triangles.svg";
-import { useState } from "react";
-import { eventsToFc } from "@/logic/nostrill";
+import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
 import toast from "react-hot-toast";
 import { Contact, RefreshCw } from "lucide-react";
 
 export default function Nostr() {
-  const { nostrFeed, api, relays } = useLocalState((s) => ({
+  const { nostrFeed, api, relays, lastEose, setEose } = useLocalState((s) => ({
     nostrFeed: s.nostrFeed,
     api: s.api,
     relays: s.relays,
+    lastEose: s.lastEose,
+    setEose: s.setEose,
   }));
   const [isSyncing, setIsSyncing] = useState(false);
-  const feed = eventsToFc(nostrFeed);
-  const refetch = () => feed;
+  const [subId, setSubId] = useState("");
 
+  const refetch = () => nostrFeed;
+
+  useEffect(() => {
+    if (!lastEose || !subId) return;
+    if (lastEose === subId) {
+      setIsSyncing(false);
+      setEose("");
+      toast.success("Nostr feed sync complete");
+    }
+  }, [lastEose, subId]);
   const handleResync = async () => {
     if (!api) return;
 
-    setIsSyncing(true);
+    // setIsSyncing(true);
+    // TODO make this configurable
+    const rels = Object.values(relays).map((r) => r.wid);
     try {
-      await api.syncRelays();
+      const subId = await api.syncRelays(rels);
+      setSubId(subId);
+      console.log("syncrelays", subId);
       toast.success("Nostr feed sync initiated");
     } catch (error) {
       toast.error("Failed to sync Nostr feed");
       console.error("Sync error:", error);
-    } finally {
-      setIsSyncing(false);
+      // } finally {
+      // setIsSyncing(false);
     }
   };
 
   async function fetchProfiles() {
     if (!api) return;
+    const rels = Object.values(relays).map((r) => r.wid);
 
     setIsSyncing(true);
     try {
-      await api.syncRelays();
-      toast.success("Nostr feed sync initiated");
+      const subId = await api.nostrProfiles(rels);
+      setSubId(subId);
+      toast.success("Nostr profile sync initiated");
     } catch (error) {
       toast.error("Failed to sync Nostr feed");
       console.error("Sync error:", error);
-    } finally {
-      setIsSyncing(false);
     }
   }
 
@@ -68,7 +82,7 @@ export default function Nostr() {
       </div>
     );
   // Show empty state with resync option when no feed data
-  if (!feed || !feed.feed || Object.keys(feed.feed).length === 0) {
+  if (Object.keys(nostrFeed.feed).length === 0) {
     return (
       <div className="nostr-empty-state">
         <div className="empty-content">
@@ -107,7 +121,7 @@ export default function Nostr() {
         <div className="feed-info">
           <h4>Nostr Feed</h4>
           <span className="post-count">
-            {Object.keys(feed.feed).length} posts
+            {Object.keys(nostrFeed.feed).length} posts
           </span>
         </div>
         <div className="flex gap-4">
@@ -133,7 +147,7 @@ export default function Nostr() {
           </button>
         </div>
       </div>
-      <PostList data={feed} refetch={refetch} />
+      <PostList data={nostrFeed} refetch={refetch} />
     </div>
   );
 }

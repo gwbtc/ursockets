@@ -5,8 +5,10 @@
 =,  strand-fail=strand-fail:libstrand:spider
 ^-  thread:spider
 |=  arg=vase
-  =/  request  ;;(request:http q.arg) 
   =/  m  (strand ,vase)  ^-  form:m
+  =/  ureq  %-  (soft request:http)  q.arg
+  ?~  ureq  (pure:m !>('wtf'))
+  =/  request  u.ureq
   :: =/  m  (strand ,json)  ^-  form:m
   ;<  ~  bind:m  (send-request:strandio request)
   ;<  res=client-response:iris  bind:m  take-client-response:strandio

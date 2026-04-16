@@ -11,6 +11,57 @@
 |_  [=state:sur =bowl:gall]
 +$  card  card:agent:gall
 
+++  get-followers  ^-  (set user:comms)
+  =/  subs  ~(tap by sup.bowl)
+    %+  roll  subs  |=  [[* p=@p pat=path] acc=(set user:comms)] 
+      ?.  ?=([%follow ~] pat)  acc
+      ?:  .=(our.bowl p)   acc
+      (~(put in acc) [%urbit p])
+    
+
+++  my-meta-to-prof  |=  meta=user-meta:nsur  ^-  user-profile:comms
+  =/  fans  get-followers
+  :-  pub.i.keys.state
+  :-  ~(key by following.state)
+  :-  ~(wyt by following.state)
+  :-  fans
+  :-  ~(wyt in fans)
+      meta
+++  user-meta-to-prof  |=  meta=user-meta:nsur  ^-  user-profile:comms
+  :-  0x0
+  :-    ~
+  :-    0
+  :-    ~
+  :-    0
+      meta
+++  default-profile  ^-  user-profile:comms
+  =/  fans  get-followers
+  :*  pub.i.keys.state
+      ~(key by following.state)
+      ~(wyt by following.state)
+      fans
+      ~(wyt in fans)
+      (scot %p our.bowl)
+      ''
+      ''
+      `our.bowl
+      ~
+    ==
+++  empty-profile  |=  p=@p  ^-  user-profile:comms
+  :*  0x0
+      ~
+      0
+      ~
+      0
+      (scot %p p)
+      ''
+      ''
+      `p
+      ~
+    ==
+
+
+
 ++  get-poast  |=  [host=@p id=@]  ^-  (unit post:post)
   =/  poast  ?:  .=(host our.bowl)
     (get:orm:feed feed.state id)
@@ -85,6 +136,9 @@
   =/  ns=(unit @da)  ?~  hed  ~  (some key.u.hed)
   =/  ne=(unit @da)  ?~  tal  ~  (some key.u.tal)
   =/  =fc:feed  [nf ns ne]
-  =/  profile  (~(get by profiles.state) user)
-  =/  msg  ''  [%feed msg %done %ok fc profile]
+  =/  uprof  (~(get by profiles.state) user)
+  =/  profile  ?^  uprof  u.uprof
+    ?:  .=(our.bowl u.host)  default-profile  (empty-profile u.host)
+  =/  msg  ''
+  [%feed msg %done %ok fc profile]
 --

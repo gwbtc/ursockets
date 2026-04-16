@@ -8,22 +8,41 @@ import toast from "react-hot-toast";
 import Icon from "@/components/Icon";
 import { wait } from "@/logic/utils";
 import type { UserType } from "@/types/nostrill";
+import InputBox from "./InputBox";
+import { ImageIcon, XCircleIcon } from "lucide-react";
+import Modal from "../modals/Modal";
+import S3Browser from "./S3Browser";
 
 function Composer({ isAnon }: { isAnon?: boolean }) {
-  const { api, composerData, addNotification, setComposerData } = useLocalState(
-    (s) => ({
-      api: s.api,
-      composerData: s.composerData,
-      addNotification: s.addNotification,
-      setComposerData: s.setComposerData,
-    }),
-  );
+  const {
+    api,
+    composerData,
+    setComposerData,
+    contacts,
+    profiles,
+    s3,
+    setModal,
+  } = useLocalState((s) => ({
+    api: s.api,
+    composerData: s.composerData,
+    setComposerData: s.setComposerData,
+    contacts: s.contacts,
+    profiles: s.profiles,
+    s3: s.s3,
+    setModal: s.setModal,
+  }));
   const [input, setInput] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isLoading, setLoading] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  console.log({ composerData });
+  const [isGlobal, setGlobal] = useState(true);
+  function toggleGlobal() {
+    setGlobal((s) => !s);
+  }
+
+  const inputRef = useRef<HTMLDivElement>(null);
+
+  // Input
   useEffect(() => {
     if (composerData) {
       setIsExpanded(true);
@@ -39,12 +58,38 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
       }, 100); // Small delay to ensure the composer is rendered
     }
   }, [composerData]);
-  async function addSimple() {
-    if (!api) return; // TODOhandle error
-    return await api.addPost(input);
+
+  //
+  // Helper to serialize content with images
+  const getSerializedContent = () => {
+    if (!inputRef.current) return input;
+
+    // Check if we have any images to serialize
+    const images = inputRef.current.querySelectorAll("img");
+    if (images.length === 0) return input;
+
+    // If we have images, clone and serialize
+    const clone = inputRef.current.cloneNode(true) as HTMLElement;
+    const cloneImages = clone.querySelectorAll("img");
+
+    cloneImages.forEach((img) => {
+      const src = img.getAttribute("src");
+      if (src) {
+        const replacement = document.createTextNode(` ![](${src}) `);
+        img.replaceWith(replacement);
+      }
+    });
+
+    return clone.innerText;
+  };
+
+  async function addSimple(content: string) {
+    if (!api) return;
+    return await api.addPost(content.trim(), isGlobal, isAnon || false);
   }
-  async function addComplex() {
-    if (!api) return; // TODOhandle error
+
+  async function addComplex(content: string) {
+    if (!api) return;
     if (!composerData) return;
     const host: UserType =
       "trill" in composerData.post
@@ -67,59 +112,32 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
 
     const res =
       composerData.type === "reply"
-        ? api.addReply(input, host, id, thread)
+        ? api.addReply(content, host, id, thread)
         : composerData?.type === "quote"
-          ? api.addQuote(input, host, id)
+          ? api.addQuote(content, host, id)
           : wait(500);
     return await res;
   }
+
   async function poast(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!api) return; // TODOhandle error
-    const our = api.airlock.our!;
+    if (!api) return;
+
+    const content = getSerializedContent();
+    if (!content.trim()) return;
+
     setLoading(true);
-    const res = !composerData ? addSimple() : addComplex();
-    const ares = await res;
-    if (ares) {
-      // // Check for mentions in the post (ship names starting with ~)
-      const mentions = input.match(/~[a-z-]+/g);
-      if (mentions) {
-        mentions.forEach((mention) => {
-          if (mention !== our) {
-            // Don't notify self-mentions
-            addNotification({
-              type: "mention",
-              from: our,
-              message: `You mentioned ${mention} in a post`,
-            });
-          }
-        });
-      }
-
-      // If this is a reply, add notification
-      if (
-        composerData?.type === "reply" &&
-        composerData.post &&
-        "trill" in composerData.post
-      ) {
-        if (composerData.post.trill.author !== our) {
-          addNotification({
-            type: "reply",
-            from: our,
-            message: `You replied to ${composerData.post.trill.author}'s post`,
-            postId: composerData.post.trill.id,
-          });
-        }
-      }
-
+    const res = !composerData ? addSimple(content) : addComplex(content);
+    if (await res) {
       setInput("");
       setComposerData(null); // Clear composer data after successful post
       toast.success("post sent");
       setLoading(false);
       setIsExpanded(false);
+      if (inputRef.current) inputRef.current.innerText = "";
     }
   }
-  const placeHolder =
+  const placeholder =
     composerData?.type === "reply"
       ? "Write your reply..."
       : composerData?.type === "quote"
@@ -133,6 +151,23 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
     setComposerData(null);
     setInput("");
     setIsExpanded(false);
+  };
+
+  const handleS3Select = (url: string) => {
+    console.log("hey", url);
+    console.log(inputRef.current);
+    if (!inputRef.current) return;
+
+    setInput((s) => s + ` ![](${url}) `);
+    const thumbEl = `<img class="img-thumb" src="${url}"/>`;
+    document.execCommand("insertHTML", false, thumbEl);
+    setModal(null);
+  };
+
+  const openS3Browser = () => {
+    setModal(
+      <S3Browser onSelect={handleS3Select} onClose={() => setModal(null)} />,
+    );
   };
 
   return (
@@ -186,20 +221,44 @@ function Composer({ isAnon }: { isAnon?: boolean }) {
         )}
 
         <div className="composer-input-row">
-          <input
-            ref={inputRef}
-            value={input}
-            onInput={(e) => setInput(e.currentTarget.value)}
-            onFocus={() => setIsExpanded(true)}
-            placeholder={placeHolder}
+          <InputBox
+            input={input}
+            setInput={setInput}
+            setIsExpanded={setIsExpanded}
+            contacts={contacts}
+            profiles={profiles}
+            placeholder={placeholder}
+            inputRef={inputRef}
           />
           {isLoading ? (
-            <div className="loading-container">
-              <img src={spinner} />
-            </div>
+            <img width="40" src={spinner} />
           ) : (
             <button type="submit" disabled={!input.trim()} className="post-btn">
               Post
+            </button>
+          )}
+        </div>
+        <div className="composer-controls">
+          <button
+            type="button"
+            onClick={toggleGlobal}
+            className="icon-btn"
+            title="global"
+          >
+            <Icon
+              size={20}
+              name="planet"
+              filter={isGlobal ? undefined : "opacity(0.3)"}
+            />
+          </button>
+          {s3 && (
+            <button
+              type="button"
+              onClick={openS3Browser}
+              className="icon-btn"
+              title="s3 media"
+            >
+              <ImageIcon size={20} />
             </button>
           )}
         </div>

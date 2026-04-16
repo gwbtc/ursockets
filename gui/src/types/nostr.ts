@@ -1,3 +1,4 @@
+export type Wevent = Event & { relays: string[] };
 export type Event = {
   id: string; // hex, no 0x, 32bytes
   pubkey: string; // ""

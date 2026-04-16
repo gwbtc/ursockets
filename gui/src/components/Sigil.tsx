@@ -1,8 +1,9 @@
 import Icon from "@/components/Icon";
-import { auraToHex } from "@/logic/utils";
+import { auraToHex, seededColorPair } from "@/logic/utils";
 import { isValidPatp } from "urbit-ob";
 import { sigil } from "urbit-sigils";
 import { reactRenderer } from "urbit-sigils";
+import GwIcon from "./GwIcon";
 
 interface SigilProps {
   patp: string;
@@ -14,15 +15,13 @@ interface SigilProps {
 const Sigil = (props: SigilProps) => {
   const bg = props.bg ? auraToHex(props.bg) : "var(--color-background)";
   const fg = props.fg ? auraToHex(props.fg) : "var(--color-primary)";
-  if (props.patp.length > 28)
+  if (props.patp.length > 28) {
+    // TODO rotate randomly too?
+    const colors = seededColorPair(props.patp);
     return (
-      <Icon
-        name="comet"
-        size={props.size}
-        className="comet-icon"
-      />
+      <GwIcon size={props.size} fg={colors.foreground} bg={colors.background} />
     );
-  else if (props.patp.length > 15)
+  } else if (props.patp.length > 15)
     // moons
     return (
       <>

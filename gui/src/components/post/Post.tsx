@@ -10,6 +10,7 @@ import UserModal from "../modals/UserModal";
 import type { Ship } from "@/types/urbit";
 import Sigil from "../Sigil";
 import type { UserProfile, UserType } from "@/types/nostrill";
+import { getThreadPath } from "@/logic/utils";
 
 export interface PostProps {
   poast: Poast;
@@ -24,7 +25,6 @@ export interface PostProps {
 function Post(props: PostProps) {
   // console.log("post", props);
   const { poast } = props;
-  console.log({ poast });
   if (!poast || poast.contents === null) {
     return null;
   }
@@ -51,8 +51,7 @@ function TrillPost(props: PostProps) {
   const [_, navigate] = useLocation();
   function openThread(_e: React.MouseEvent) {
     const sel = window.getSelection()?.toString();
-    const id = "urbit" in props.user ? poast.id : poast.hash;
-    const path = `/t/${poast.host}/${id}`;
+    const path = getThreadPath(poast);
     if (poast.hash.includes("000000")) {
       console.log("bad hash", poast);
       return;
@@ -64,7 +63,7 @@ function TrillPost(props: PostProps) {
     e.stopPropagation();
     setModal(<UserModal user={props.user} />);
   }
-  const avatar = profile ? (
+  const avatar = profile?.picture ? (
     <div className="avatar sigil cp" role="link" onMouseUp={openModal}>
       <img src={profile.picture} />
     </div>

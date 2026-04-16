@@ -1,11 +1,13 @@
 /-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
     post=trill-post, gate=trill-gate
-/+  trill=trill-post, nostr-keys, sr=sortug, jsonlib=json-nostrill,
+/+  trill=trill-post, nostr-keys, sr=sortug,
+    jsonlib=json-nostrill,
+    constants,
     ws=websockets
 |%
 ::
 ++  default-state  |=  =bowl:gall  ^-  state:sur
-  =/  s  *state-0:sur
+  =/  s  *state:sur
   :: =/  l  ~['wss://relay.damus.io' 'wss://nos.lol']
   =/  key  (gen-keys:nostr-keys eny.bowl)
   =/  keyl  [key ~]
@@ -21,15 +23,14 @@
     ~&  sub-count=~(wyt by reqs.rs)
     =/  total-received
       %+  roll  ~(tap by reqs.rs)
-        |=  [[* es=event-stats:nsur] acc=@ud]
-          %+  add  acc  received.es
+        |=  [[* rs=req-state:nsur] acc=@ud]
+          %+  add  acc  received.rs
     ~&  >>  total=total-received  
     $(l t.l)
   
 ++  ui-ws-res  |=  [wid=@ msg=@t]
   
-  =/  resmsg  (cat 3 msg (cat 3 msg msg))
-  =/  octs  (as-octs:mimes:html resmsg)
+  =/  octs  (as-octs:mimes:html msg)
   =/  res-event=websocket-event:eyre  [%message 1 `octs]
   :~  (give-ws-payload-server:ws wid res-event)
   ==
@@ -52,6 +53,12 @@
 
 ++  cards
 |_  =bowl:gall
+  ++  init  ^-  (list card:agent:gall)
+    :: :-  global-relay-card
+        bindings
+  ++  global-relay-card  ^-  card:agent:gall
+    (connect:ws global-relay:constants bowl)
+
   ++  relay-binding  ^-  card:agent:gall
     [%pass /binding %arvo %e %connect [~ /nostrill] dap.bowl]
   ++  ui-binding  ^-  card:agent:gall
@@ -69,5 +76,14 @@
   ::
   ++  poke-host  |=  [sip=@p =poke:comms]  ^-  card:agent:gall
     [%pass /heads-up %agent [sip dap.bowl] %poke %noun !>(poke)]
+
+  ++  poke-thread  |=  [tid=@ta body=*]  ^-  card:agent:gall
+    =/  ta-now  (scot %ud `@`now.bowl)
+    [%pass /ted-res/[ta-now] %agent [our.bowl %spider] %poke %spider-input !>([tid %noun !>(body)])]
+
+  ++  poke-ui-thread  |=  [tid=@ta sub-id=@t]  ^-  card:agent:gall
+    =/  ta-now  (scot %ud `@`now.bowl)
+    =/  payload=ted:ui  [%res sub-id]
+    [%pass /ted-res/[ta-now] %agent [our.bowl %spider] %poke %spider-input !>([tid %nostrill-ted !>(payload)])]
   --
 --

@@ -12,9 +12,10 @@ import type {
 import type { Ship } from "@/types/urbit";
 import anyAscii from "any-ascii";
 import type { ReactGrouping, SPID } from "@/types/ui";
-import { openLock } from "./bunts";
+import { defaultPerms, openLock } from "./bunts";
 import { isValidPatp, patp2dec } from "urbit-ob";
 import { REF_REGEX } from "./constants";
+import type { UserType } from "@/types/nostrill";
 
 export function parseSortugLink(link: string): SortugRef {
   const s = link.replace("urbit://", "").split("/");
@@ -222,23 +223,23 @@ export function wait(ms: number) {
   });
 }
 
-export function quoteToReference(d: SPID): Reference | ExternalContent {
-  if (d.service === "twatter")
-    return {
-      json: {
-        origin: "twatter",
-        content: JSON.stringify(d.post),
-      },
-    };
-  else
-    return {
-      ref: {
-        type: "trill",
-        ship: d.post.host,
-        path: `/${d.post.id}`,
-      },
-    };
-}
+// export function quoteToReference(d: SPID): Reference | ExternalContent {
+//   if (d.service === "twatter")
+//     return {
+//       json: {
+//         origin: "twatter",
+//         content: JSON.stringify(d.post),
+//       },
+//     };
+//   else
+//     return {
+//       ref: {
+//         type: "trill",
+//         ship: d.post.host,
+//         path: `/${d.post.id}`,
+//       },
+//     };
+// }
 
 export function trillPermalink(t: Poast) {
   return `urbit://trill/${t.host}/${t.id}`;
@@ -338,8 +339,8 @@ export function buildPost(
     thread: null,
     parent: null,
     contents: [{ paragraph: [{ text: s }] }],
-    read: openLock,
-    write: openLock,
+    perms: defaultPerms,
+    hash: "",
     tags: [],
     id,
     time,
@@ -456,4 +457,105 @@ export function checkIfClickedOutside(
 ) {
   e.stopPropagation();
   if (el.contains(e.currentTarget)) close();
+}
+
+export function abbreviateHex(hex: string): string {
+  if (hex.length <= 11) return hex;
+  return `${hex.slice(0, 4)}...${hex.slice(-4)}`;
+}
+export function abbreviateUser(user: UserType): string {
+  if ("urbit" in user) return abbreviatePatp(user.urbit);
+  else return abbreviateHex(user.nostr);
+}
+export function abbreviatePatp(p: string): string {
+  const isComet = p.match(/--/);
+  if (!isComet) return p;
+  const left = p.slice(0, 7);
+  const right = p.slice(44, 50);
+  return `${left}_${right}`;
+}
+// export function segmentPatp(p: string){
+//   const p2 = p.replace("~", "");
+
+// }
+
+// vibed
+
+export function seededColorPair(seed: string): {
+  background: string;
+  foreground: string;
+} {
+  // FNV-1a 32-bit hash
+  let hash = 0x811c9dc5;
+
+  for (let i = 0; i < seed.length; i++) {
+    hash ^= seed.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+
+  const h = (hash >>> 0) % 360;
+  const s = 55 + ((hash >>> 8) % 21); // 55–75
+  const l = 35 + ((hash >>> 16) % 31); // 35–65
+
+  const background = hslToHex(h, s, l);
+  const foreground = getReadableTextColor(background);
+
+  return { background, foreground };
+}
+
+function getReadableTextColor(hex: string): string {
+  const { r, g, b } = hexToRgb(hex);
+
+  // WCAG relative luminance
+  const luminance = [r, g, b]
+    .map((v) => {
+      const c = v / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    })
+    .reduce((acc, c, i) => acc + c * [0.2126, 0.7152, 0.0722][i], 0);
+
+  // Pick black or white depending on contrast
+  return luminance > 0.179 ? "#000000" : "#ffffff";
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  s /= 100;
+  l /= 100;
+
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+
+  let r = 0,
+    g = 0,
+    b = 0;
+
+  if (h < 60) [r, g, b] = [c, x, 0];
+  else if (h < 120) [r, g, b] = [x, c, 0];
+  else if (h < 180) [r, g, b] = [0, c, x];
+  else if (h < 240) [r, g, b] = [0, x, c];
+  else if (h < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+
+  const toHex = (n: number) =>
+    Math.round((n + m) * 255)
+      .toString(16)
+      .padStart(2, "0");
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const clean = hex.replace(/^#/, "");
+  const num = parseInt(clean, 16);
+
+  return {
+    r: (num >> 16) & 255,
+    g: (num >> 8) & 255,
+    b: num & 255,
+  };
+}
+export function getThreadPath(post: Poast): string {
+  if (post.event) return `/t/n/${post.id}`;
+  else return `/t/u/${post.host}/${post.id}`;
 }

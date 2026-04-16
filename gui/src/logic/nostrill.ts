@@ -1,15 +1,15 @@
-import type { Event } from "@/types/nostr";
+import type { Wevent, Event } from "@/types/nostr";
 import type { Content, Cursor, FC, FlatFeed, Poast } from "@/types/trill";
-import { engagementBunt, openLock } from "./bunts";
-import type { UserType } from "@/types/nostrill";
+import { defaultGate, engagementBunt } from "./bunts";
+import type { BasicProfile, UserProfile, UserType } from "@/types/nostrill";
 import type { Result } from "@/types/ui";
 import { isValidPatp } from "urbit-ob";
 import { IMAGE_SUBREGEX, URL_REGEX, VIDEO_SUBREGEX } from "./constants";
 import { decodeNostrKey } from "./nostr";
 
-export function eventsToFc(postEvents: Event[]): FC {
+export function eventsToFc(postEvents: Wevent[]): FC {
   const fc = postEvents.reduce(
-    (acc: FC, event: Event) => {
+    (acc: FC, event: Wevent) => {
       const p = eventToPoast(event);
       if (!p) return acc;
       acc.feed[p.id] = p;
@@ -21,7 +21,7 @@ export function eventsToFc(postEvents: Event[]): FC {
   );
   return fc;
 }
-export function addEventToFc(event: Event, fc: FC): FC {
+export function addEventToFc(event: Wevent, fc: FC): FC {
   const p = eventToPoast(event);
   if (!p) return fc;
   fc.feed[p.id] = p;
@@ -56,8 +56,9 @@ export function extractURLs(text: string): {
   return { text: tokens, pics, vids };
 }
 
-export function eventToPoast(event: Event): Poast | null {
-  if (event.kind !== 1) return null;
+export function eventToPoast(event: Wevent): Poast | null {
+  const valid = [1, 667];
+  if (!valid.includes(event.kind)) return null;
   const inl = extractURLs(event.content || "");
   const contents: Content = [
     { paragraph: inl.text },
@@ -73,8 +74,7 @@ export function eventToPoast(event: Event): Poast | null {
     contents,
     thread: null,
     parent: null,
-    read: openLock,
-    write: openLock,
+    perms: { read: defaultGate, write: defaultGate },
     tags: [],
     hash: event.id,
     time: ts,
@@ -87,6 +87,7 @@ export function eventToPoast(event: Event): Poast | null {
     if (!f) continue;
     const ff = f.toLowerCase();
     // console.log("tag", ff);
+    if (ff === "patp") poast.author = tag[1];
     if (ff === "e") {
       const [, eventId, _relayURL, marker, _pubkey, ..._] = tag;
       // TODO
@@ -118,12 +119,34 @@ export function eventToPoast(event: Event): Poast | null {
   }
   if (!poast.parent && !poast.thread) {
     const tags = event.tags.filter((t) => t[0] !== "p");
-    console.log("no parent", { event, poast, tags });
+    // console.log("no parent", { event, poast, tags });
   }
   if (!poast.parent && poast.thread) poast.parent = poast.thread;
   return poast;
 }
 
+export function eventToProfile(event: Event): UserProfile | null {
+  try {
+    const data = JSON.parse(event.content);
+    console.log("metadata", data);
+    console.log("tags", event.tags);
+    const { name, picture, about, ...other } = data;
+    const patp = data.patp ? data.patp : null;
+    const bp: BasicProfile = { patp, name, picture, about, other };
+    const prof: UserProfile = {
+      pubkey: event.pubkey,
+      followers: [],
+      following: [],
+      followerCount: 0,
+      followingCount: 0,
+      ...bp,
+    };
+    return prof;
+  } catch (e) {
+    console.error("error parsing nostr event 0", e);
+    return null;
+  }
+}
 export function stringToUser(s: string): Result<UserType> {
   const p = isValidPatp(s);
   if (p) return { ok: { urbit: s } };
@@ -138,6 +161,10 @@ export function userToString(user: UserType): Result<string> {
     else return { error: "invalid @p" };
   } else if ("nostr" in user) return { ok: user.nostr };
   else return { error: "unknown user" };
+}
+export function userToStringSafe(user: UserType): string {
+  if ("urbit" in user) return user.urbit;
+  else return user.nostr;
 }
 // NOTE common tags:
 // imeta

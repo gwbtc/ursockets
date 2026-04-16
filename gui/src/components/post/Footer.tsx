@@ -10,16 +10,20 @@ import NostrIcon from "./wrappers/NostrIcon";
 import type { SPID } from "@/types/ui";
 import QuoteModal from "@/components/modals/QuoteModal";
 import ReactionsModal from "@/components/modals/ReactionsModal";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import RelayPost from "../modals/RelayPost";
+import { generateNevent } from "@/logic/nostr";
 // TODO abstract this somehow
 
 function Footer({ user, poast, thread, refetch }: PostProps) {
   const [_showMenu, setShowMenu] = useState(false);
   const [location, navigate] = useLocation();
   const [reposting, _setReposting] = useState(false);
-  const { api, setComposerData, setModal } = useLocalState((s) => ({
+  const { api, setComposerData, setModal, relays } = useLocalState((s) => ({
     api: s.api,
     setComposerData: s.setComposerData,
     setModal: s.setModal,
+    relays: s.relays,
   }));
   const our = api!.airlock.our!;
   function getComposerData(): SPID {
@@ -52,23 +56,39 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
       : Object.keys(poast.children).length
     : 0;
   const myRP = poast.engagement.shared.find((r) => r.pid.ship === our);
-  async function cancelRP(e: React.MouseEvent) {
-    e.stopPropagation();
-    e.preventDefault();
+  async function doCancelRP() {
     const r = await api!.deletePost(user, poast.id);
     if (r) toast.success("Repost deleted");
-    // refetch();
+    setModal(null);
     if (location.includes(poast.id)) navigate("/");
   }
-  async function sendRP(e: React.MouseEvent) {
-    // TODO update backend because contents are only markdown now
+  function cancelRP(e: React.MouseEvent) {
     e.stopPropagation();
     e.preventDefault();
+    setModal(
+      <ConfirmationDialog
+        onConfirm={doCancelRP}
+        onCancel={() => setModal(null)}
+      />,
+    );
+  }
+  async function doSendRP() {
     const id = "urbit" in user ? poast.id : poast.hash;
     const r = await api!.addRP(user, id);
     if (r) {
       toast.success("Your repost was published");
     }
+    setModal(null);
+  }
+  function sendRP(e: React.MouseEvent) {
+    e.stopPropagation();
+    e.preventDefault();
+    setModal(
+      <ConfirmationDialog
+        onConfirm={doSendRP}
+        onCancel={() => setModal(null)}
+      />,
+    );
   }
   function doReact(e: React.MouseEvent) {
     e.stopPropagation();
@@ -123,38 +143,68 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
   ).winner;
   const reactIcon = stringToReact(mostCommonReact);
 
+  function deletePoast(e: React.MouseEvent) {
+    e.stopPropagation();
+    setModal(
+      <ConfirmationDialog
+        onConfirm={doDelete}
+        onCancel={() => setModal(null)}
+      />,
+    );
+  }
+
+  async function doDelete() {
+    const r = await api!.deletePost(user, poast.id);
+    toast.success("Post deleted");
+    setModal(null);
+  }
+
+  const isMine = poast.author === api?.airlock.our;
+  const canRelay = Object.keys(relays).length > 0 && isMine;
+
   // TODO round up all helpers
+  //
+  function handleRelay() {
+    if (poast.event) {
+      const nevent = generateNevent(poast.event);
+      console.log({ nevent });
+      const href = `https://primal.net/e/${nevent}`;
+      window.open(href, "_blank");
+    } else setModal(<RelayPost poast={poast} />);
+  }
 
   return (
     <div className="footer-wrapper post-footer">
       <footer>
-        {!thread && (
-          <div className="icon">
-            <span
-              role="link"
-              onMouseUp={showReplyCount}
-              className="reply-count"
-            >
-              {displayCount(childrenCount)}
-            </span>
-            <div className="icon-wrapper" role="link" onMouseUp={doReply}>
-              <Icon name="reply" />
-            </div>
+        <div className="icon-container">
+          <span
+            role="link"
+            onMouseUp={showReplyCount}
+            className="reply-count icon-count"
+          >
+            {displayCount(childrenCount)}
+          </span>
+          <div className="icon-wrapper" role="link" onMouseUp={doReply}>
+            <Icon name="reply" />
           </div>
-        )}
-        <div className="icon">
-          <span role="link" onMouseUp={showQuoteCount} className="quote-count">
+        </div>
+        <div className="icon-container">
+          <span
+            role="link"
+            onMouseUp={showQuoteCount}
+            className="quote-count icon-count"
+          >
             {displayCount(poast.engagement.quoted.length)}
           </span>
           <div className="icon-wrapper" role="link" onMouseUp={doQuote}>
             <Icon name="quote" />
           </div>
         </div>
-        <div className="icon">
+        <div className="icon-container">
           <span
             role="link"
             onMouseUp={showRepostCount}
-            className="repost-count"
+            className="repost-count icon-count"
           >
             {displayCount(poast.engagement.shared.length)}
           </span>
@@ -170,17 +220,27 @@ function Footer({ user, poast, thread, refetch }: PostProps) {
             </div>
           )}
         </div>
-        <div className="icon" role="link" onMouseUp={doReact}>
+        <div className="icon-container">
           <span
             role="link"
             onMouseUp={showReactCount}
-            className="reaction-count"
+            className="reaction-count icon-count"
           >
             {displayCount(Object.keys(poast.engagement.reacts).length)}
           </span>
-          {reactIcon}
+          <div className="icon-wrapper" role="link" onMouseUp={doReact}>
+            {reactIcon}
+          </div>
         </div>
-        <NostrIcon poast={poast} />
+        {canRelay && <NostrIcon open={handleRelay} />}
+        {isMine && (
+          <div className="icon-container">
+            <span className="icon-count" />
+            <div className="icon-wrapper" role="link" onMouseUp={deletePoast}>
+              <Icon name="trash" title="delete" />
+            </div>
+          </div>
+        )}
       </footer>
     </div>
   );
@@ -212,14 +272,6 @@ export default Footer;
 //   }, []);
 //   const { our, setModal, setAlert } = useLocalState();
 //   const mine = our === poast.host || our === poast.author;
-//   async function doDelete(e: React.MouseEvent) {
-//     e.stopPropagation();
-//     deletePost(poast.host, poast.id);
-//     setAlert("Post deleted");
-//     setShowMenu(false);
-//     refetch();
-//     if (location.includes(poast.id)) navigate("/");
-//   }
 //   async function copyLink(e: React.MouseEvent) {
 //     e.stopPropagation();
 //     const link = trillPermalink(poast);

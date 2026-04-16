@@ -1,5 +1,9 @@
 |%
 +$  keys  [pub=@ priv=@]
++$  wevent
+  $:  relays=(list @t)
+      event
+  ==
 +$  event
 $:  id=@ux           :: 32bytes
     pubkey=@ux       ::  32bytes
@@ -25,15 +29,18 @@ $:  pubkey=@ux       ::  32bytes
 $:  name=@t
     about=@t
     picture=@t
+    patp=(unit @p)
     other=(map @t json)
 ==
+
 +$  relay-stats
 $:  start=@da
     url=@t
-    reqs=(map sub-id event-stats)
+    reqs=(map sub-id req-state)
 ==
-+$  event-stats
-$:  filters=(list filter)
++$  req-state
+$:  name=@t  ::  for frontend purposes, defined by the app
+    filters=(list filter)
     received=event-count
   ::  if not ongoing we kill the subscription on %eose. If ongoing we turn to .y after %eose
     ongoing=(unit ?)

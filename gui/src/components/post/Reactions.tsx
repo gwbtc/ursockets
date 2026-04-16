@@ -99,8 +99,7 @@ export function stringToReact(s: string) {
     return <img className="react-img" src={pepegmi} alt="" />;
   if (s === "pepesad")
     return <img className="react-img" src={pepesad} alt="" />;
-  if (s === "")
-    return <Icon name="emoji" size={20} className="react-img no-react" />;
+  if (s === "") return <Icon name="emoji" className="react-img no-react" />;
   if (s === "cringe") return <img className="react-img" src={cringe} alt="" />;
   if (s === "cry") return <img className="react-img" src={cry} alt="" />;
   if (s === "crywojak") return <img className="react-img" src={cry} alt="" />;
