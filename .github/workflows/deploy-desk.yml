@@ -2,13 +2,13 @@ name: Deploy to distribution ship
 on:
   push:
     branches:
-      - develop
+      - master
 
 env:
   DESK: nostrill
   SHIP_HOST: root@143.198.70.9
-  PIER_PATH: /root/.local/share/groundwire-alpha/ribsyp-lidwex-mitdev-sopsyn--difrel-mapler-mitnyt-daplyd
-  TMUX_TAB: ribsyp
+  PIER_PATH: /root/.local/share/groundwire-alpha/tornec-magdev-masdyl-pidnel--pindys-docnys-darfex-daplyd
+  TMUX_TAB: desk-distributor
 
 jobs:
   deploy:
@@ -26,8 +26,7 @@ jobs:
 
       - name: Deploy desk
         run: |
-          rsync -az --delete --exclude='.git*' \
-            app/ ${SHIP_HOST}:${PIER_PATH}/${DESK}/
+          scp -r app/* ${SHIP_HOST}:${PIER_PATH}/${DESK}/
 
       - name: Commit desk on ship
         run: |
