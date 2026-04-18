@@ -9,15 +9,19 @@ import type { RelayStats } from "@/types/nostrill";
 import { WS_URL } from "@/logic/api";
 
 function Settings() {
-  const { key, relays, api } = useLocalState((s) => ({
+  const { key, relays, api, sets } = useLocalState((s) => ({
     key: s.pubkey,
     relays: s.relays,
     api: s.api,
+    sets: s.uiSettings,
   }));
-  console.log(key);
   const [newRelay, setNewRelay] = useState("");
   const [isAddingRelay, setIsAddingRelay] = useState(false);
   const [isCyclingKey, setIsCyclingKey] = useState(false);
+  const [backlogSize, setBacklogSize] = useState<number>(
+    sets?.relay?.["backlog-size"] || 24,
+  );
+  const [backlogUnit, setBacklogUnit] = useState<"hours" | "days">("hours");
 
   async function removeRelay(_url: string, relay: RelayStats) {
     try {
@@ -66,6 +70,20 @@ function Settings() {
       console.error("Cycle key error:", error);
     } finally {
       setIsCyclingKey(false);
+    }
+  }
+
+  async function saveBacklogSize() {
+    const hours = backlogUnit === "days" ? backlogSize * 24 : backlogSize;
+    setMisc("relay", "backlog-size", hours);
+  }
+  async function setMisc(bucket: string, entry: string, value: any) {
+    try {
+      await api?.setSettings(bucket, entry, value);
+      toast.success("Setting saved");
+    } catch (e) {
+      toast.error("Failed to save setting");
+      console.error("settings save error:", e);
     }
   }
 
@@ -185,6 +203,41 @@ function Settings() {
                       </button>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+            <div className="section-content">
+              <div className="setting-item">
+                <div className="setting-info">
+                  <label>Backlog Size</label>
+                  <p>
+                    Choose how much content to fetch when you sync data from the
+                    relay
+                  </p>
+                </div>
+                <div className="setting-control">
+                  <input
+                    type="number"
+                    min={1}
+                    value={backlogSize}
+                    onChange={(e) =>
+                      setBacklogSize(Math.max(1, parseInt(e.target.value) || 1))
+                    }
+                    className="backlog-input"
+                  />
+                  <select
+                    value={backlogUnit}
+                    onChange={(e) =>
+                      setBacklogUnit(e.target.value as "hours" | "days")
+                    }
+                    className="backlog-unit"
+                  >
+                    <option value="hours">Hours</option>
+                    <option value="days">Days</option>
+                  </select>
+                  <button onClick={saveBacklogSize} className="add-relay-btn">
+                    Save
+                  </button>
                 </div>
               </div>
             </div>

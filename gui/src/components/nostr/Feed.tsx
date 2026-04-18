@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
 import toast from "react-hot-toast";
 import { Contact, RefreshCw } from "lucide-react";
+import type { RelayReqs, RelayStats } from "@/types/nostrill";
 
 export default function Nostr() {
   const { nostrFeed, api, relays, lastEose, setEose } = useLocalState((s) => ({
@@ -14,35 +15,61 @@ export default function Nostr() {
     lastEose: s.lastEose,
     setEose: s.setEose,
   }));
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [subId, setSubId] = useState("");
+  const [fetchingPosts, setFetchingPosts] = useState("");
+  const [fetchingProfiles, setFetchingProfiles] = useState("");
 
   const refetch = () => nostrFeed;
+  console.log({
+    eose: lastEose,
+    posts: fetchingPosts,
+    profiles: fetchingProfiles,
+  });
 
   useEffect(() => {
-    if (!lastEose || !subId) return;
-    if (lastEose === subId) {
-      setIsSyncing(false);
-      setEose("");
+    if (!lastEose) return;
+    if (lastEose === fetchingPosts) {
+      setFetchingPosts("");
       toast.success("Nostr feed sync complete");
+      setEose("");
+      setFetchingProfiles("temp");
+      toast.loading("Nostr profile sync initiated");
     }
-  }, [lastEose, subId]);
+    if (lastEose === fetchingProfiles) {
+      setFetchingProfiles("");
+      setEose("");
+      toast.success("Nostr profiles sync complete");
+    }
+  }, [lastEose, fetchingPosts, fetchingProfiles]);
+
+  useEffect(() => {
+    const allReqs = Object.values(relays).reduce(
+      (acc: RelayReqs, item: RelayStats) => {
+        acc = Object.assign(acc, item.reqs);
+        return acc;
+      },
+      {},
+    );
+    for (const [subId, req] of Object.entries(allReqs)) {
+      if (req.name === "timeline" && !req.ongoing) setFetchingPosts(subId);
+      if (req.name === "user profiles fetch" && !req.ongoing)
+        setFetchingProfiles(subId);
+    }
+  }, [relays]);
   const handleResync = async () => {
     if (!api) return;
-
-    // setIsSyncing(true);
+    toast.loading("Nostr post sync initiated");
+    setFetchingPosts("temp");
     // TODO make this configurable
     const rels = Object.values(relays).map((r) => r.wid);
     try {
-      const subId = await api.syncRelays(rels);
-      setSubId(subId);
-      console.log("syncrelays", subId);
-      toast.success("Nostr feed sync initiated");
+      const res = await api.syncRelays(rels);
+      // const subId = await api.syncRelaysThread(rels);
+      // setSubId(subId);
+      // console.log("syncrelays", subId);
+      // toast.success("Nostr feed sync initiated");
     } catch (error) {
       toast.error("Failed to sync Nostr feed");
       console.error("Sync error:", error);
-      // } finally {
-      // setIsSyncing(false);
     }
   };
 
@@ -50,16 +77,18 @@ export default function Nostr() {
     if (!api) return;
     const rels = Object.values(relays).map((r) => r.wid);
 
-    setIsSyncing(true);
+    setFetchingProfiles("temp");
     try {
       const subId = await api.nostrProfiles(rels);
-      setSubId(subId);
-      toast.success("Nostr profile sync initiated");
+      setFetchingProfiles(subId);
+      toast.loading("Nostr profile sync initiated");
     } catch (error) {
       toast.error("Failed to sync Nostr feed");
       console.error("Sync error:", error);
     }
   }
+  console.log({ nostrFeed });
+  console.log({ relays });
 
   if (Object.keys(relays).length === 0)
     return (
@@ -94,10 +123,10 @@ export default function Nostr() {
           </p>
           <button
             onClick={handleResync}
-            disabled={isSyncing}
+            disabled={!!fetchingPosts}
             className="resync-btn"
           >
-            {isSyncing ? (
+            {fetchingPosts ? (
               <>
                 <img src={spinner} alt="Loading" className="btn-spinner" />
                 Syncing...
@@ -135,11 +164,11 @@ export default function Nostr() {
 
           <button
             onClick={handleResync}
-            disabled={isSyncing}
+            disabled={!!fetchingPosts}
             className="btn-small"
             title="Sync with Nostr relays"
           >
-            {isSyncing ? (
+            {fetchingPosts ? (
               <img src={spinner} alt="Loading" className="btn-spinner-small" />
             ) : (
               <RefreshCw />

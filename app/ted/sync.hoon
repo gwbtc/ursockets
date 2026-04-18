@@ -12,16 +12,16 @@
   =/  ureq  (de-relay-do:de:jsonlib u.ujon)
   ?~  ureq  ~&  bad-json=(en:json:html u.ujon)  bail  
   =/  req=relay-handling:ui  u.ureq
-  ~&  req=req
+  ~&  >>  req=req
   ;<  =bowl:spider  bind:m  get-bowl:strandio
+  ~&  >>  tid=tid.bowl
   ?.  ?=(relay-get:ui action.req)  bail
   =/  t=ted:ui  [%req tid.bowl relays.req action.req]
 
   ;<  ~  bind:m  (poke-our:strandio %nostrill %nostrill-ted !>(t))
   ;<  v=vase  bind:m  (take-poke:strandio %nostrill-ted)
-  ~&  v=v
   =/  res  !<(ted:ui v)
-  ~&  sub-id-to-ted=res
+  ~&  >>>  sync-ted-sub-id-to-ted=res
   ?.  ?=(%res -.res)  bail
   =/  j=json  [%s sub-id.res]
   (pure:m !>(j))

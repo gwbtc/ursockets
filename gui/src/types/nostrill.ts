@@ -1,4 +1,5 @@
 import type { Wevent as NostrEvent } from "./nostr";
+import type { NostrFilter } from "@nostrify/nostrify";
 import type { FC, FullNode, Poast } from "./trill";
 
 export type UserType = { urbit: string } | { nostr: string };
@@ -36,7 +37,16 @@ export type Relays = Record<string, RelayStats>;
 export type RelayStats = {
   start: number;
   wid: number;
-  reqs: Record<string, number>;
+  reqs: RelayReqs;
+};
+export type RelayReqs = Record<string, RelayRequest>;
+export type RelayRequest = {
+  // subID: string; // actually the key, not to add it
+  eventsReceived: number;
+  filters: NostrFilter[];
+  name: string;
+  ongoing: true | false | null;
+  chunked?: boolean;
 };
 
 export type PeekRes = { feed: PeekFeedRes } | { thread: PeekThreadRes };
@@ -54,6 +64,7 @@ export type NostrFact =
   | { user: NostrEvent[] }
   | { thread: NostrEvent[] }
   | { event: NostrEvent }
+  | { sub: { subId: string; type: string } }
   | { eose: string }
   | { relays: Relays }
   | { "sent-post": { host: any; id: string; relays: string[] } }

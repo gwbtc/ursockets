@@ -60,7 +60,6 @@
   |~  [=mark =vase]
   ^-  (quip card:agent:gall agent:gall)
   |^
-  ~&  nostrill-on-poke=mark
   ?+  mark  `this
     %noun  handle-comms
     %json  on-ui
@@ -73,7 +72,6 @@
   ==  
   ++  on-ted
     =/  pok  !<(ted:ui vase)
-    :: =/  poke  !<()
     =^  cards  state  (handle-ted:mutan pok)
     :_  this  cards
 
@@ -704,6 +702,23 @@
        :~  (urbit-watch:fols ~zod)
            [%pass /foldbug %agent [~zod dap.bowl] %poke %bitch !>(~)]
        ==
+      %uinf
+       :_  this
+       :~  (update-ui:cards [%nostr %feed nostr-feed])
+       ==
+      %tedt
+        =/  teds  .^((list path) %gx /(scot %p our.bowl)/spider/(scot %da now.bowl)/tree/noun)
+        ~&  teds
+        =/  flt=(list @t)  (zing teds)
+        |-  ?~  flt  ~&  'no ted'  `this
+          ?.  .=('sync-' (cut 3 [0 5] i.flt))  $(flt t.flt)
+          =/  tid  i.flt
+
+        :_  this
+        =/  payload  [%res 'lmao']
+        :~
+            [%pass /fuck/this %agent [our.bowl %spider] %poke %spider-input !>([tid %nostrill-ted !>(payload)])]
+        ==
       :: ::  TODO refactoring into mutations
       :: :: 
       :: %rt0
@@ -779,21 +794,25 @@
   ?+  pole  `this
     [%websocket-client wids=@ ~]
       ::  reconnect logic requires knowing which side dropped the connection, which is... tricky
-      `this
-      :: ~&  websocket-client-connection-dropped=`@t`wids.pole
-      :: =/  wid  (slav %ud wids.pole)
+      ~&  websocket-client-connection-dropped=`@t`wids.pole
+      =/  uwid  (slaw %ud wids.pole)
+      ?~  uwid  `this
+      =/  wid  u.uwid
+      =.  relays  (~(del by relays) wid)
       :: ::  check if it's the global relay
       :: =/  is-global  .=  `wid  global-relay-conn  
       :: ?:  is-global
       ::   ~&  reconnecting-to-global=wid
       ::   :_  this  :~((connect:ws global-relay:constants bowl))
       :: ::
-      :: =/  relay  (~(get by relays) wid)
-      :: ?~  relay  `this  :: that would be weird
       :: :_  this
       :: ~&  reconnecting=url.u.relay
       :: :~  (connect:ws url.u.relay bowl)
       :: ==
+      :_  this
+      ::  TODO more minute disconnected note
+      :~  (update-ui:cards [%nostr %relays relays])
+      ==
       
   ==
 ::
@@ -843,7 +862,7 @@
 ++  on-arvo
   |~  [wire=(pole knot) =sign-arvo]
   ^-  (quip card:agent:gall agent:gall)
-  ~&  >>  on-arvo=[`path`wire -.sign-arvo +<.sign-arvo]
+  :: ~&  >>  on-arvo=[`path`wire -.sign-arvo +<.sign-arvo]
   ?:  ?=(%iris -.sign-arvo)
     :: ~&  >  +.sign-arvo
     `this

@@ -23,6 +23,7 @@ export function generateNprofile(pubkey: string) {
   return nprofile;
 }
 export function decodeNostrKey(key: string): string | null {
+  console.log("decoding nostr", key);
   try {
     const { type, data } = nip19.decode(key);
     if (type === "nevent") return data.id;

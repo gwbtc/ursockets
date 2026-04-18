@@ -1,5 +1,5 @@
 /-  sur=nostrill, nsur=nostr
-/+  js=json-nostr, sr=sortug, seq, nostr-keys, constants, server, ws=websockets, evlib=nostr-events
+/+  js=json-nostr, sr=sortug, seq, nostr-keys, constants, server, ws=websockets, evlib=nostr-events, lib=nostrill
 /=  web  /web/router
 |_  [=state:sur =bowl:gall]
 +$  card  card:agent:gall
@@ -42,9 +42,9 @@
 
 ++  set-req
   |=  [relay=relay-stats:nsur name=@t fs=(list filter:nsur) ongoing=(unit ?) chunked=(list filter:nsur)]
-  ^-  [client-msg:nsur relay-stats:nsur]
+  ^-  [[%req relay-req:nsur] relay-stats:nsur]
     =/  sub-id  (gen-sub-id:nostr-keys eny.bowl)
-    =/  msg=client-msg:nsur  [%req sub-id fs]
+    =/  msg  [%req sub-id fs]
     =/  req=req-state:nsur  [name fs 0 ongoing chunked]
     =.  reqs.relay  (~(put by reqs.relay) sub-id req)
     [msg relay]
@@ -106,43 +106,39 @@
     =/  wmsg  (req-to-msg req)
     (give-ws-payload-client:ws wid wmsg)
   ::
-  :: TODO temp, replace with one below
-  ++  get-posts-ted
-    ^-  [sub-id=@t rs=req-state:nsur =card]
-    =/  kinds  (silt ~[1])
-    =/  last-week  (sub now.bowl ~m1)
-    :: =/  since  (to-unix-secs:jikan:sr last-week)
-    =/  =filter:nsur  [~ ~ `kinds ~ `last-week ~ ~]
-    =/  req-name  'timeline'
-    =/  filters  ~[filter]
-    =/  req  (build-req filters)
-    =/  sub-id=@t  +<.req
-    =/  card  (send-card req)
-    =/  rs=req-state:nsur  (init-req req-name filters ~ ~)
-    [sub-id rs card]
-    
-  
   ++  get-posts
     =/  kinds  (silt ~[1])
-    =/  last-week  (sub now.bowl ~h1)
-    :: =/  since  (to-unix-secs:jikan:sr last-week)
-    =/  =filter:nsur  [~ ~ `kinds ~ `last-week ~ ~]
+    =/  from::  look in settings agent
+      ?.  .^(? %gx /(scot %p our.bowl)/settings/(scot %da now.bowl)/has-entry/nostrill/relay/backlog-size/noun)
+      ~h1
+      =/  res  .^(* %gx /(scot %p our.bowl)/settings/(scot %da now.bowl)/entry/nostrill/relay/backlog-size/noun)
+      =/  hours  ?>  ?=(@ +>.res)  +>.res
+      (mul hours ~h1)
+    ~&  >>>  from=from
+    :: =/  since  (sub now.bowl from)
+    =/  since  (sub now.bowl ~m10)
+
+
+    =/  =filter:nsur  [~ ~ `kinds ~ `since ~ ~]
+    =/  filters  ~[filter]
     =/  req-name  'timeline'
-    =^  req  relay  (set-req relay req-name ~[filter] ~ ~)
-    :_  relay
-    :~  (send-card req)
-    ==
-  :: ++  get-posts
-  ::   =/  kinds  (silt ~[1])
-  ::   =/  last-week  (sub now.bowl ~d7)
-  ::   :: =/  since  (to-unix-secs:jikan:sr last-week)
-  ::   =/  =filter:nsur  [~ ~ `kinds ~ `last-week ~ ~]
-  ::   =/  req-name  'timeline'
-  ::   =^  req  relay  (set-req relay req-name ~[filter] `.n ~)
-  ::   :_  relay
-  ::   :~  (send-card req)
-  ::   ==
-  ::
+    |%
+    ++  ted
+      ^-  [sub-id=@t rs=req-state:nsur =card]
+      =/  req  (build-req filters)
+      =/  sub-id=@t  sub-id.req
+      ~&  get-posts-ted=sub-id
+      =/  card  (send-card req)
+      =/  rs=req-state:nsur  (init-req req-name filters ~ ~)
+      [sub-id rs card]
+    ++  sub
+      =^  req  relay  (set-req relay req-name ~[filter] ~ ~)
+      ~&  get-posts-sub=req
+      :_  relay
+      :~  (send-card req)
+      ==
+    --
+
   ++  get-user-feed
     |=  pubkey=@ux
     =/  kinds  (silt ~[1])
@@ -208,7 +204,6 @@
   ::
   ++  get-profile  |=  pubkey=@ux
     =/  kinds  (silt ~[0])
-    :: =/  since  (to-unix-secs:jikan:sr last-week)
     =/  pubkeys  (silt ~[pubkey])
     =/  =filter:nsur  [~ `pubkeys `kinds ~ ~ ~ ~]
     =/  req-name  'user profile fetch'
@@ -246,6 +241,9 @@
       =/  pubkeys=(set @ux)  (silt i.chunks)
       =/  =filter:nsur  [~ `pubkeys `kinds ~ ~ ~ ~]
       (set-req relay req-name ~[filter] ~ queue)
+
+    =/  sub-id=@t  sub-id.req
+    ~&  >>>  profiles-sub-id=sub-id
     :_  relay
     :~  (send-card req)
     ==
