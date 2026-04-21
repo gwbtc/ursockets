@@ -30,7 +30,7 @@ export default function Global() {
     const relay = relayRef.current;
     const req = relay.req([{ kinds: [667] }]);
     for await (const msg of req) {
-      console.log("relay msg", msg);
+      // console.log("relay msg", msg);
       if (msg[0] === "EVENT") {
         const event = msg[2];
         const wevent = { ...event, relays: [GLOBAL_RELAY_URL] };

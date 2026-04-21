@@ -21,7 +21,7 @@ export type LocalState = {
   isNew: boolean;
   api: IO | null;
   init: () => Promise<void>;
-  UISettings: Record<string, any>;
+  uiSettings: Record<string, any>;
   modal: JSX.Element | null;
   setModal: (modal: JSX.Element | null) => void;
   composerData: ComposerData | null;
@@ -66,8 +66,14 @@ export const useStore = creator((set, get) => ({
       //   set({ contacts: r.ok });
       // }
     });
-    api.scrySettings().then((_r) => {
-      // console.log("settings", r);
+    api.scrySettings().then((r) => {
+      if ("error" in r) {
+        console.error("error scrying settings", r);
+        return;
+      }
+      const uiSettings = r.ok.desk;
+      console.log({ uiSettings });
+      set({ uiSettings });
     });
     api.scryStorage().then((r) => {
       if ("ok" in r) {
@@ -174,7 +180,10 @@ export const useStore = creator((set, get) => ({
         if ("nostr" in fact) {
           set({ lastNostrEventTime: Date.now() });
           console.log("nostr fact", fact);
-          // if ("feed" in fact.nostr) set({ nostrFeed: fact.nostr.feed });
+          if ("feed" in fact.nostr) {
+            const nostrFeed = eventsToFc(fact.nostr.feed);
+            set({ nostrFeed });
+          }
           if ("thread" in fact.nostr)
             console.log("nostr thread!!!", fact.nostr.thread);
           if ("relays" in fact.nostr) set({ relays: fact.nostr.relays });
@@ -219,7 +228,7 @@ export const useStore = creator((set, get) => ({
   following: new Map(),
   followers: [],
   following2: { feed: {}, start: "", end: "" },
-  UISettings: {},
+  uiSettings: {},
   modal: null,
   setModal: (modal) => set({ modal }),
   // composer data

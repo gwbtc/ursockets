@@ -143,12 +143,28 @@ export default class IO {
 
   async scryContacts(): AsyncRes<UrbitContacts> {
     const path = "/all";
-    const res = await this.scry(path, "contacts");
+    const res = await this.scry(path, "n-contacts");
     return res;
   }
   async scrySettings(): AsyncRes<SettingsRes> {
-    const path = "/all";
+    const path = "/desk/nostrill";
     const res = await this.scry(path, "settings");
+    return res;
+  }
+  async setSettings(
+    bucket: string,
+    entry: string,
+    value: any,
+  ): AsyncRes<number> {
+    const json = {
+      "put-entry": {
+        desk: "nostrill",
+        "bucket-key": bucket,
+        "entry-key": entry,
+        value,
+      },
+    };
+    const res = await this.poke(json, "settings", "settings-event");
     return res;
   }
   async scryStorage(): AsyncRes<S3Config> {
@@ -285,15 +301,15 @@ export default class IO {
   }
   // nostr reads
   //
-  async syncRelays(relays: number[]): Promise<string> {
+  async syncRelaysThread(relays: number[]): Promise<string> {
     const json = { relays, action: { sync: null } };
     const res = (await this.thread("sync", json)) as string;
     return res;
   }
-  // async syncRelays(relays: number[]) {
-  //   const json = { do: { relays, action: { sync: null } } };
-  //   return await this.poke({ rela: json });
-  // }
+  async syncRelays(relays: number[]) {
+    const json = { do: { relays, action: { sync: null } } };
+    return await this.poke({ rela: json });
+  }
   async nostrFeed(pubkey: string, relays: number[]): AsyncRes<number> {
     const json = { do: { relays, action: { user: pubkey } } };
     return await this.poke({ rela: json });
@@ -340,8 +356,4 @@ export default class IO {
   //     return { error: `${e}` };
   //   }
   // }
-
-  // notifications
-
-  // mark as read
 }

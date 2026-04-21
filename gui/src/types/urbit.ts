@@ -30,7 +30,8 @@ export type SettingsValue =
   | { [key: string]: SettingsValue };
 
 export type SettingsMap = Record<string, SettingsValue>;
-export type SettingsRes = { all: Record<AppName, SettingsMap> };
+// export type SettingsRes = { all: Record<AppName, SettingsMap> };
+export type SettingsRes = { desk: Record<string, SettingsMap> };
 export type StorageCredentials = {
   accessKeyId: string;
   endpoint: string;

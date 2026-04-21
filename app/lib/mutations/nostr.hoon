@@ -101,7 +101,6 @@
   =/  rclient  ~(. relay.nclient [wid relay])
   |^
   =^  cards  state
-    ~&  >  handle-ws=-.msg
     ?-  -.msg
       ::  This gets returned when we post a message to a relay
       %ok     (handle-ok url.relay +.msg)
@@ -142,9 +141,6 @@
     |=  [sub-id=@t =event:nsur]
     ^-  (quip card _state)
     ::  increment event count in relay state
-    ~&  >>  parsing-nostr-event=kind.event
-    ~&  >>  sub-id=sub-id
-    :: ~&  >   relay-subs=~(key by reqs.relay)
     =/  req  (~(get by reqs.relay) sub-id)
     ?~  req  ~&  >>>  "sub id not found in relay state"  `state
     
@@ -265,13 +261,12 @@
       =/  ureq=(unit req-state:nsur)  (~(get by reqs.relay) sub-id)
       ?~  ureq  ~&  >>>  "sub id not found! on eose"  `state
       =/  reqs=req-state:nsur  u.ureq
-      ~&  >>  eose=reqs
-      ~&  >>>  "**************"
       :: 
       ::  if there's a queue we setup the next subscription
       =^  cards  relay
         ?:  (is-feed:evlib filters.reqs)
           ~&  >>  "eose on global feed request"
+          ::  TODO don't send all at once, stream in chunks
           =/  c  (update-ui:cardslib [%nostr %feed nostr-feed.state])
           =^  mc  relay  get-profiles:rclient
           [[c mc] relay]
@@ -314,7 +309,7 @@
       ::  if ongoing request we mark it as backlog received and keep it alive, else we cloe it
       =^  cards3  relay
         ?~  ongoing.reqs
-          ~&  >>>  closing-relay-sub=[sub-id filters.reqs]
+          ~&  >>>  closing-relay-sub=sub-id
           =/  d  (close-sub-req:nclient sub-id wid relay)
           :_  +.d
           :~  (send-card:rclient -.d)
@@ -323,10 +318,16 @@
         =.  reqs.relay  (~(put by reqs.relay) sub-id reqs)
         [~ relay]
 
-      =/  eose-card  (update-ui:cardslib [%nostr %eose sub-id])
-      =/  carrds  :-  eose-card  %+  weld  cards  %+  weld  cards2  cards3
-      
       =.  relays.state  (~(put by relays.state) wid relay)
+      =/  eose-card    (update-ui:cardslib [%nostr %eose sub-id])
+      =/  relays-card  (update-ui:cardslib [%nostr %relays relays.state])
+      =/  cs
+        :~  eose-card
+        ==
+      =/  carrds=(list card)
+        :-  eose-card  :-  relays-card
+        %+  weld  cards  %+  weld  cards2  cards3
+      
       :_  state  carrds
 
   --
@@ -337,28 +338,6 @@
       (~(put by profiles.state) [%urbit src.bowl] u.prof)
          :: TODO kinda wanna send it to the UI
          `state
-
-
-  ++  call-relay  |=  [wid=@ud relay-url=@t ro=relay-order:ui]
-    ^-  (quip card _state)
-    =/  nclient  ~(. nostr-client [state bowl])
-    =/  urelay  (~(get by relays.state) wid)
-    ?~  urelay
-      ~&  >>>  not-connected-to-relay=wid
-      (test-reconnection relay-url ro)
-      ::
-    =/  relay  u.urelay
-    =/  rclient  ~(. relay.nclient [wid relay])
-    ::
-    =/  d=[(list card) _relay]
-    ?+  -.ro  !!
-      %user      (get-user-feed:rclient +.ro)
-      %thread    (get-thread:rclient +.ro)
-      %sync       get-posts:rclient
-      %prof       get-profiles:rclient      
-    ==
-    =.  relays.state  (~(put by relays.state) wid +.d)
-    [-.d state]
     
   ++  test-reconnection  |=  [relay-url=@t ro=relay-order:ui]
     ^-  (quip card _state)
@@ -374,7 +353,7 @@
 
   ++  relay-get  |=  [tid=@ta wids=(list @ud) rg=relay-get:ui]
     ^-  (quip card _state)
-    ~&  >>  got-tid=tid
+    ~&  >>  relay-get=[tid wids rg]
     =/  nclient  ~(. nostr-client [state bowl])
     =^  cards  state
     =|  css=(list card)
@@ -390,12 +369,12 @@
     
       =/  d
       ?+  -.rg  !!
-        %sync       get-posts-ted:rclient
+        %sync       ted:get-posts:rclient
       ==
       =.  reqs.relay  (~(put by reqs.relay) sub-id.d rs.d)
       =.  relays.state  (~(put by relays.state) wid relay)
       =/  cs=(list card)
-        :~  (poke-ui-thread:cards:lib tid sub-id.d)
+        :~  (poke-ui-thread:cardslib tid sub-id.d)
             card.d
         ==
       =/  ncss  (weld cs css)
@@ -424,15 +403,18 @@
         =/  rclient  ~(. relay.nclient [wid relay])
         ::
         =/  d=[(list card) _relay]
+        ~&  action=action.rh
         ?-  -.action.rh
           %user      (get-user-feed:rclient +.action.rh)
           %thread    (get-thread:rclient +.action.rh)
-          %sync       get-posts:rclient
+          %sync       sub:get-posts:rclient
           %prof       get-profiles:rclient      
         ==
         =.  relays.state  (~(put by relays.state) wid +.d)
         $(wids t.wids, css (weld css -.d))      
-      [cards state]    
+      =/  relays-card  (update-ui:cardslib [%nostr %relays relays.state])
+      =/  cs  [relays-card cards]
+      [cs state]    
 
 
     ++  send-post  |=  [wids=(list @ud) host=@p id=@da]

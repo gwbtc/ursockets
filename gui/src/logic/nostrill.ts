@@ -8,9 +8,11 @@ import { IMAGE_SUBREGEX, URL_REGEX, VIDEO_SUBREGEX } from "./constants";
 import { decodeNostrKey } from "./nostr";
 
 export function eventsToFc(postEvents: Wevent[]): FC {
+  console.log("post events", postEvents.length);
   const fc = postEvents.reduce(
     (acc: FC, event: Wevent) => {
       const p = eventToPoast(event);
+      // console.log({ event, p });
       if (!p) return acc;
       acc.feed[p.id] = p;
       if (!acc.start || event.created_at < Number(acc.start)) acc.start = p.id;

@@ -556,6 +556,6 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   };
 }
 export function getThreadPath(post: Poast): string {
-  if (post.event) return `/t/n/${post.id}`;
+  if (post.event) return `/t/n/${post.event.id}`;
   else return `/t/u/${post.host}/${post.id}`;
 }

@@ -82,6 +82,7 @@
     [%pass /ted-res/[ta-now] %agent [our.bowl %spider] %poke %spider-input !>([tid %noun !>(body)])]
 
   ++  poke-ui-thread  |=  [tid=@ta sub-id=@t]  ^-  card:agent:gall
+    ~&  >>>  poke-ui-ted=tid
     =/  ta-now  (scot %ud `@`now.bowl)
     =/  payload=ted:ui  [%res sub-id]
     [%pass /ted-res/[ta-now] %agent [our.bowl %spider] %poke %spider-input !>([tid %nostrill-ted !>(payload)])]

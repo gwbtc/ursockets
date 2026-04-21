@@ -39,11 +39,11 @@
     ==
   ++  wevent
   |=  w=wevent:sur  ^-  json
-    %:  pairs
-      relays+a+(turn relays.w cord:en:common)
-      event+(event +.w)
-      ~
-    ==
+    =/  base  (event +.w)
+    ?>  ?=(%o -.base)
+    =.  p.base  (~(put by p.base) 'relays' [%a (turn relays.w cord:en:common)])
+    base
+
   ++  event
   =/  nostr=?  .n
   |=  e=event:sur  ^-  json
