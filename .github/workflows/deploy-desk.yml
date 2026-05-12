@@ -7,7 +7,7 @@ on:
 env:
   DESK: nostrill
   SHIP_HOST: root@143.198.70.9
-  PIER_PATH: /root/.local/share/groundwire-alpha/nopner-loclyr-fonzod-batwet--mirmel-toplev-sopluc-daplyd
+  PIER_PATH: /root/.local/share/groundwire-alpha/watwyd-bannyt-parmep-sivpes--motweb-dovfet-nilrec-daplyd
   TMUX_TAB: sponsor
 
 jobs:
