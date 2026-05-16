@@ -33,7 +33,6 @@
   :: Don't add to relays state if it's the global-feed relay
   ?:  .=  url.u.socket  global-relay:constants
     =.  global-relay-conn.state  `wid
-    :: TODO ui card?
     `state
     ::
     =/  relay=relay-stats:nsur  [now.bowl url.u.socket ~]

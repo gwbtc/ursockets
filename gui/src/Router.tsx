@@ -3,7 +3,6 @@ import useLocalState from "@/state/state";
 import Feed from "@/pages/Feed";
 import User from "@/pages/User";
 import Settings from "@/pages/Settings";
-import Chat from "@/pages/Chat";
 import Follows from "@/pages/Follows";
 import Thread, { NostrThreadLoader } from "@/pages/Thread";
 import { Switch, Router, Redirect, Route } from "wouter";
@@ -47,7 +46,6 @@ export default function r() {
           <Route path="/sets" component={Settings} />
           <Route path="/fols" component={Follows} />
           <Route path="/f" component={Feed} />
-          <Route path="/chat" component={Chat} />
           <Route path="/f/:taip" component={Feed} />
           <Route path="/u/:user" component={User} />
           <Route path="/t/u/:host/:id" component={Thread} />
