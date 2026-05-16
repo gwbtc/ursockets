@@ -19,7 +19,7 @@ const Loader: React.FC<Props> = (props) => {
   const { user } = props;
   const userString2 = "urbit" in user ? user.urbit : user.nostr;
   const profile = profiles.get(userString2);
-
+  console.log({ profiles, profile });
   if (props.isMe) return <ProfileEditor {...props} profile={profile} />;
   else return <Profile profile={profile} {...props} />;
 };

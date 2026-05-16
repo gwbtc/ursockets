@@ -13,6 +13,7 @@ import type {
   Fact,
   FeedData,
   NostrFollow,
+  UserProfile,
   UserType,
 } from "@/types/nostrill";
 
@@ -86,9 +87,9 @@ export default function ({ user }: { user: UserType }) {
     }
   }
 
-  async function copy(e: React.MouseEvent) {
+  async function copy(e: React.MouseEvent, text: string) {
     e.stopPropagation();
-    await navigator.clipboard.writeText(userString);
+    await navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard");
   }
 
@@ -168,18 +169,21 @@ export default function ({ user }: { user: UserType }) {
 
         <div className="user-modal-info">
           <h2 className="user-modal-name">{displayName}</h2>
-          <div className="user-modal-id-row">
-            <span className="user-modal-id" title={userString}>
-              {"urbit" in user ? user.urbit : truncatedId}
-            </span>
-            <Icon
-              name="copy"
-              size={16}
-              className="user-modal-copy-icon cp"
-              onClick={copy}
-              title="Copy to clipboard"
-            />
-          </div>
+          {displayName !== userString && (
+            <div className="user-modal-id-row">
+              <span className="user-modal-id" title={userString}>
+                {"urbit" in user ? user.urbit : truncatedId}
+              </span>
+              <Icon
+                name="copy"
+                size={24}
+                className="user-modal-copy-icon cp"
+                onClick={(e) => copy(e, userString)}
+                title="Copy to clipboard"
+              />
+            </div>
+          )}
+          {profile && <GroundwireID profile={profile} copy={copy} />}
 
           {/* User type badge */}
           <div className="user-modal-badge">
@@ -303,4 +307,60 @@ export function ProfValue({ value }: { value: any }) {
   else if (typeof value === "object")
     return <span className="field-value">{JSON.stringify(value)}</span>;
   else return <span className="field-value">{JSON.stringify(value)}</span>;
+}
+export function GroundwireID({
+  profile,
+  copy,
+}: {
+  profile: UserProfile;
+  copy: (e: React.MouseEvent, text: string) => void;
+}) {
+  const gwid = profile.urbitID ? profile.urbitID.gwid : profile.gwid;
+  const trim = (s: string) => s.replace(/\./g, "");
+  return (
+    <div>
+      <div className="f1">
+        <p>English GroundwireID</p>
+        <Icon
+          name="copy"
+          size={16}
+          className="user-modal-copy-icon cp"
+          onClick={(e) => copy(e, gwid.english.nym)}
+          title="Copy to clipboard"
+        />
+      </div>
+      <div className="">
+        <p className="user-modal-id" title={gwid.english.nym}>
+          {gwid.english.nym}
+        </p>
+        <p className="user-modal-id" title={gwid.english.foreshortened}>
+          {gwid.english.foreshortened}
+        </p>
+        <p className="user-modal-id" title={gwid.english.abridged}>
+          {gwid.english.abridged}
+        </p>
+      </div>
+      <div className="f1">
+        <p>Chinese GroundwireID</p>
+        <Icon
+          name="copy"
+          size={16}
+          className="user-modal-copy-icon cp"
+          onClick={(e) => copy(e, gwid.hanzi.nym)}
+          title="Copy to clipboard"
+        />
+      </div>
+      <div className="">
+        <p className="user-modal-id" title={gwid.hanzi.nym}>
+          {trim(gwid.hanzi.nym)}
+        </p>
+        <p className="user-modal-id" title={gwid.hanzi.foreshortened}>
+          {trim(gwid.hanzi.foreshortened)}
+        </p>
+        <p className="user-modal-id" title={gwid.hanzi.abridged}>
+          {trim(gwid.hanzi.abridged)}
+        </p>
+      </div>
+    </div>
+  );
 }

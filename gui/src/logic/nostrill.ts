@@ -1,7 +1,12 @@
 import type { Wevent, Event } from "@/types/nostr";
 import type { Content, Cursor, FC, FlatFeed, Poast } from "@/types/trill";
 import { defaultGate, engagementBunt } from "./bunts";
-import type { BasicProfile, UserProfile, UserType } from "@/types/nostrill";
+import type {
+  BasicProfile,
+  UrbitID,
+  UserProfile,
+  UserType,
+} from "@/types/nostrill";
 import type { Result } from "@/types/ui";
 import { isValidPatp } from "urbit-ob";
 import { IMAGE_SUBREGEX, URL_REGEX, VIDEO_SUBREGEX } from "./constants";
@@ -134,7 +139,8 @@ export function eventToProfile(event: Event): UserProfile | null {
     console.log("tags", event.tags);
     const { name, picture, about, ...other } = data;
     const patp = data.patp ? data.patp : null;
-    const bp: BasicProfile = { patp, name, picture, about, other };
+    const urbitID: UrbitID = { patp, point: 0, gwid: "" };
+    const bp: BasicProfile = { urbitID, name, picture, about, other };
     const prof: UserProfile = {
       pubkey: event.pubkey,
       followers: [],

@@ -139,7 +139,6 @@
     }
 
     .body-text {
-      /* font-family: Arial, Helvetica, sans-serif; */
       margin: 0.3rem 0 1rem 0;
       word-break: break-word;
     }
@@ -658,7 +657,7 @@
 
 .trill-poll .my-vote {
   border: 3px solid var(--text-color);
-  border-right: 4px solid var(--text-color);
+  background-color: rgba(128, 128, 128, 0.14);
 }
 
 .trill-poll .bottom-row {

@@ -14,6 +14,7 @@ import type {
   PeekFeedRes,
   PeekRes,
   PeekThreadRes,
+  UserProfile,
   UserType,
 } from "@/types/nostrill";
 import type { AsyncRes } from "@/types/ui";
@@ -280,6 +281,12 @@ export default class IO {
   async getProfiles(users: UserType[]) {
     const json = { fetch: users };
     return await this.poke({ prof: json });
+  }
+  async scryProfile(user?: UserType): AsyncRes<UserProfile> {
+    const path = user
+      ? `/j/profile/${Object.keys(user)[0]}/${Object.values(user)[0]}`
+      : "/j/profile";
+    return await this.scry(path);
   }
   // relays
   async addRelay(url: string) {
