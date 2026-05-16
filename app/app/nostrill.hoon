@@ -207,7 +207,8 @@
   ++  handle-prof  |=  poke=prof-poke:ui
     ?-  -.poke
       %add
-        =/  prof  (my-meta-to-prof:scry +.poke)
+        =/  prof  default-profile:scry
+        =.  user-meta.prof  +.poke
         =.  profiles  (~(put by profiles) [%urbit our.bowl] prof)
         ::  send to global relay
         =/  nclient  ~(. nostr-client [state bowl])
@@ -719,8 +720,9 @@
         :~
             [%pass /fuck/this %agent [our.bowl %spider] %poke %spider-input !>([tid %nostrill-ted !>(payload)])]
         ==
-      %gwid
-      =/  gw-id  (make-c:gwid our.bowl 256 .n)
+      [%gwid who=@p width=@ tweak=? lang=?(%en %zh)]
+      =/  gw-id  (make-v:b:gwid [%urbit our.bowl])
+      :: =/  gw-id  (make-c:gwid our.bowl 256 .n)
       :: =/  our  pub.i.keys
       ~&  >  gw-id=gw-id
       `this
@@ -770,6 +772,9 @@
   [%websocket-server *]  `this
   [%ui ~]
     ?>  .=(our.bowl src.bowl)
+    =/  have-my-prof  (~(has by profiles) [%urbit our.bowl])
+    =.  profiles  ?:  have-my-prof  profiles
+      (~(put by profiles) [%urbit our.bowl] default-profile:scry)
     :_  this
     =/  jon  (state:en:jsonlib state)
     [%give %fact ~[/ui] [%json !>(jon)]]^~
@@ -829,6 +834,9 @@
    [%x %j %feed host=@ start=@ end=@ count=@ newest=@ replies=@ *]
      (sfeed:scry host.pole start.pole end.pole count.pole newest.pole replies.pole)
    [%x %j %thread host=@ id=@ *]  (thread:scry host.pole id.pole)
+  ::
+   [%x %j %profile ~]  own-profile:scry
+   [%x %j %profile which=@ id=@ ~]  (profile:scry which.pole id.pole)
   ==
   
 ::

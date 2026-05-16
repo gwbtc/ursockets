@@ -150,7 +150,7 @@
 ++  profile-to-event  |=  [=keys:nsur prof=user-profile:comms eny=@ now=@da]
   ^-  event:nsur
   :: kind should  be 1 when sending to normal relays, 667 to sending to the global relay
-  =/  jon=json  (user-meta:en:js +>+>+.prof)
+  =/  jon=json  (user-meta:en:js +>+>+<.prof)
   =/  string  (en:json:html jon)
   =/  ts  (to-unix-secs:jikan:sr now)
   =/  raw=raw-event:nsur  [pub.keys ts 0 ~ string]

@@ -1,7 +1,7 @@
 /-  wrap, sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui, noti=nostrill-notif,
     tf=trill-feed, tp=trill-post,
     wrap
-/+  sr=sortug, common=json-common, trill=json-trill, nostr=json-nostr
+/+  sr=sortug, common=json-common, trill=json-trill, nostr=json-nostr, gwid
 |%
 ++  en
 =,  enjs:format
@@ -78,9 +78,29 @@
       :-  'followingCount'  (numb following-count.prof)
       :+  'followers'  %a  %+  turn  ~(tap in followers.prof)  user
       :-  'followerCount'  (numb follower-count.prof)      
+      :-  'urbitID'  (urbit-id urbit-id.prof)
+      :-  'gwid'  (engwid gwid.prof)
     ==
-  (user-meta-pairs:en:nostr +>+>+:prof)
+  (user-meta-pairs:en:nostr +>+>+<:prof)
 
+  ++  urbit-id  |=  u=(unit urbit-id:comms)  ^-  json
+    ?~  u  ~
+    %-  pairs
+      :~  patp+(patp:en:common p.u.u)
+          point+(ud:en:common point.u.u)
+          gwid+(engwid gwid.u.u)
+      ==
+  ++  engwid  |=  g=nyms:gwid  ^-  json
+    %-  pairs
+      :~  english+(engwidnym english.g)
+          hanzi+(engwidnym hanzi.g)
+      ==
+  ++  engwidnym  |=  o=output:gwid  ^-  json
+    %-  pairs
+      :~  nym+s+nym.o
+          abridged+s+abridged.o
+          foreshortened+s+foreshortened.o
+      ==
   ++  enfollowing
   |=  m=(map user:sur feed:tf)
   ^-  json
@@ -268,13 +288,24 @@
     name+so
     about+so
     picture+so
-    patp+de-unit-patp
     other+other-meta
   ==
-++  de-unit-patp  |=  jon=json  ^-  (unit (unit @p))
-  ?.  ?=(%s -.jon)  ~
-  %-  some  ((se:de:common %p) jon)
-  ::  we have this for type economy but a user does not get to change their profile's @p in the UI
+:: ++  urbit-id  |=  jon=json  ^-  (unit urbit-id:comms)
+::   ?.  ?=(%o -.jon)  ~
+::   %.  jon
+::   %-  ot  :~
+::     patp+(se:de:common %p)
+::     point+ni
+::     gwid+degwid
+::   ==
+:: ++  de-unit-patp  |=  jon=json  ^-  (unit (unit @p))
+::   ?.  ?=(%s -.jon)  ~
+::   %-  some  ((se:de:common %p) jon)
+::   ::  we have this for type economy but a user does not get to change their profile's @p in the UI
+
+:: ++  de-unit-urbit-id  |=  jon=json  ^-  (unit (unit urbit-id:comms))
+::   ?.  ?=(%o -.jon)  ~
+::   %-  some  (urbit-id:de:nostr jon)
 
 ++  other-meta  |=  jon=json
   ?.  ?=(%o -.jon)  ~  (some p.jon)

@@ -29,7 +29,6 @@ $:  pubkey=@ux       ::  32bytes
 $:  name=@t
     about=@t
     picture=@t
-    patp=(unit @p)
     other=(map @t json)
 ==
 

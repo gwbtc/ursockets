@@ -6,7 +6,8 @@
     feedlib=trill-feed,
     postlib=trill-post,
     constants,
-    sr=sortug
+    sr=sortug,
+    gwid
 
 |_  [=state:sur =bowl:gall]
 +$  card  card:agent:gall
@@ -19,48 +20,63 @@
       (~(put in acc) [%urbit p])
     
 
-++  my-meta-to-prof  |=  meta=user-meta:nsur  ^-  user-profile:comms
-  =/  fans  get-followers
-  :-  pub.i.keys.state
-  :-  ~(key by following.state)
-  :-  ~(wyt by following.state)
-  :-  fans
-  :-  ~(wyt in fans)
-      meta
-++  user-meta-to-prof  |=  meta=user-meta:nsur  ^-  user-profile:comms
-  :-  0x0
-  :-    ~
-  :-    0
-  :-    ~
-  :-    0
-      meta
+++  my-gwid  ^-  nyms:gwid
+  (make:b:gwid [%nostr pub.i.keys.state])
+++  my-urbit-id  ^-  urbit-id:comms
+  =/  urgwid  (make:b:gwid [%urbit our.bowl])
+  [our.bowl `@ud`our.bowl urgwid]
+
+++  default-user-meta  |=  who=@p  ^-  user-meta:nsur
+    :^  (scot %p who)
+        ''
+        ''
+        ~
 ++  default-profile  ^-  user-profile:comms
+  =/  nostrgwid  (make:b:gwid [%nostr pub.i.keys.state])
+  =/  urgwid  (make:b:gwid [%urbit our.bowl])
   =/  fans  get-followers
   :*  pub.i.keys.state
       ~(key by following.state)
       ~(wyt by following.state)
       fans
       ~(wyt in fans)
-      (scot %p our.bowl)
-      ''
-      ''
-      `our.bowl
-      ~
+      (default-user-meta our.bowl)
+      `my-urbit-id
+      nostrgwid
     ==
-++  empty-profile  |=  p=@p  ^-  user-profile:comms
+++  empty-profile  |=  u=user:sur  ^-  user-profile:comms
+  =/  bgwid  (make:b:gwid u)
+  ?:  ?=(%urbit -.u)
+  =/  nostrgwid  (make:b:gwid [%nostr pub.i.keys.state])
   :*  0x0
       ~
       0
       ~
       0
-      (scot %p p)
-      ''
-      ''
-      `p
-      ~
+      (default-user-meta +.u)
+      `[+.u `@`+.u bgwid]
+      nostrgwid
     ==
 
-
+  :*  +.u
+      ~
+      0
+      ~
+      0
+      (default-user-meta ~zod)
+      ~
+      bgwid
+    ==
+++  empty-nostr-profile  |=  [pubkey=@ux meta=user-meta:nsur]  ^-  user-profile:comms
+  =/  bgwid  (make:b:gwid [%nostr pubkey])
+  :-  pubkey
+  :-  ~
+  :-  0
+  :-  ~
+  :-  0
+  :-  meta
+  :-  ~
+      bgwid
 
 ++  get-poast  |=  [host=@p id=@]  ^-  (unit post:post)
   =/  poast  ?:  .=(host our.bowl)
@@ -138,7 +154,42 @@
   =/  =fc:feed  [nf ns ne]
   =/  uprof  (~(get by profiles.state) user)
   =/  profile  ?^  uprof  u.uprof
-    ?:  .=(our.bowl u.host)  default-profile  (empty-profile u.host)
+    ?:  .=(our.bowl u.host)  default-profile  (empty-profile [%urbit u.host])
   =/  msg  ''
   [%feed msg %done %ok fc profile]
+
+++  own-profile
+^-  (unit (unit cage))
+  :-  ~  :-  ~  :-  %json  !>
+  =/  uprof  (~(get by profiles.state) [%urbit our.bowl])
+  %-  en-profile:en:appjs 
+    ?^  uprof  u.uprof  default-profile
+    
+++  profile  |=  [which=@t ids=@t]
+^-  (unit (unit cage))
+  =/  network  (parse-app which)
+  ?~  network  ~
+  =/  usert  (branch-id u.network ids)
+  ?~  usert  ~
+  :-  ~  :-  ~  :-  %json  !>
+  =/  uprof  (~(get by profiles.state) -.u.usert)
+  %-  en-profile:en:appjs 
+    ?^  uprof  u.uprof
+    ?:  +.u.usert  default-profile  (empty-profile -.u.usert)
+    
+++  branch-id  |=  [network=?(%nostr %urbit) id=@t]
+  ^-  (unit [user:sur itsa-me=?])
+  ?:  ?=(%nostr network)
+    =/  upk  (slaw:sr %ux id)
+    ?~  upk  ~
+      =/  itsa-me  .=(u.upk pub.i.keys.state)
+      `[[%nostr u.upk] itsa-me]
+    =/  up  (slaw %p id)
+    ?~  up  ~
+      =/  itsa-me  .=(u.up our.bowl)
+      `[[%urbit u.up] itsa-me]
+++  parse-app  |=  which=@t  ^-  (unit ?(%nostr %urbit))
+    ?:  .=('nostr' which)  `%nostr
+    ?:  .=('urbit' which)  `%urbit
+    ~
 --

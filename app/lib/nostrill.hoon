@@ -45,6 +45,20 @@
     %urbit  +.u
     %nostr  +.u
   ==
+++  cord-to-user  |=  c=@t  ^-  (unit user:sur)
+    =/  upk  (slaw:sr %ux c)
+    ?~  upk 
+      ::  not hex
+      =/  up  (slaw %p c)
+      ::  not @p either
+      ?~  up  ~
+      ::  yes @p, not hex
+      `[%urbit u.up]
+      ::  yes hex
+    ?.  (validate-pubkey:nostr-keys u.upk)  ~
+    `[%nostr u.upk]
+
+
 ++  atom-to-user  |=  p=@  ^-  u=user:sur
   ?:  (validate-pubkey:nostr-keys p)
     [%nostr p]  
