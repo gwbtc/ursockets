@@ -16,7 +16,8 @@
     seed,
     harklib=hark,
     followlib=nostrill-follows,
-    constants
+    constants,
+    gwid
 /=  web  /web/router
 |%
 +$  versioned-state  $%(state-0:sur)
@@ -39,7 +40,6 @@
   =/  default  (default-state:lib bowl)
   :_  this(state default)
       init:cards
-
 ::
 ++  on-save
   ^-  vase
@@ -719,6 +719,11 @@
         :~
             [%pass /fuck/this %agent [our.bowl %spider] %poke %spider-input !>([tid %nostrill-ted !>(payload)])]
         ==
+      %gwid
+      =/  gw-id  (make-c:gwid our.bowl 256 .n)
+      :: =/  our  pub.i.keys
+      ~&  >  gw-id=gw-id
+      `this
       :: ::  TODO refactoring into mutations
       :: :: 
       :: %rt0
