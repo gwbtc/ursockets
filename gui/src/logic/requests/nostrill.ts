@@ -126,6 +126,11 @@ export default class IO {
     if (!("thread" in r)) return { error: "wrong result" };
     return { ok: r.thread };
   }
+
+  async scryRelays() {
+    const path = `/j/relays`;
+    return await this.scry(path);
+  }
   // async scryHark(): AsyncRes<Skein[]> {
   async scryHark(): AsyncRes<Skein[]> {
     // const path3 = "/all/skeins";

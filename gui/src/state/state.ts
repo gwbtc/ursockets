@@ -13,6 +13,8 @@ import { skeinToNote } from "@/logic/notifications";
 import { defaultGate } from "@/logic/bunts";
 import { eventsToFc, addEventToFc, eventToProfile } from "@/logic/nostrill";
 import type { S3Config, UrbitContacts } from "@/types/urbit";
+import toast from "react-hot-toast";
+import { GLOBAL_RELAY_URL } from "@/logic/constants";
 // import contactsSample from "../contacts.json";
 // TODO handle airlock connection issues
 // the SSE pipeline has a "status-update" event FWIW
@@ -48,6 +50,8 @@ export type LocalState = {
   lastEose: string;
   setEose: (s: string) => void;
   lastNostrEventTime: number;
+  lastDroppedWs: string;
+  dismissDroppedWs: () => void;
 };
 
 const creator = create<LocalState>();
@@ -59,6 +63,7 @@ export const useStore = creator((set, get) => ({
   init: async () => {
     const airlock = await start();
     const api = new IO(airlock);
+    // api.addRelay(GLOBAL_RELAY_URL);
     api.scryContacts().then((r) => {
       console.log("contacts", r);
       // set({ contacts: contactsSample });
@@ -188,6 +193,7 @@ export const useStore = creator((set, get) => ({
             console.log("nostr thread!!!", fact.nostr.thread);
           if ("relays" in fact.nostr) set({ relays: fact.nostr.relays });
           if ("eose" in fact.nostr) set({ lastEose: fact.nostr.eose });
+          if ("drop" in fact.nostr) set({ lastDroppedWs: fact.nostr.drop });
           if ("event" in fact.nostr) {
             // console.log("san event", fact.nostr.event);
             const event: Wevent = fact.nostr.event;
@@ -243,6 +249,8 @@ export const useStore = creator((set, get) => ({
   lastEose: "",
   setEose: (lastEose) => set({ lastEose }),
   lastNostrEventTime: 0,
+  lastDroppedWs: "",
+  dismissDroppedWs: () => set({ lastDroppedWs: "" }),
 }));
 
 const useShallowStore = <T extends (state: LocalState) => any>(

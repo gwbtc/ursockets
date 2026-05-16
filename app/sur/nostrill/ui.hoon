@@ -75,6 +75,7 @@
       [%event event:nsur]            ::  some specific event
       [%eose sub-id=@t]              ::  end of data or backlog
       [%relays (map @ relay-stats:nsur)]
+      [%drop url=@t]                 ::  connected with a relay was closed
       [%sent-post host=@p id=@ relays=(list @t) event:nsur]  ::  confirmation that a post of ours was sent to a relay
       [%sent-prof relays=(list @t)]
   ==

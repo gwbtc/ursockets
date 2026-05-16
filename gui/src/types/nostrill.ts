@@ -81,6 +81,7 @@ export type NostrFact =
   | { event: NostrEvent }
   | { sub: { subId: string; type: string } }
   | { eose: string }
+  | { drop: string }
   | { relays: Relays }
   | { "sent-post": { host: any; id: string; relays: string[] } }
   | { "sent-prof": string[] };

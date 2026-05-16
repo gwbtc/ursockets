@@ -43,6 +43,22 @@
     :-  %a  %+  turn  (tap:norm:sur feed)  |=  [id=@ud wev=wevent:nsur]
       (wevent:en:nostr wev)
 
+  +$  socket  [wid=@ud url=@t status=$?(%accepted %pending)]
+  ++  all-relays
+  |=  [ls=(list socket) rm=(map @ relay-stats:nsur)]  ^-  json
+    %-  pairs  :~
+      relays+(en-relays rm)
+      sockets+(en-sockets ls)
+    ==
+  ++  en-sockets
+  |=  ls=(list socket)  ^-  json
+    :-  %a  %+  turn  ls
+      |=  s=socket
+        %-  pairs  :~
+          wid+(numb wid.s)
+          url+s+url.s
+          status+s+status.s
+        ==
   ++  en-relays
   |=  r=(map @ relay-stats:nsur)  ^-  json
     %-  pairs  %+  turn  ~(tap by r)
@@ -163,6 +179,7 @@
       %thread  (en-nostr-feed +.nf)
       %event   (event:en:nostr +.nf)
       %eose    (cord:en:common +.nf)
+      %drop    (cord:en:common +.nf)
       %relays  (en-relays +.nf)
       ::
       %sent-post  (en-nostr-sent-post +.nf)

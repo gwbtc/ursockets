@@ -7,7 +7,8 @@
     postlib=trill-post,
     constants,
     sr=sortug,
-    gwid
+    gwid,
+    ws=websockets
 
 |_  [=state:sur =bowl:gall]
 +$  card  card:agent:gall
@@ -192,4 +193,12 @@
     ?:  .=('nostr' which)  `%nostr
     ?:  .=('urbit' which)  `%urbit
     ~
+::
+++  relays
+^-  (unit (unit cage))
+  =/  sockets  (list-connected:ws bowl)
+  :-  ~  :-  ~  :-  %json  !>
+  %+  all-relays:en:appjs  sockets  relays.state
+  
+
 --

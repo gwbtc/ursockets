@@ -808,10 +808,29 @@
       =/  uwid  (slaw %ud wids.pole)
       ?~  uwid  `this
       =/  wid  u.uwid
-      =.  relays  (~(del by relays) wid)
       :: ::  check if it's the global relay
-      :: =/  is-global  .=  `wid  global-relay-conn  
-      :: ?:  is-global
+      =/  is-global  .=  `wid  global-relay-conn  
+      ?.  is-global
+      =/  urelay  (~(get by relays) wid)
+      ?~  urelay  `this
+      =/  url  url.u.urelay
+      =.  relays  (~(del by relays) wid)
+
+      :_  this
+      :~  (update-ui:cards [%nostr %relays relays])
+          (update-ui:cards [%nostr %drop url])
+      ==
+      ::  if it is global
+      
+      =/  url  global-relay:constants
+      =.  global-relay-conn  ~
+      :_  this
+      :: :~
+      ::     (update-ui:cards [%nostr %drop url])
+      :: ==
+      ~
+
+
       ::   ~&  reconnecting-to-global=wid
       ::   :_  this  :~((connect:ws global-relay:constants bowl))
       :: ::
@@ -819,10 +838,6 @@
       :: ~&  reconnecting=url.u.relay
       :: :~  (connect:ws url.u.relay bowl)
       :: ==
-      :_  this
-      ::  TODO more minute disconnected note
-      :~  (update-ui:cards [%nostr %relays relays])
-      ==
       
   ==
 ::
@@ -837,6 +852,7 @@
   ::
    [%x %j %profile ~]  own-profile:scry
    [%x %j %profile which=@ id=@ ~]  (profile:scry which.pole id.pole)
+   [%x %j %relays ~]  relays:scry
   ==
   
 ::

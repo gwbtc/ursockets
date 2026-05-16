@@ -3,6 +3,7 @@ import useLocalState from "@/state/state";
 import Feed from "@/pages/Feed";
 import User from "@/pages/User";
 import Settings from "@/pages/Settings";
+import Chat from "@/pages/Chat";
 import Follows from "@/pages/Follows";
 import Thread, { NostrThreadLoader } from "@/pages/Thread";
 import { Switch, Router, Redirect, Route } from "wouter";
@@ -11,14 +12,17 @@ import WelcomeModal from "@/components/modals/WelcomeModal";
 import RelayStatusButton from "@/components/RelayStatusButton";
 import { useEffect } from "react";
 import Modal from "./components/modals/Modal";
+import toast from "react-hot-toast";
+import RelayDroppedDialog from "./components/modals/RelayDropped";
 
 const WELCOME_SHOWN_KEY = "nostrill-welcome-shown";
 
 export default function r() {
-  const { modal, setModal, profiles } = useLocalState((s) => ({
+  const { modal, setModal, dropped, dismiss } = useLocalState((s) => ({
     modal: s.modal,
     setModal: s.setModal,
-    profiles: s.profiles,
+    dropped: s.lastDroppedWs,
+    dismiss: s.dismissDroppedWs,
   }));
 
   useEffect(() => {
@@ -29,6 +33,10 @@ export default function r() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!dropped) return;
+    setModal(<RelayDroppedDialog url={dropped} />);
+  }, [dropped]);
   return (
     <Switch>
       <Router base="/apps/nostrill">
@@ -39,6 +47,7 @@ export default function r() {
           <Route path="/sets" component={Settings} />
           <Route path="/fols" component={Follows} />
           <Route path="/f" component={Feed} />
+          <Route path="/chat" component={Chat} />
           <Route path="/f/:taip" component={Feed} />
           <Route path="/u/:user" component={User} />
           <Route path="/t/u/:host/:id" component={Thread} />
