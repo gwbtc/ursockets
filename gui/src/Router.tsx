@@ -11,14 +11,17 @@ import WelcomeModal from "@/components/modals/WelcomeModal";
 import RelayStatusButton from "@/components/RelayStatusButton";
 import { useEffect } from "react";
 import Modal from "./components/modals/Modal";
+import toast from "react-hot-toast";
+import RelayDroppedDialog from "./components/modals/RelayDropped";
 
 const WELCOME_SHOWN_KEY = "nostrill-welcome-shown";
 
 export default function r() {
-  const { modal, setModal, profiles } = useLocalState((s) => ({
+  const { modal, setModal, dropped, dismiss } = useLocalState((s) => ({
     modal: s.modal,
     setModal: s.setModal,
-    profiles: s.profiles,
+    dropped: s.lastDroppedWs,
+    dismiss: s.dismissDroppedWs,
   }));
 
   useEffect(() => {
@@ -29,6 +32,10 @@ export default function r() {
     }
   }, []);
 
+  useEffect(() => {
+    if (!dropped) return;
+    setModal(<RelayDroppedDialog url={dropped} />);
+  }, [dropped]);
   return (
     <Switch>
       <Router base="/apps/nostrill">

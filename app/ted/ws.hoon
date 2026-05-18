@@ -6,6 +6,7 @@
 ::  One Off WebSockets message thread
 ::  Connets to WebSockets server, awaits the connection to be open, sends message, awaits confirmation, then closes connection
 |=  arg=vase
+  ~&  "calling websockets %ws thread"
   =/  m  (strand ,vase)  ^-  form:m
   ;<  =bowl:spider  bind:m  get-bowl:strandio
   =/  args  !<([@t websocket-message:eyre] arg)
@@ -17,7 +18,7 @@
   =/  iris-card  [%pass /ws-connect %arvo %i task]
   ;<  ~  bind:m  (send-raw-card:strandio iris-card)
   ;<  wid=@ud  bind:m  %+  (retry:strandio @ud)  `5  get-wid
-  ~&  >>  ted-found-wid=wid
+  :: ~&  >>  ted-found-wid=wid
   ::  NOTE: can't directly send cards to Iris, Iris is subscribed to the agent, not the Thread, hence won't receive them. Poke the agent instead
   =/  pok=poke:comms  [%ted wid %msg +.args]
   ;<  ~  bind:m  (poke-our:strandio %nostrill %noun !>(pok))
@@ -34,12 +35,13 @@
   :: ==
     +$  socket  [wid=@ud url=@t status=$?(%accepted %pending)]    
     ++  get-wid
-      ~&  >  "hey hey getting wid"
+      :: ~&  get-wid=endpoint
       =/  m  (strand ,(unit @))
       ^-  form:m
-      ;<  sockets=(list socket)  bind:m  (scry:strandio (list socket) /ix/ws/app)
-      :: =/  sockets  .^((list socket) %ix (scot %p our.bowl) %ws (scot %da now.bowl) /app)
-      ~&  >>>  get-wid=sockets
+      :: .^(* %ix /=//=/ws)
+      ;<  sockets=(list socket)  bind:m  (scry:strandio (list socket) /ix//ws/nostrill)
+      :: :: =/  sockets  .^((list socket) %ix (scot %p our.bowl) %ws (scot %da now.bowl) /app)
+      :: ~&  >>>  get-wid=sockets
       ?~  sockets  (pure:m ~)
       =/  l=(list socket)  sockets
       |-  ?~  l  (pure:m ~)

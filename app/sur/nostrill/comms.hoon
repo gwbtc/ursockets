@@ -1,4 +1,5 @@
 /-  *wrap, nsur=nostr, tf=trill-feed, tp=trill-post
+/+  gwid
 ::  Communication between Urbit Ships
 |%
 ::  TODO find a better place for these
@@ -11,8 +12,16 @@
       following-count=@ud
       followers=(set user)
       follower-count=@ud
-      user-meta:nsur
+      =user-meta:nsur
+      urbit-id=(unit urbit-id)
+      ::  this one built on the nostr pubkey, not the @p
+      gwid=nyms:gwid
   ==
++$  urbit-id
+$:  p=@p
+    point=@ud
+    gwid=nyms:gwid    
+==
 
 ::  Pokes are used to notify solely users of engagement. There is no data requests through pokes
 

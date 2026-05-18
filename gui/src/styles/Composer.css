@@ -62,14 +62,14 @@
 
   & .reply-context {
     margin-bottom: 12px;
-    border-left: 3px solid var(--color-accent, #2a9d8f);
     background: rgba(42, 157, 143, 0.08);
+    border: 1px solid color-mix(in srgb, var(--color-accent, #2a9d8f) 45%, transparent);
   }
 
   & .quote-context {
     margin-top: 12px;
-    border-left: 3px solid var(--color-secondary, #e76f51);
     background: rgba(231, 111, 81, 0.08);
+    border: 1px solid color-mix(in srgb, var(--color-secondary, #e76f51) 45%, transparent);
   }
 
   & .quote-header {
@@ -77,7 +77,7 @@
     padding: 8px 12px;
     background: rgba(231, 111, 81, 0.08);
     border-radius: 8px;
-    border-left: 3px solid var(--color-secondary, #e76f51);
+    border: 1px solid color-mix(in srgb, var(--color-secondary, #e76f51) 45%, transparent);
   }
 
   & .context-header {

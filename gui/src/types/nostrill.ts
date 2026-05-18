@@ -9,13 +9,28 @@ export interface UserProfile extends BasicProfile {
   followingCount: number;
   followers: UserType[];
   followerCount: number;
+  urbitID: UrbitID | null;
+  gwid: GroundwireID;
 }
 export interface BasicProfile {
   name: string;
   picture: string; // URL
   about: string;
-  patp: string | null;
   other: Record<string, any>;
+}
+export interface UrbitID {
+  patp: string;
+  point: number;
+  gwid: GroundwireID;
+}
+export interface GroundwireID {
+  english: GWNyms;
+  hanzi: GWNyms;
+}
+export interface GWNyms {
+  nym: string;
+  abridged: string;
+  foreshortened: string;
 }
 export type DateObj = { month: number; day: number; year?: number };
 
@@ -66,6 +81,7 @@ export type NostrFact =
   | { event: NostrEvent }
   | { sub: { subId: string; type: string } }
   | { eose: string }
+  | { drop: string }
   | { relays: Relays }
   | { "sent-post": { host: any; id: string; relays: string[] } }
   | { "sent-prof": string[] };

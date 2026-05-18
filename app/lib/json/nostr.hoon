@@ -99,7 +99,6 @@
     :~  name+s+name.meta
         about+s+about.meta
         picture+s+picture.meta
-        :-  'patp'  ?~  patp.meta  ~  (patp:en:common u.patp.meta)
     ==
     %+  turn  ~(tap by other.meta)  |=  a=[@t json]  a
     
@@ -294,9 +293,6 @@
       %'image'
         =/  crd  (so jn)
         ?~  crd  $(fields t.fields)  $(fields t.fields, um um(picture u.crd))
-      %'patp'
-        =/  crd  ((se:de:common %p) jn)
-        $(fields t.fields, um um(patp crd))
       ==
   --
 --

@@ -16,7 +16,8 @@
     seed,
     harklib=hark,
     followlib=nostrill-follows,
-    constants
+    constants,
+    gwid
 /=  web  /web/router
 |%
 +$  versioned-state  $%(state-0:sur)
@@ -39,7 +40,6 @@
   =/  default  (default-state:lib bowl)
   :_  this(state default)
       init:cards
-
 ::
 ++  on-save
   ^-  vase
@@ -207,7 +207,8 @@
   ++  handle-prof  |=  poke=prof-poke:ui
     ?-  -.poke
       %add
-        =/  prof  (my-meta-to-prof:scry +.poke)
+        =/  prof  default-profile:scry
+        =.  user-meta.prof  +.poke
         =.  profiles  (~(put by profiles) [%urbit our.bowl] prof)
         ::  send to global relay
         =/  nclient  ~(. nostr-client [state bowl])
@@ -719,6 +720,12 @@
         :~
             [%pass /fuck/this %agent [our.bowl %spider] %poke %spider-input !>([tid %nostrill-ted !>(payload)])]
         ==
+      [%gwid who=@p width=@ tweak=? lang=?(%en %zh)]
+      =/  gw-id  (make-v:b:gwid [%urbit our.bowl])
+      :: =/  gw-id  (make-c:gwid our.bowl 256 .n)
+      :: =/  our  pub.i.keys
+      ~&  >  gw-id=gw-id
+      `this
       :: ::  TODO refactoring into mutations
       :: :: 
       :: %rt0
@@ -765,6 +772,9 @@
   [%websocket-server *]  `this
   [%ui ~]
     ?>  .=(our.bowl src.bowl)
+    =/  have-my-prof  (~(has by profiles) [%urbit our.bowl])
+    =.  profiles  ?:  have-my-prof  profiles
+      (~(put by profiles) [%urbit our.bowl] default-profile:scry)
     :_  this
     =/  jon  (state:en:jsonlib state)
     [%give %fact ~[/ui] [%json !>(jon)]]^~
@@ -798,10 +808,29 @@
       =/  uwid  (slaw %ud wids.pole)
       ?~  uwid  `this
       =/  wid  u.uwid
-      =.  relays  (~(del by relays) wid)
       :: ::  check if it's the global relay
-      :: =/  is-global  .=  `wid  global-relay-conn  
-      :: ?:  is-global
+      =/  is-global  .=  `wid  global-relay-conn  
+      ?.  is-global
+      =/  urelay  (~(get by relays) wid)
+      ?~  urelay  `this
+      =/  url  url.u.urelay
+      =.  relays  (~(del by relays) wid)
+
+      :_  this
+      :~  (update-ui:cards [%nostr %relays relays])
+          (update-ui:cards [%nostr %drop url])
+      ==
+      ::  if it is global
+      
+      =/  url  global-relay:constants
+      =.  global-relay-conn  ~
+      :_  this
+      :: :~
+      ::     (update-ui:cards [%nostr %drop url])
+      :: ==
+      ~
+
+
       ::   ~&  reconnecting-to-global=wid
       ::   :_  this  :~((connect:ws global-relay:constants bowl))
       :: ::
@@ -809,10 +838,6 @@
       :: ~&  reconnecting=url.u.relay
       :: :~  (connect:ws url.u.relay bowl)
       :: ==
-      :_  this
-      ::  TODO more minute disconnected note
-      :~  (update-ui:cards [%nostr %relays relays])
-      ==
       
   ==
 ::
@@ -824,6 +849,10 @@
    [%x %j %feed host=@ start=@ end=@ count=@ newest=@ replies=@ *]
      (sfeed:scry host.pole start.pole end.pole count.pole newest.pole replies.pole)
    [%x %j %thread host=@ id=@ *]  (thread:scry host.pole id.pole)
+  ::
+   [%x %j %profile ~]  own-profile:scry
+   [%x %j %profile which=@ id=@ ~]  (profile:scry which.pole id.pole)
+   [%x %j %relays ~]  relays:scry
   ==
   
 ::

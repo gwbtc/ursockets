@@ -152,7 +152,7 @@
   margin: 0 24px;
   background: var(--color-surface);
   border-radius: 8px;
-  border-left: 3px solid var(--color-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
 }
 
 .user-modal-about p {

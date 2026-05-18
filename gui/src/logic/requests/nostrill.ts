@@ -14,6 +14,7 @@ import type {
   PeekFeedRes,
   PeekRes,
   PeekThreadRes,
+  UserProfile,
   UserType,
 } from "@/types/nostrill";
 import type { AsyncRes } from "@/types/ui";
@@ -124,6 +125,11 @@ export default class IO {
     const r = res.ok as { thread: PeekThreadRes };
     if (!("thread" in r)) return { error: "wrong result" };
     return { ok: r.thread };
+  }
+
+  async scryRelays() {
+    const path = `/j/relays`;
+    return await this.scry(path);
   }
   // async scryHark(): AsyncRes<Skein[]> {
   async scryHark(): AsyncRes<Skein[]> {
@@ -280,6 +286,12 @@ export default class IO {
   async getProfiles(users: UserType[]) {
     const json = { fetch: users };
     return await this.poke({ prof: json });
+  }
+  async scryProfile(user?: UserType): AsyncRes<UserProfile> {
+    const path = user
+      ? `/j/profile/${Object.keys(user)[0]}/${Object.values(user)[0]}`
+      : "/j/profile";
+    return await this.scry(path);
   }
   // relays
   async addRelay(url: string) {

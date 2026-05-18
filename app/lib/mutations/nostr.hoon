@@ -19,14 +19,6 @@
 +*  cardslib  ~(. cards:lib bowl)
 +$  card  card:agent:gall
 
-++  empty-nostr-profile  |=  [pubkey=@ux meta=user-meta:nsur]  ^-  user-profile:comms
-  :-  pubkey
-  :-  ~
-  :-  0
-  :-  ~
-  :-  0
-      meta
-
 ::  relay state
 ++  get-relay  ^-  (unit [wid=@ud relay=relay-stats:nsur])
   =/  rls  ~(tap by relays.state)
@@ -41,7 +33,6 @@
   :: Don't add to relays state if it's the global-feed relay
   ?:  .=  url.u.socket  global-relay:constants
     =.  global-relay-conn.state  `wid
-    :: TODO ui card?
     `state
     ::
     =/  relay=relay-stats:nsur  [now.bowl url.u.socket ~]
@@ -180,7 +171,7 @@
       ?~  ujon  ~&  failed-parse-metadata=ujon  `state
       =/  umeta  (user-meta:de:njs u.ujon)
       ?~  umeta  ~&  >>  failed-dejs-metadata=ujon  `state
-      =/  prof  (empty-nostr-profile pubkey.event u.umeta)
+      =/  prof  (empty-nostr-profile:scri pubkey.event u.umeta)
       =.  profiles.state  (~(put by profiles.state) [%nostr pubkey.event] prof)
       :_  state
       ~

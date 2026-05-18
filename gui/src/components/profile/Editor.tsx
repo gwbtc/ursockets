@@ -1,5 +1,10 @@
 import { useState } from "react";
-import type { BasicProfile, UserProfile, UserType } from "@/types/nostrill";
+import type {
+  BasicProfile,
+  UrbitID,
+  UserProfile,
+  UserType,
+} from "@/types/nostrill";
 import useLocalState from "@/state/state";
 import Icon from "@/components/Icon";
 import toast from "react-hot-toast";
@@ -76,11 +81,15 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
         }
       });
 
+      // TODO
+      const urbitID: UrbitID | null = api?.airlock?.our
+        ? { patp: api.airlock.our, point: 0, gwid: "" }
+        : null;
       const nprofile: BasicProfile = {
         name,
         picture,
         about,
-        patp: api?.airlock?.our || null,
+        urbitID,
         other,
       };
 
