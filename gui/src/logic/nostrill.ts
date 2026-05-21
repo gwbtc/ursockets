@@ -139,14 +139,14 @@ export function eventToProfile(event: Event): UserProfile | null {
     console.log("tags", event.tags);
     const { name, picture, about, ...other } = data;
     const patp = data.patp ? data.patp : null;
-    const urbitID: UrbitID = { patp, point: 0, gwid: "" };
-    const bp: BasicProfile = { urbitID, name, picture, about, other };
+    const bp: BasicProfile = { name, picture, about, other };
     const prof: UserProfile = {
       pubkey: event.pubkey,
       followers: [],
       following: [],
       followerCount: 0,
       followingCount: 0,
+      urbitID: null,
       ...bp,
     };
     return prof;
