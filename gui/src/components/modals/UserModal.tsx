@@ -316,6 +316,7 @@ export function GroundwireID({
   copy: (e: React.MouseEvent, text: string) => void;
 }) {
   const gwid = profile.urbitID ? profile.urbitID.gwid : profile.gwid;
+  if (!gwid) return <div>Groundwire ID not found</div>;
   const trim = (s: string) => s.replace(/\./g, "");
   return (
     <div>

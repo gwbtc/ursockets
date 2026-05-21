@@ -10,7 +10,7 @@ export interface UserProfile extends BasicProfile {
   followers: UserType[];
   followerCount: number;
   urbitID: UrbitID | null;
-  gwid: GroundwireID;
+  gwid?: GroundwireID;
 }
 export interface BasicProfile {
   name: string;

@@ -82,14 +82,10 @@ const ProfileEditor: React.FC<ProfileEditorProps> = ({
       });
 
       // TODO
-      const urbitID: UrbitID | null = api?.airlock?.our
-        ? { patp: api.airlock.our, point: 0, gwid: "" }
-        : null;
       const nprofile: BasicProfile = {
         name,
         picture,
         about,
-        urbitID,
         other,
       };
 
