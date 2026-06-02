@@ -1,10 +1,11 @@
+/-  g=contacts-0
 |%
 ::
 +|  %compat
+
++$  nest  (pair term flag:g)
 ::
 ++  okay  `epic`1
-+$  flag  (pair ship term)
-+$  nest  (pair term flag)
 ::
 +|  %types
 ::  $value-type: contact field value type
@@ -36,9 +37,10 @@
       [%look p=@ta]
       ::
       ::  group
-      [%flag p=flag]
+      [%flag p=flag:g]
       ::
       ::  uniform set
+      :: TODO408 this definition is *BUGGY AS HELL*
       [%set p=$|((set value) unis)]
   ==
 ::  +unis: whether set is uniformly typed
@@ -83,9 +85,12 @@
 ::  $book: contact book
 ::
 +$  book  (map kip page)
-::  $directory: merged contacts
+::  $leaf: standalone contact page
 ::
-+$  directory  (map ship contact)
++$  leaf  [contact=? page]
+::  $directory: peers and contacts directory
+::
++$  directory  (map ship leaf)
 ::  $peers: network peers
 ::
 +$  peers  (map ship foreign)

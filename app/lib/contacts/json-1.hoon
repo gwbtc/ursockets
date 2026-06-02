@@ -1,16 +1,16 @@
-/-  c=contacts
+/-  c=contacts, c0=contacts-0
 |%
 ++  g
 |%
-  ++  enjs
-  =,  enjs:format
+++  enjs
+=,  enjs:format
   |%
   ++  print-flag
-    |=  f=flag:c
+    |=  f=flag:c0
     ^-  @t
     (rap 3 (scot %p p.f) '/' q.f ~)
   ++  flag
-    |=  f=flag:c
+    |=  f=flag:c0
     s+(print-flag f)
   ++  print-nest
     |=  n=nest:c
@@ -38,8 +38,7 @@
   ++  nest  (su nest:p)
   --
 --
-++  enjs
-  =,  enjs:format
+++  enjs  =,  enjs:format
   |%
   ::
   ++  ship
@@ -96,12 +95,16 @@
   ::
   ++  directory
     |=  =directory:c
-    ^-  json
-    =|  dir=(map @ta json)
-    :-  %o
-    %-  ~(rep by directory)
-    |=  [[who=@p con=contact:c] acc=_dir]
-    (~(put by acc) (scot %p who) (contact con))
+    %-  pairs
+    %+  turn  ~(tap by directory)
+    |=  [who=@p =leaf:c]
+    :-  (scot %p who)
+    %-   pairs
+    =,  leaf
+    :~  'isContact'^b+contact
+        contact+(^contact con)
+        mod+(^contact mod)
+    ==
   ::
   ++  response
     |=  n=response:c

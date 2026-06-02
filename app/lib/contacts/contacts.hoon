@@ -315,13 +315,16 @@
       (~(put by c) %avatar look/u.avatar.o)
     =?  c  ?=(^ cover.o)
       (~(put by c) %cover look/u.cover.o)
-    =?  c  !?=(~ groups.o)
+    :: WTFTLON bruh
+    =?  c  ?=(~ groups.o)
       %+  ~(put by c)  %groups
       :-  %set
       %-  ~(run in groups.o)
-      |=  =flag
+      |=  =flag:c0
       flag/flag
-    c
+      c
+
+    
   ::  +profile: convert legacy to profile
   ::
   ++  profile
@@ -358,7 +361,7 @@
         =/  groups
           (~(get cy c) %groups %set)
         ?~  groups  ~
-        ^-  (set flag)
+        ^-  (set flag:c0)
         %-  ~(run in u.groups)
         |=  val=value
         ?>  ?=(%flag -.val)
