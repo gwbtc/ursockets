@@ -1,4 +1,4 @@
-/+  c=contacts
+/+  c=contacts-contacts
 /+  j=contacts-json-1
 |_  contact=contact:c
 ++  grad  %noun

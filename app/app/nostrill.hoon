@@ -17,7 +17,8 @@
     harklib=hark,
     followlib=nostrill-follows,
     constants,
-    gwid
+    gwid,
+    fine
 /=  web  /web/router
 |%
 +$  versioned-state  $%(state-0:sur)

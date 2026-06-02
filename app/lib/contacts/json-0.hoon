@@ -8,11 +8,11 @@
   =,  enjs:format
   |%
   ++  print-flag
-    |=  f=flag:c
+    |=  f=flag:legacy
     ^-  @t
     (rap 3 (scot %p p.f) '/' q.f ~)
   ++  flag
-    |=  f=flag:c
+    |=  f=flag:legacy
     s+(print-flag f)
   ++  print-nest
     |=  n=nest:c
@@ -41,7 +41,7 @@
   --
 --
 ++  enjs
-  =,  enjs:format
+=,  enjs:format
   |%
   ::  XX shadowed for compat, +ship:enjs removes the ~
   ::
@@ -74,7 +74,7 @@
     ::
         =-  groups+a+-
         %-  ~(rep in groups.c)
-        |=([f=flag j=(list json)] [(flag:enjs:gj f) j])
+        |=([f=flag:legacy j=(list json)] [(flag:enjs:gj f) j])
     ==
   ::
   ++  field

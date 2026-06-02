@@ -730,7 +730,8 @@
         |=  [[=kip =page] =_dir]
         ?^  kip
           dir
-        (~(put by dir) kip (contact-uni page))
+        (~(put by dir) kip [& page])
+        :: (~(put by dir) kip (contact-uni page))
       ::  export all peers
       ::
       =.  dir
@@ -738,7 +739,8 @@
         |=  [[who=ship far=foreign] =_dir]
         ?~  for.far  dir
         ?:  (~(has by dir) who)  dir
-        (~(put by dir) who con.for.far)
+        (~(put by dir) who [| con.for.far ~])
+        :: (~(put by dir) who con.for.far)
       ``contact-directory-0+!>(dir)
       ::
         [%x %v1 %changes since=@ ~]

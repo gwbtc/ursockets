@@ -1,8 +1,9 @@
 /-  ui=nostrill-ui
 |_  t=ted:ui
+++  grad  %noun
 ++  grow
   |%
-  ++  noun  r  
+  ++  noun  t  
   --
 ++  grab
   |%
