@@ -5,10 +5,11 @@ on:
       - master
 
 env:
-  DESK: nostrill
+  TMUX_TAB:  sponsor
+  DESK:      nostrill
   SHIP_HOST: root@143.198.70.9
-  PIER_PATH: /root/.local/share/groundwire-alpha/watwyd-bannyt-parmep-sivpes--motweb-dovfet-nilrec-daplyd
-  TMUX_TAB: sponsor
+  PIER_PATH: /root/.local/share/groundwire-alpha
+  DIST_PIER: watwyd-bannyt-parmep-sivpes--motweb-dovfet-nilrec-daplyd
 
 jobs:
   deploy:
@@ -24,10 +25,14 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H 143.198.70.9 >> ~/.ssh/known_hosts
 
+      - name: Clear deployed desk
+        run: ssh ${SHIP_HOST} "find ${PIER_PATH}/${DIST_PIER}/${DESK} -mindepth 1 -maxdepth 1 -exec rm -rf {} +"
+
+      - name: Create desk.ship
+        run: printf '%s\n' "~${DIST_PIER}" > app/desk.ship
+
       - name: Deploy desk
-        run: |
-          scp -r app/* ${SHIP_HOST}:${PIER_PATH}/${DESK}/
+        run: scp -r app/* ${SHIP_HOST}:${PIER_PATH}/${DIST_PIER}/${DESK}/
 
       - name: Commit desk on ship
-        run: |
-          ssh ${SHIP_HOST} "tmux send-keys -t ${TMUX_TAB} '|commit %${DESK}' Enter"
+        run: ssh ${SHIP_HOST} "tmux send-keys -t ${TMUX_TAB} '|commit %${DESK}' Enter"
