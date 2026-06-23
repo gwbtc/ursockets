@@ -1,5 +1,6 @@
 .claude
 .zig-cache
+dist
 fakezod
 AGENTS.md
 CLAUDE.md
