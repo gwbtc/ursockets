@@ -16,6 +16,17 @@ const RepoImport = struct {
 
 const dependencies = [_]RepoImport{
     .{
+        .name = "landscape",
+        .url = "https://github.com/tloncorp/landscape",
+        .commit = "46c6ed8738082b6a94558710b1e3619befa83057",
+        .prefix = "desk",
+        .paths = &.{
+            "lib/docket.hoon",
+            "mar/docket-0.hoon",
+            "sur/docket.hoon",
+        },
+    },
+    .{
         .name = "tlon-apps",
         .url = "https://github.com/tloncorp/tlon-apps",
         .commit = "9f0c94771e4773567a2f55a727ffa31b0f6e8e9f",
