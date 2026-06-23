@@ -24,6 +24,7 @@ const dependencies = [_]RepoImport{
             "lib/docket.hoon",
             "mar/docket-0.hoon",
             "sur/docket.hoon",
+            "sur/hark.hoon",
         },
     },
     .{
@@ -48,6 +49,11 @@ const dependencies = [_]RepoImport{
             "mar/contact/update-0.hoon",
             "mar/contact/update-1.hoon",
             "mar/contact/update.hoon",
+            "sur/groups.hoon",
+            "sur/meta.hoon",
+            "sur/epic.hoon",
+            "sur/story.hoon",
+            "sur/cite.hoon",
         },
     },
     .{
