@@ -173,16 +173,16 @@ pub fn build(b: *std.Build) void {
 fn buildDesk(step: *std.Build.Step, allocator: std.mem.Allocator, install_path: []const u8, copy_target: ?[]const u8) !void {
     try requireGitVersion(step);
 
-    if (!pathExists("desk") and !pathExists("desk-dev")) {
-        return step.fail("neither /desk nor /desk-dev directory found", .{});
+    if (!pathExists("app") and !pathExists("desk-dev")) {
+        return step.fail("neither /app nor /desk-dev directory found", .{});
     }
 
     std.debug.print("Creating install prefix at {s}...\n", .{install_path});
     try recreateDir(install_path);
 
-    if (pathExists("desk")) {
-        std.debug.print("Copying /desk to install prefix...\n", .{});
-        try copyDirContents(allocator, "desk", install_path);
+    if (pathExists("app")) {
+        std.debug.print("Copying /appto install prefix...\n", .{});
+        try copyDirContents(allocator, "app", install_path);
     }
 
     var import_copies = std.ArrayList(ImportCopy){};
