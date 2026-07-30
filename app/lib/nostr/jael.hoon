@@ -123,13 +123,16 @@
 ::
 ++  is-comet
   |=  [=bowl:gall who=@p]  ^-  ?
-  ::  XX pin: %pynt returns (unit point) for a locally-known ship
-  =/  pt=(unit point)
-    .^  (unit point)  %j
+  ::  %pynt gives a (unit point) for a locally-known ship; we need only its
+  ::  presence, so scry loosely as (unit *) rather than depend on jael's mold.
+  ::  XX pin: confirm %pynt is the right care and that a present point implies
+  ::  a %gw-btc-verified comet.
+  =/  pt=(unit *)
+    .^  (unit *)  %j
         /(scot %p our.bowl)/pynt/(scot %da now.bowl)/(scot %p who)
     ==
   ?~  pt  |
-  =(%czar (clan:title who))  :: XX placeholder; want ?=(%pawn (clan:title who))
+  ?=(%pawn (clan:title who))
 ::
 ::  +ed-verify: is `sig` a valid @p ed25519 signature over `msg`, per `pass`?
 ::
