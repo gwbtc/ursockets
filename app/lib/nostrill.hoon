@@ -1,6 +1,6 @@
 /-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
     post=trill-post, gate=trill-gate
-/+  trill=trill-post, nostr-keys, sr=sortug,
+/+  trill=trill-post, nostr-keys, jael=nostr-jael, sr=sortug,
     jsonlib=json-nostrill,
     constants,
     ws=websockets
@@ -9,9 +9,11 @@
 ++  default-state  |=  =bowl:gall  ^-  state:sur
   =/  s  *state:sur
   :: =/  l  ~['wss://relay.damus.io' 'wss://nos.lol']
-  =/  key  (gen-keys:nostr-keys eny.bowl)
+  ::  the Nostr key is now DERIVED from our Groundwire/Jael identity (deterministic,
+  ::  survives reinstall, bound to our @p) rather than random `eny`.
+  =/  key  (derive-keys:jael bowl)
   =/  keyl  [key ~]
-  s(keys keyl) 
+  s(keys keyl)
 
 ++  print-relay-stats
   |=  rm=(map @ relay-stats:nsur)
