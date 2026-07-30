@@ -28,6 +28,11 @@
 ++  sign-event  |=  [priv=@ux hash=@ux eny=@]
   =^  sed  eny  (raws eny 256)
   (sign:schnorr:secp256k1:secp:crypto priv hash sed)
+::  +verify-event: BIP-340 verify a Nostr signature. `pubkey` is the 32-byte
+::  x-only npub, `hash` the 32-byte event id.  (Nostrill had signing but no
+::  verification; a relay needs this.)
+++  verify-event  |=  [pubkey=@ux hash=@ux sig=@ux]  ^-  ?
+  (verify:schnorr:secp256k1:secp:crypto pubkey hash sig)
 
 
 :: 
