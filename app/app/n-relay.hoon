@@ -216,11 +216,11 @@
   ::
   ++  match
     |=  [f=filter:nsur =event:nsur]  ^-  ?
-    ?&  ?|(?=(~ ids.f)      (~(has in u.ids.f) id.event))
-        ?|(?=(~ authors.f)  (~(has in u.authors.f) pubkey.event))
-        ?|(?=(~ kinds.f)    (~(has in u.kinds.f) kind.event))
-        ?|(?=(~ since.f)    (gte created-at.event (unix-secs:jael u.since.f)))
-        ?|(?=(~ until.f)    (lte created-at.event (unix-secs:jael u.until.f)))
+    ?&  ?|(?=(~ ids.f) (~(has in u.ids.f) id.event))
+        ?|(?=(~ authors.f) (~(has in u.authors.f) pubkey.event))
+        ?|(?=(~ kinds.f) (~(has in u.kinds.f) kind.event))
+        ?|(?=(~ since.f) (gte created-at.event (unix-secs:jael u.since.f)))
+        ?|(?=(~ until.f) (lte created-at.event (unix-secs:jael u.until.f)))
     ==
   --
 --
