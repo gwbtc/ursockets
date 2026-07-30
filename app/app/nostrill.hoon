@@ -1,6 +1,6 @@
 /-  sur=nostrill, nsur=nostr, comms=nostrill-comms, ui=nostrill-ui,
     tf=trill-feed, tp=trill-post
-/+  lib=nostrill, nostr-keys, sr=sortug, scri,
+/+  lib=nostrill, nostr-keys, jael=nostr-jael, sr=sortug, scri,
     ws=websockets,
     bip-b173,
     nreq=nostr-req,
@@ -51,9 +51,13 @@
   ^-  (quip card:agent:gall agent:gall)
   =/  old-state  !<(versioned-state old-state)
   ?-  -.old-state
-    %0   :_  this(state old-state)
-         init:cards
-  
+    %0
+    ::  migrate any pre-existing (randomly generated) Nostr key to the
+    ::  deterministic, Jael-derived one.  Idempotent once migrated.
+    =/  new-key  (derive-keys:jael bowl)
+    =/  migrated  old-state(keys [new-key ~])
+    :_  this(state migrated)
+    init:cards
   ==
   :: `this(state (default-state:lib bowl))
 ::
@@ -175,7 +179,9 @@
              [cs this]
     ==
   ++  handle-cycle-keys
-        =/  ks  (gen-keys:nostr-keys eny.bowl)
+        ::  re-derive the deterministic, Jael-bound key (idempotent) rather than
+        ::  minting a random one, so the UI can't strand the grounded npub.
+        =/  ks  (derive-keys:jael bowl)
         =.  keys  [ks keys]
         :: =/  nkeys  keys(i ks, t `(list keys:nsur)`keys)
         :: :: =.  keys  nkeys
